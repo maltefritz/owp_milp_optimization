@@ -759,7 +759,7 @@ with tab6:
     ss.param_opt['capital_interest'] *= 1/100
 
     ss.param_opt['lifetime'] = col_econ.number_input(
-        'Lebensdauer in Jahre', value=ss.param_opt['lifetime'],
+        'Betrachtungsdauer in Jahre', value=ss.param_opt['lifetime'],
         key='lifetime'
         )
 
