@@ -492,7 +492,7 @@ with tab3:
         solar_heat_flow.reset_index(inplace=True)
         solar_heat_flow['solar_heat_flow'] *= 1e6
 
-        col_vis.subheader('Solathermie')
+        col_vis.subheader('Solarthermie')
         col_vis.altair_chart(
             alt.Chart(solar_heat_flow).mark_line(color='#EC6707').encode(
                 y=alt.Y('solar_heat_flow',
