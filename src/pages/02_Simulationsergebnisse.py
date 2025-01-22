@@ -261,15 +261,15 @@ with tab_ov:
     unit_cost.rename(columns=renamedict, inplace=True)
     unit_cost.rename(
         index={
-            'invest': 'Investitionskosten',
-            'op_cost_var': 'Variable Betriebskosten',
-            'op_cost_fix': 'Fixe Betriebskosten',
-            'op_cost': 'Gesamtbetriebskosten'
+            'invest': 'Investitionskosten (€)',
+            'op_cost_var': 'Variable Betriebskosten (€)',
+            'op_cost_fix': 'Fixe Betriebskosten (€)',
+            'op_cost': 'Gesamtbetriebskosten (€)'
             },
         inplace=True
         )
 
-    unit_cost.drop('Gesamtbetriebskosten', axis=0, inplace=True)
+    unit_cost.drop('Gesamtbetriebskosten (€)', axis=0, inplace=True)
     unit_cost = unit_cost.apply(lambda x: round(x, 2))
 
     col_cost.dataframe(unit_cost, use_container_width=True)
