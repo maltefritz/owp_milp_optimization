@@ -244,6 +244,9 @@ disp_opt_params = ['cap_N', 'Q_N', 'A_N']
 with tab2:
     st.header('Parametrisierung der Wärmeversorgungsanlagen')
 
+    if ss.param_units:
+        ss.param_units = dict(sorted(ss.param_units.items()))
+
     for unit, unit_params in ss.param_units.items():
         unit_cat = unit.rstrip('0123456789')
         unit_nr = unit[len(unit_cat):]
