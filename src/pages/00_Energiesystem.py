@@ -345,19 +345,38 @@ with tab2:
 
 # %% MARK: Heat Load
 with tab3:
+    if 'heat_data' not in ss:
+        ss.heat_data = {}
+    if 'heat_dataset_name_select' not in ss:
+        if 'heat_dataset_name' in ss.heat_data:
+            ss.heat_dataset_name_select = ss.heat_data['heat_dataset_name']
+        else:
+            ss.heat_dataset_name_select = ss.all_heat_load.columns[0]
+    if 'heat_load_year_select' not in ss:
+        if 'heat_load_year' in ss.heat_data:
+            ss.heat_load_year_select = ss.heat_data['heat_load_year']
+    if 'precise_dates' not in ss.heat_data:
+        ss.heat_data['precise_dates'] = False
+
+    if 'date_picker_heat_load' not in ss:
+        if 'dates' in ss.heat_data and ss.heat_data['dates'] is not None:
+            ss.date_picker_heat_load = tuple(d.date() for d in ss.heat_data['dates'])
+    print(ss.heat_data)
+
     st.header('Wärmeversorgungsdaten')
 
     col_sel, col_vis = st.columns([1, 2], gap='large')
 
-    dataset_name = col_sel.selectbox(
+    ss.heat_data['heat_dataset_name'] = col_sel.selectbox(
         'Wähle die Wärmelastdaten aus, die im System zu verwenden sind',
         [*ss.all_heat_load.columns, 'Eigene Daten'],
-        placeholder='Wärmelastendaten'
+        placeholder='Wärmelastendaten',
+        key='heat_dataset_name_select'
     )
 
     heat_load = pd.DataFrame()
-    if dataset_name == 'Eigene Daten':
-        heat_load_year = None
+    if ss.heat_data['heat_dataset_name'] == 'Eigene Daten':
+        ss.heat_data['heat_load_year'] = None
         tooltip = (
             'Die erste Spalte muss ein Datumsindex in stündlicher Auflösung und'
             + ' die zweite die Wärmelast in MWh beinhalten. Zusätzlich muss bei'
@@ -381,38 +400,40 @@ with tab3:
     else:
         user_file = None
         heat_load_years = ss.all_heat_load.loc[
-            ~ss.all_heat_load[dataset_name].isna(), dataset_name
+            ~ss.all_heat_load[ss.heat_data['heat_dataset_name']].isna(), ss.heat_data['heat_dataset_name']
             ].index.year.unique()
-        heat_load_year = col_sel.selectbox(
+        ss.heat_data['heat_load_year'] = col_sel.selectbox(
             'Wähle das Jahr der Wärmelastdaten aus',
             heat_load_years, index=len(heat_load_years)-1,
-            placeholder='Betrachtungsjahr'
+            placeholder='Betrachtungsjahr',
+            key='heat_load_year_select'
         )
-        yearmask = ss.all_heat_load.index.year == heat_load_year
+        yearmask = ss.all_heat_load.index.year == ss.heat_data['heat_load_year']
         heat_load = ss.all_heat_load.loc[
-            yearmask, dataset_name
+            yearmask, ss.heat_data['heat_dataset_name']
             ].copy().to_frame()
 
-    dates = None
-    if dataset_name != 'Eigene Daten':
+    ss.heat_data['dates'] = None
+    if ss.heat_data['heat_dataset_name'] != 'Eigene Daten':
         precise_dates = col_sel.toggle(
-            'Exakten Zeitraum wählen', key='prec_dates_heat_load'
+            'Exakten Zeitraum wählen', value=ss.heat_data['precise_dates'], key='prec_dates_heat_load'
         )
-        if precise_dates:
-            dates = col_sel.date_input(
+        ss.heat_data['precise_dates'] = precise_dates
+        if ss.heat_data['precise_dates']:
+            ss.heat_data['dates'] = col_sel.date_input(
                 'Zeitraum auswählen:',
                 value=(
-                    dt.date(int(heat_load_year), 3, 28),
-                    dt.date(int(heat_load_year), 7, 2)
+                    dt.date(int(ss.heat_data['heat_load_year']), 3, 28),
+                    dt.date(int(ss.heat_data['heat_load_year']), 7, 2)
                     ),
-                min_value=dt.date(int(heat_load_year), 1, 1),
-                max_value=dt.date(int(heat_load_year), 12, 31),
+                min_value=dt.date(int(ss.heat_data['heat_load_year']), 1, 1),
+                max_value=dt.date(int(ss.heat_data['heat_load_year']), 12, 31),
                 format='DD.MM.YYYY', key='date_picker_heat_load'
                 )
-            dates = [
-                dt.datetime(year=d.year, month=d.month, day=d.day) for d in dates
+            ss.heat_data['dates'] = [
+                dt.datetime(year=d.year, month=d.month, day=d.day) for d in ss.heat_data['dates']
                 ]
-            heat_load = heat_load.loc[dates[0]:dates[1], :]
+            heat_load = heat_load.loc[ss.heat_data['dates'][0]:ss.heat_data['dates'][1], :]
 
         scale_hl = col_sel.toggle('Daten skalieren', key='scale_hl')
         if scale_hl:
@@ -421,21 +442,21 @@ with tab3:
                 key='scale_method_hl'
                 )
             if scale_method_hl == 'Haushalte':
-                if dataset_name == 'Flensburg':
+                if ss.heat_data['heat_dataset_name'] == 'Flensburg':
                     base_households = 50000
-                elif dataset_name == 'Sonderburg':
+                elif ss.heat_data['heat_dataset_name'] == 'Sonderburg':
                     base_households = 13000
                 scale_households_hl = col_sel.number_input(
                     'Anzahl Haushalte', value=base_households,
                     min_value=1, step=100, key='scale_households_hl'
                     )
-                heat_load[dataset_name] *= scale_households_hl / base_households
+                heat_load[ss.heat_data['heat_dataset_name']] *= scale_households_hl / base_households
             elif scale_method_hl == 'Faktor':
                 scale_factor_hl = col_sel.number_input(
                     'Skalierungsfaktor', value=1.0, step=0.1, min_value=0.0,
                     key='scale_factor_hl'
                     )
-                heat_load[dataset_name] *= scale_factor_hl
+                heat_load[ss.heat_data['heat_dataset_name']] *= scale_factor_hl
             elif scale_method_hl == 'Erweitert':
                 scale_amp_hl = col_sel.number_input(
                     'Stauchungsfaktor', value=1.0, step=0.1, min_value=0.0,
@@ -447,13 +468,13 @@ with tab3:
                     help='Verschiebt den Median der Lastdaten.',
                     key='scale_off_hl'
                     )
-                heat_load_median = heat_load[dataset_name].median()
-                heat_load[dataset_name] = (
-                    (heat_load[dataset_name] - heat_load_median) * scale_amp_hl
+                heat_load_median = heat_load[ss.heat_data['heat_dataset_name']].median()
+                heat_load[ss.heat_data['heat_dataset_name']] = (
+                    (heat_load[ss.heat_data['heat_dataset_name']] - heat_load_median) * scale_amp_hl
                     + heat_load_median + scale_off_hl
                     )
-                # negative_mask = heat_load[dataset_name] < 0
-                if (heat_load[dataset_name] < 0).values.any():
+                # negative_mask = heat_load[ss.heat_data['heat_dataset_name']] < 0
+                if (heat_load[ss.heat_data['heat_dataset_name']] < 0).values.any():
                     st.error(
                         'Durch die Skalierung resultiert eine negative '
                         + 'Wärmelast. Bitte den Offset anpassen.'
@@ -461,7 +482,7 @@ with tab3:
 
     col_vis.subheader('Wärmelastdaten')
 
-    if user_file is not None or dataset_name != 'Eigene Daten':
+    if user_file is not None or ss.heat_data['heat_dataset_name'] != 'Eigene Daten':
         heat_load.rename(
             columns={heat_load.columns[0]: 'heat_demand'}, inplace=True
             )
@@ -485,10 +506,10 @@ with tab3:
 
     if 'Solarthermie' in ss.units:
         solar_heat_flow = ss.all_solar_heat_flow[
-            ss.all_solar_heat_flow.index.year == heat_load_year
+            ss.all_solar_heat_flow.index.year == ss.heat_data['heat_load_year']
             ].copy()
-        if precise_dates:
-            solar_heat_flow = solar_heat_flow.loc[dates[0]:dates[1], :]
+        if ss.heat_data['precise_dates']:
+            solar_heat_flow = solar_heat_flow.loc[ss.heat_data['dates'][0]:ss.heat_data['dates'][1], :]
         solar_heat_flow.reset_index(inplace=True)
         solar_heat_flow['solar_heat_flow'] *= 1e6
 
@@ -509,8 +530,8 @@ with tab4:
     col_elp, col_vis_el = st.columns([1, 2], gap='large')
 
     el_prices_years = list(ss.all_el_prices.index.year.unique())
-    if heat_load_year:
-        el_year_idx = el_prices_years.index(heat_load_year)
+    if ss.heat_data['heat_load_year']:
+        el_year_idx = el_prices_years.index(ss.heat_data['heat_load_year'])
     else:
         el_year_idx = len(el_prices_years) - 1
     el_prices_year = col_elp.selectbox(
@@ -525,18 +546,18 @@ with tab4:
         ss.all_el_emissions.index.year == el_prices_year
         ].copy()
 
-    precise_dates = col_elp.toggle(
+    ss.heat_data['precise_dates'] = col_elp.toggle(
         'Exakten Zeitraum wählen', key='prec_dates_el_prices'
         )
-    if precise_dates:
+    if ss.heat_data['precise_dates']:
         el_dates = col_elp.date_input(
             'Zeitraum auswählen:',
-            value=dates if dates is not None else (
-                dt.date(int(heat_load_year), 3, 28),
-                dt.date(int(heat_load_year), 7, 2)
+            value=ss.heat_data['dates'] if ss.heat_data['dates'] is not None else (
+                dt.date(int(ss.heat_data['heat_load_year']), 3, 28),
+                dt.date(int(ss.heat_data['heat_load_year']), 7, 2)
                 ),
-            min_value=dt.date(int(heat_load_year), 1, 1),
-            max_value=dt.date(int(heat_load_year), 12, 31),
+            min_value=dt.date(int(ss.heat_data['heat_load_year']), 1, 1),
+            max_value=dt.date(int(ss.heat_data['heat_load_year']), 12, 31),
             format='DD.MM.YYYY', key='date_picker_el_prices'
             )
         el_dates = [
@@ -628,8 +649,8 @@ with tab5:
     col_gas, col_vis_gas = st.columns([1, 2], gap='large')
 
     gas_prices_years = list(ss.all_el_prices.index.year.unique())
-    if heat_load_year:
-        gas_year_idx = gas_prices_years.index(heat_load_year)
+    if ss.heat_data['heat_load_year']:
+        gas_year_idx = gas_prices_years.index(ss.heat_data['heat_load_year'])
     else:
         gas_year_idx = len(gas_prices_years) - 1
     gas_prices_year = col_gas.selectbox(
@@ -644,18 +665,18 @@ with tab5:
         ss.all_co2_prices.index.year == gas_prices_year
         ].copy()
 
-    precise_dates = col_gas.toggle(
+    ss.heat_data['precise_dates'] = col_gas.toggle(
         'Exakten Zeitraum wählen', key='prec_dates_gas_prices'
         )
-    if precise_dates:
+    if ss.heat_data['precise_dates']:
         gas_dates = col_gas.date_input(
             'Zeitraum auswählen:',
-            value=dates if dates is not None else (
-                dt.date(int(heat_load_year), 3, 28),
-                dt.date(int(heat_load_year), 7, 2)
+            value=ss.heat_data['dates'] if ss.heat_data['dates'] is not None else (
+                dt.date(int(ss.heat_data['heat_load_year']), 3, 28),
+                dt.date(int(ss.heat_data['heat_load_year']), 7, 2)
                 ),
-            min_value=dt.date(int(heat_load_year), 1, 1),
-            max_value=dt.date(int(heat_load_year), 12, 31),
+            min_value=dt.date(int(ss.heat_data['heat_load_year']), 1, 1),
+            max_value=dt.date(int(ss.heat_data['heat_load_year']), 12, 31),
             format='DD.MM.YYYY', key='date_picker_gas_prices'
             )
         gas_dates = [
