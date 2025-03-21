@@ -326,6 +326,17 @@ class EnergySystem():
                 solver='gurobi', solve_kwargs={'tee': True},
                 cmdline_options=options
                 )
+        elif self.param_opt['Solver'] == 'SCIP':
+            options = {
+                    'limits/gap': self.param_opt['MIPGap'],
+                    'logfile': logpath
+                    }
+            if self.param_opt['TimeLimit'] is not None:
+                options.update({'limits/time': self.param_opt['TimeLimit']})
+            self.model.solve(
+                solver='scip', solve_kwargs={'tee': True},
+                cmdline_options=options
+                )
         elif self.param_opt['Solver'] == 'HiGHS':
             opt = appsi.solvers.Highs()
             opt.config.mip_gap = self.param_opt['MIPGap']

@@ -603,16 +603,20 @@ if tes_used:
                     use_container_width=True
                     )
 
+# %% MARK: Solver Log
 with tab_pro:
-    with tab_pro.expander('Solver Log'):
-        logpath = os.path.abspath(
-            os.path.join(
-                os.path.dirname(__file__), '..', 'solverlogs',
-                f'{ss.param_opt["Solver"].lower()}_log.txt'
+    if self.param_opt['Solver'] == 'SCIP':
+        st.text('Der SCIP Solver ermöglicht aktuell keine Solverlogs.')
+    else:
+        with tab_pro.expander('Solver Log'):
+            logpath = os.path.abspath(
+                os.path.join(
+                    os.path.dirname(__file__), '..', 'solverlogs',
+                    f'{ss.param_opt["Solver"].lower()}_log.txt'
+                    )
                 )
-            )
-        with open(logpath, 'r', encoding='utf-8') as file:
-            solverlog = file.read()
+            with open(logpath, 'r', encoding='utf-8') as file:
+                solverlog = file.read()
 
-        st.text(solverlog)
-        st.text(solverlog)
+            st.text(solverlog)
+            st.text(solverlog)
