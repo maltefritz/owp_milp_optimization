@@ -160,6 +160,6 @@ cython_debug/
 #.idea/
 
 # User saved data
-src/save/*
-src/solverlogs/*
-src/_tmp
+src/owp_milp_optimization/save/*
+src/owp_milp_optimization/solverlogs/*
+src/owp_milp_optimization/_tmp
