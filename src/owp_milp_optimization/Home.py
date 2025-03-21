@@ -149,7 +149,7 @@ with st.expander('Disclaimer'):
 
 with st.expander('Copyright'):
     licpath = os.path.abspath(os.path.join(
-        os.path.dirname(__file__), '..', 'LICENSE'
+        os.path.dirname(__file__), '..', '..', 'LICENSE'
         ))
     with open(licpath, 'r', encoding='utf-8') as file:
         lictext = file.read()
