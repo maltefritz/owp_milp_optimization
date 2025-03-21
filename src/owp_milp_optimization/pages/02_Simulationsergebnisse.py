@@ -605,7 +605,7 @@ if tes_used:
 
 # %% MARK: Solver Log
 with tab_pro:
-    if self.param_opt['Solver'] == 'SCIP':
+    if ss.param_opt['Solver'] == 'SCIP':
         st.text('Der SCIP Solver ermöglicht aktuell keine Solverlogs.')
     else:
         with tab_pro.expander('Solver Log'):
