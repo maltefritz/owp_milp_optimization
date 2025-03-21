@@ -7,7 +7,10 @@ from copy import deepcopy
 
 import altair as alt
 import pandas as pd
+import pyomo.environ as pyo
 import streamlit as st
+from pyomo.contrib.appsi.solvers import Highs
+from pyomo.opt import check_available_solvers
 from streamlit import session_state as ss
 
 
@@ -792,6 +795,19 @@ with tab6:
     ss.param_opt['Solver'] = col_opt.selectbox(
         'Solver', options=['Gurobi', 'SCIP', 'HiGHS']
         )
+
+    if ss.param_opt['Solver'] == 'HiGHS':
+        if not Highs().available():
+            col_opt.error(
+                'Der Solver `HiGHS` ist auf diesem System nicht verfügbar. '
+                + 'Bitte verwenden Sie einen anderen Solver.'
+                )
+    else:
+        if not check_available_solvers(ss.param_opt['Solver'].lower()):
+            col_opt.error(
+                f'Der Solver `{ss.param_opt["Solver"]}` ist auf diesem System '
+                + 'nicht verfügbar. Bitte verwenden Sie einen anderen Solver.'
+                )
 
     ss.param_opt['MIPGap'] *= 100
     ss.param_opt['MIPGap'] = col_opt.number_input(
