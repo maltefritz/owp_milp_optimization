@@ -619,4 +619,3 @@ with tab_pro:
                 solverlog = file.read()
 
             st.text(solverlog)
-            st.text(solverlog)
