@@ -493,7 +493,7 @@ with tab_units:
 # if 'Solarthermie' in ss.units:
 with tab_supply:
     if 'Solarthermie' in ss.units:
-        with st.expander('Solarthermie'):
+        with st.expander('Solarthermiedaten'):
             solar_heat_flow = ss.all_solar_heat_flow[
                 ss.all_solar_heat_flow.index.year == heat_load_year
                 ].copy()
