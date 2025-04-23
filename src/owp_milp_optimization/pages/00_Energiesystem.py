@@ -200,14 +200,17 @@ with tab_heat:
         )
         ss.heat_data['precise_dates'] = precise_dates
         if ss.heat_data['precise_dates']:
+            no_data_mask = (
+                ~ss.all_heat_load[ss.heat_data['heat_dataset_name']].isna()
+                )
             ss.heat_data['dates'] = col_sel.date_input(
                 'Zeitraum auswählen:',
                 value=(
                     dt.date(int(ss.heat_data['heat_load_year']), 3, 28),
                     dt.date(int(ss.heat_data['heat_load_year']), 7, 2)
                     ),
-                min_value=dt.date(int(ss.heat_data['heat_load_year']), 1, 1),
-                max_value=dt.date(int(ss.heat_data['heat_load_year']), 12, 31),
+                min_value=ss.all_heat_load[no_data_mask].index[0].date(),
+                max_value=ss.all_heat_load[no_data_mask].index[-1].date(),
                 format='DD.MM.YYYY', key='date_picker_heat_load'
                 )
             ss.heat_data['dates'] = [
