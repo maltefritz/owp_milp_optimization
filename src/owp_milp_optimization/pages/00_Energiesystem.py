@@ -611,13 +611,16 @@ with tab_supply:
 
             if any(heat_load):
                 nr_steps_hl = len(heat_load.index)
+                start_date_hl = heat_load.loc[0, 'Date'].date()
+                end_date_hl = heat_load.loc[nr_steps_hl-1, "Date"].date()
                 nr_steps_el = len(el_prices.index)
                 if nr_steps_hl != nr_steps_el:
                     st.error(
                         'Die Anzahl der Zeitschritte der Wärmelastdaten '
-                        + f'({nr_steps_hl}) stimmt nicht mit denen der '
-                        + f' Strompreiszeitreihe ({nr_steps_el}) überein. Bitte die '
-                        + 'Daten angleichen.'
+                        + f'({nr_steps_hl}), vom {start_date_hl} bis '
+                        + f'{end_date_hl}, stimmt nicht mit denen der '
+                        + f' Strompreiszeitreihe ({nr_steps_el}) überein.\n\n'
+                        + 'Bitte die Daten angleichen.'
                         )
 
             col_elp.subheader('Strompreisbestandteile in ct/kWh')
@@ -734,13 +737,16 @@ with tab_supply:
 
             if any(heat_load):
                 nr_steps_hl = len(heat_load.index)
+                start_date_hl = heat_load.loc[0, 'Date'].date()
+                end_date_hl = heat_load.loc[nr_steps_hl-1, "Date"].date()
                 nr_steps_gas = len(gas_prices.index)
                 if nr_steps_hl != nr_steps_gas:
                     st.error(
                         'Die Anzahl der Zeitschritte der Wärmelastdaten '
-                        + f'({nr_steps_hl}) stimmt nicht mit denen der '
-                        + f' Gaspreiszeitreihe ({nr_steps_gas}) überein. Bitte die '
-                        + 'Daten angleichen.'
+                        + f'({nr_steps_hl}), vom {start_date_hl} bis '
+                        + f'{end_date_hl},  stimmt nicht mit denen der '
+                        + f' Gaspreiszeitreihe ({nr_steps_gas}) überein.\n\n'
+                        + 'Bitte die Daten angleichen.'
                         )
 
             col_vis_gas.subheader('Gaspreis')
