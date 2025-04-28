@@ -1,12 +1,12 @@
+import base64
 import json
 import os
 import shutil
 
 import pandas as pd
 import streamlit as st
-from streamlit import session_state as ss
-
 from model import EnergySystem
+from streamlit import session_state as ss
 
 
 @st.dialog('Energiesystem lokal speichern')
@@ -72,6 +72,26 @@ with st.sidebar:
         os.path.dirname(__file__), '..', 'img', 'Logo_ZNES_mitUnisV2.svg'
         )
     st.image(logo, use_container_width=True)
+
+    st.divider()
+
+    st.subheader('Befragung und Feedback')
+
+    col_qr, _ = st.columns([2, 1])
+    link_url = 'https://app.edkimo.com/feedback/sotneblun?utm_source=pwa&utm_medium=fbc-copy'
+    image_path = os.path.join(os.path.dirname(__file__), '..', 'img', 'Edkimo_Befragung.png')
+
+    with open(image_path, 'rb') as f:
+        data = f.read()
+    img_base64 = base64.b64encode(data).decode()
+
+    col_qr.markdown(
+        f'<a href="{link_url}" target="_blank">'
+        f'<img src="data:image/png;base64,{img_base64}" alt="Edkimo Befragung">'
+        f'</a>',
+        unsafe_allow_html=True
+    )
+    col_qr.write('Scannen oder anklicken')
 
     st.markdown('''---''')
 
