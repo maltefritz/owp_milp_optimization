@@ -106,4 +106,3 @@ dependencies:
       - tzdata==2024.1
       - urllib3==2.2.1
       - watchdog==4.0.0
-prefix: C:\Users\jfrei\.conda\envs\st_solph_py311
