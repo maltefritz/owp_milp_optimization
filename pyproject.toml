@@ -1,0 +1,44 @@
+[build-system]
+requires = ["flit_core >= 3.4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "owp_milp_optimization"
+description = "District heating system unit design and dispatch optimization dashboard using Mixed Integer Linear Programming (MILP)."
+version = "0.0.1"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.9"
+authors = [
+    { name = "Malte Fritz", email = "malte.fritz@web.de" },
+    { name = "Jonas Freißmann", email = "jonas.freissmann@web.de" }
+]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+]
+dependencies = [
+    "streamlit>=1.40.0",
+    "oemof.solph==0.5.2",
+    "pandas>=2.2.2",
+    "highspy==1.5.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "build",
+    "flit",
+    "furo",
+    "pytest",
+    "sphinx>=7.2.2",
+    "sphinx-copybutton",
+    "sphinx-design",
+    "sphinxcontrib.bibtex",
+]
+
+[project.urls]
+Homepage = "https://github.com/maltefritz/owp_milp_optimization"
+
+[tool.flit.sdist]
+exclude = [
+    "docs/_build"
+]
