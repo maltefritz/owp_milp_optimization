@@ -8,7 +8,7 @@ description = "District heating system unit design and dispatch optimization das
 version = "0.0.1"
 readme = "README.md"
 license = { file = "LICENSE" }
-requires-python = ">=3.9"
+requires-python = "!=3.9.7, >=3.9"
 authors = [
     { name = "Malte Fritz", email = "malte.fritz@web.de" },
     { name = "Jonas Freißmann", email = "jonas.freissmann@web.de" }
