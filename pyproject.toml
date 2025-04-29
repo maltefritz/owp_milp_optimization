@@ -20,6 +20,7 @@ dependencies = [
     "streamlit>=1.40.0",
     "oemof.solph==0.5.2",
     "pandas>=2.2.2",
+    "highspy==1.5.3",
 ]
 
 [project.optional-dependencies]
