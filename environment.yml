@@ -1,6 +1,6 @@
 name: st_solph_py311
 channels:
-  - conda-forge
+  - https://repo.anaconda.cloud/repo/main
 dependencies:
   - _openmp_mutex=4.5=2_gnu
   - boost-cpp=1.72.0=h5b4e17d_7
