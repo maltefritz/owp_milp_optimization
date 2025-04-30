@@ -342,7 +342,7 @@ with tab_system:
             ss.nr_units[unit] = col_nr_unit.number_input(
                 f'Anzahl {unit}', value=init_nr_units, 
                 min_value=1, max_value=99, step=1,
-                label_visibility='collapsed'
+                label_visibility='collapsed', key=f'nr_units{unit}'
             )
 
         removed_units = [u for u in ss.nr_units.keys() if u not in ss.units]
@@ -376,7 +376,7 @@ with tab_system:
     own_es = False
     esfile = st.file_uploader(
         'Datei auswählen:', type='zip',
-        help='Aktuell nicht vollständig funktionsfähig'
+        help=ss.tt['own_es'], key='own_es'
     )
     if esfile is not None:
         tmppath = os.path.abspath(
