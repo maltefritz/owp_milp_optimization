@@ -90,6 +90,12 @@ boundinputpath = os.path.abspath(
 with open(boundinputpath, 'r', encoding='utf-8') as file:
     ss.bound_inputs = json.load(file)
 
+tooltippath = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..', 'input', 'tooltips.json')
+    )
+with open(tooltippath, 'r', encoding='utf-8') as file:
+    ss.tt = json.load(file)
+
 # %% MARK: Sidebar
 with st.sidebar:
     st.subheader('Offene Wärmespeicherplanung')
@@ -155,19 +161,16 @@ with tab_heat:
     dataset_name = col_sel.selectbox(
         'Wähle die Wärmelastdaten aus, die im System zu verwenden sind',
         [*ss.all_heat_load.columns, 'Eigene Daten'],
-        placeholder='Wärmelastendaten'
+        placeholder='Wärmelastendaten', help=ss.tt['select_heat_load'],
+        key='select_heat_load'
     )
 
     heat_load = pd.DataFrame()
     if dataset_name == 'Eigene Daten':
         heat_load_year = None
-        tooltip = (
-            'Die erste Spalte muss ein Datumsindex in stündlicher Auflösung und'
-            + ' die zweite die Wärmelast in MWh beinhalten. Zusätzlich muss bei'
-            + 'der csv-Datein das Trennzeichen ein Semikolon sein.'
-            )
         user_file = col_sel.file_uploader(
-            'Datensatz einlesen', type=['csv', 'xlsx'], help=tooltip
+            'Datensatz einlesen', type=['csv', 'xlsx'],
+            help=ss.tt['own_data_heat_load'], key='own_data_heat_load'
             )
         if user_file is None:
             col_sel.info(
@@ -210,7 +213,8 @@ with tab_heat:
                     ),
                 min_value=dt.date(int(heat_load_year), 1, 1),
                 max_value=dt.date(int(heat_load_year), 12, 31),
-                format='DD.MM.YYYY', key='date_picker_heat_load'
+                format='DD.MM.YYYY', help=ss.tt['date_picker_heat_load'],
+                key='date_picker_heat_load'
                 )
             dates = [
                 dt.datetime(year=d.year, month=d.month, day=d.day) for d in dates
@@ -221,33 +225,34 @@ with tab_heat:
         if scale_hl:
             scale_method_hl = col_sel.selectbox(
                 'Methode', ['Haushalte', 'Faktor', 'Erweitert'],
-                key='scale_method_hl'
+                help=ss.tt['scale_method_hl'], key='scale_method_hl'
                 )
             if scale_method_hl == 'Haushalte':
                 if dataset_name == 'Flensburg':
                     base_households = 50000
+                    tt_households = ss.tt['scale_households_hl_fl']
                 elif dataset_name == 'Sonderburg':
                     base_households = 13000
+                    tt_households = ss.tt['scale_households_hl_so']
                 scale_households_hl = col_sel.number_input(
                     'Anzahl Haushalte', value=base_households,
-                    min_value=1, step=100, key='scale_households_hl'
+                    min_value=1, step=100, help=tt_households,
+                    key='scale_households_hl'
                     )
                 heat_load[dataset_name] *= scale_households_hl / base_households
             elif scale_method_hl == 'Faktor':
                 scale_factor_hl = col_sel.number_input(
                     'Skalierungsfaktor', value=1.0, step=0.1, min_value=0.0,
-                    key='scale_factor_hl'
+                     help=ss.tt['scale_factor_hl'], key='scale_factor_hl'
                     )
                 heat_load[dataset_name] *= scale_factor_hl
             elif scale_method_hl == 'Erweitert':
                 scale_amp_hl = col_sel.number_input(
                     'Stauchungsfaktor', value=1.0, step=0.1, min_value=0.0,
-                    help='Staucht die Lastdaten um den Median.',
-                    key='scale_amp_hl'
+                    help=ss.tt['scale_amp_hl'], key='scale_amp_hl'
                     )
                 scale_off_hl = col_sel.number_input(
-                    'Offset', value=1.0, step=0.1,
-                    help='Verschiebt den Median der Lastdaten.',
+                    'Offset', value=1.0, step=0.1, help=ss.tt['scale_off_hl'],
                     key='scale_off_hl'
                     )
                 heat_load_median = heat_load[dataset_name].median()
@@ -283,7 +288,7 @@ with tab_heat:
 
     ss.param_opt['heat_price'] = col_sel.number_input(
         'Wärmeerlös in €/MWh', value=ss.param_opt['heat_price'],
-        key='heat_revenue'
+        help=ss.tt['heat_revenue'], key='heat_revenue'
         )
 
 # %% MARK: Energy System

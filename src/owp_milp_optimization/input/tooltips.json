@@ -1,0 +1,12 @@
+{
+    "select_heat_load": "Es können Wärmelastdaten der deutschen Stadt Flensburg oder der dänischen Sonderburg ausgewählt werden. Darüber hinaus können eigene Daten eingelesen werden.",
+    "own_data_heat_load": "Die erste Spalte muss ein Datumsindex in stündlicher Auflösung und die zweite die Wärmelast in MWh beinhalten. Zusätzlich muss bei der csv-Datein das Trennzeichen ein Semikolon sein.",
+    "date_picker_heat_load": "Die Auswahl des exakten Zeitraums ist abhängig von dem gewählten Jahr. Es ist nicht möglich einen Zeitraum über den Jahreswechsel anzugeben.",
+    "scale_method_hl": "Die vorhandenen Lastdaten können anhand der anzuschließenden Haushalte, über ein Skalierungsfaktor oder einer Stauchung und Verschiebung angepasst werden.",
+    "scale_households_hl_fl": "Anschlussrate von Haushalten in Flensburg: ca. 50000",
+    "scale_households_hl_so": "Anschlussrate von Haushalten in Sonderburg: ca. 13000",
+    "scale_factor_hl": "Multipliziert die Lastdaten mit dem angegebenden Wert.",
+    "scale_amp_hl": "Staucht die Lastdaten um den Median.",
+    "scale_off_hl": "Verschiebt den Median der Lastdaten.",
+    "heat_revenue": "Die erzielbaren Wärmeerlöse berechnen sich typischerweise aus einer Mischkalkulation eines Leistungs- und Arbeitspreises, welche jährlich festgelegt werden."
+}
