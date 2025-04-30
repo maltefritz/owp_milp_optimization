@@ -3,6 +3,7 @@ import os
 
 import pandas as pd
 import streamlit as st
+from helpers import footer, load_icon_base64s
 from streamlit import session_state as ss
 
 st.set_page_config(
@@ -177,3 +178,8 @@ with st.expander('Copyright'):
 
     st.success('#### Softwarelizenz\n' + lictext.replace('(c)', '©'))
 
+# %% MARK: Footer
+icon_path = os.path.join(os.path.dirname(__file__), 'img', 'icons')
+icon_base64s = load_icon_base64s(icon_path)
+
+footer(icon_base64s)

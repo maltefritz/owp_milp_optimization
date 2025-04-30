@@ -5,6 +5,7 @@ import shutil
 
 import pandas as pd
 import streamlit as st
+from helpers import footer, load_icon_base64s
 from model import EnergySystem
 from streamlit import session_state as ss
 
@@ -273,3 +274,9 @@ if opt:
             label='**Zu den Ergebnissen**',
             icon='📊', use_container_width=True
             )
+
+# %% MARK: Footer
+icon_path = os.path.join(os.path.dirname(__file__), '..', 'img', 'icons')
+icon_base64s = load_icon_base64s(icon_path)
+
+footer(icon_base64s)

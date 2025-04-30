@@ -9,6 +9,7 @@ import altair as alt
 import numpy as np
 import pandas as pd
 import streamlit as st
+from helpers import footer, load_icon_base64s
 from streamlit import session_state as ss
 
 
@@ -640,3 +641,9 @@ with tab_pro:
                 solverlog = file.read()
 
             st.text(solverlog)
+
+# %% MARK: Footer
+icon_path = os.path.join(os.path.dirname(__file__), '..', 'img', 'icons')
+icon_base64s = load_icon_base64s(icon_path)
+
+footer(icon_base64s)
