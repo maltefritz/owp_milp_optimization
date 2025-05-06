@@ -17,8 +17,8 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
 ]
 dependencies = [
-    "streamlit>=1.40.0",
-    "oemof.solph==0.5.2",
+    "streamlit>=1.44.0",
+    "oemof.solph==0.6.0a4",
     "pandas>=2.2.2",
     "highspy==1.5.3",
 ]
