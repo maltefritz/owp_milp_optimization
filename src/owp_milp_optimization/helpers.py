@@ -73,9 +73,8 @@ def footer(icon_base64s):
                     background-color: {color};
                     border: none;
                     color: white;
-                    width: 150px;
-                    height: 40px;
                     font-size: 16px;
+                    padding: 10px 20px;
                     border-radius: 5px;
                     cursor: pointer;">{text}</button>
             </a>
