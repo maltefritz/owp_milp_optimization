@@ -85,20 +85,20 @@ class EnergySystem():
 
             if unit_cat == 'sol':
                 if unit_params['invest_mode']:
-                    nominal_value = solph.Investment(
+                    nominal_capacity = solph.Investment(
                         ep_costs=unit_params['inv_spez'] / self.bwsf,
                         maximum=unit_params['A_max'],
                         minimum=unit_params['A_min']
                         )
                 else:
-                    nominal_value = unit_params['A_N']
+                    nominal_capacity = unit_params['A_N']
 
                 self.comps[unit] = solph.components.Source(
                     label=unit,
                     outputs={
                         self.buses['hnw']: solph.flows.Flow(
                             variable_costs=unit_params['op_cost_var'],
-                            nominal_value=nominal_value,
+                            nominal_capacity=nominal_capacity,
                             fix=self.data['solar_heat_flow']
                             )
                         }
@@ -113,20 +113,20 @@ class EnergySystem():
                     fix = None
 
                 if unit_params['invest_mode']:
-                    nominal_value = solph.Investment(
+                    nominal_capacity = solph.Investment(
                         ep_costs=unit_params['inv_spez'] / self.bwsf,
                         maximum=unit_params['cap_max'],
                         minimum=unit_params['cap_min']
                         )
                 else:
-                    nominal_value = unit_params['cap_N']
+                    nominal_capacity = unit_params['cap_N']
 
                 self.comps[unit] = solph.components.Source(
                     label=unit,
                     outputs={
                         self.buses['hnw']: solph.flows.Flow(
                             variable_costs=unit_params['op_cost_var'],
-                            nominal_value=nominal_value,
+                            nominal_capacity=nominal_capacity,
                             fix=fix
                             )
                         }
@@ -140,7 +140,7 @@ class EnergySystem():
             inputs={
                 self.buses['hnw']: solph.flows.Flow(
                     variable_costs=-self.param_opt['heat_price'],
-                    nominal_value=self.data['heat_demand'].max(),
+                    nominal_capacity=self.data['heat_demand'].max(),
                     fix=self.data['heat_demand']/self.data['heat_demand'].max()
                     )
                 }
@@ -166,13 +166,13 @@ class EnergySystem():
             if unit_cat in ['ccet', 'ice']:
 
                 if unit_params['invest_mode']:
-                    nominal_value = solph.Investment(
+                    nominal_capacity = solph.Investment(
                         ep_costs=unit_params['inv_spez'] / self.bwsf,
                         maximum=unit_params['cap_max'],
                         minimum=unit_params['cap_min']
                         )
                 else:
-                    nominal_value = unit_params['cap_N']
+                    nominal_capacity = unit_params['cap_N']
 
                 self.comps[unit] = solph.components.Converter(
                     label=unit,
@@ -182,7 +182,7 @@ class EnergySystem():
                             variable_costs=unit_params['op_cost_var']
                             ),
                         self.buses['hnw']: solph.flows.Flow(
-                            nominal_value=nominal_value,
+                            nominal_capacity=nominal_capacity,
                             max=unit_params['Q_rel_max'],
                             min=unit_params['Q_rel_min'],
                             nonconvex=solph.NonConvex()
@@ -221,20 +221,20 @@ class EnergySystem():
                         )
 
                 if unit_params['invest_mode']:
-                    nominal_value = solph.Investment(
+                    nominal_capacity = solph.Investment(
                         ep_costs=unit_params['inv_spez'] / self.bwsf,
                         maximum=unit_params['cap_max'],
                         minimum=unit_params['cap_min']
                         )
                 else:
-                    nominal_value = unit_params['cap_N']
+                    nominal_capacity = unit_params['cap_N']
 
                 self.comps[unit] = solph.components.Converter(
                     label=unit,
                     inputs={self.buses[input_nw]: solph.flows.Flow()},
                     outputs={
                         self.buses['hnw']: solph.flows.Flow(
-                            nominal_value=nominal_value,
+                            nominal_capacity=nominal_capacity,
                             max=unit_params['Q_rel_max'],
                             min=unit_params['Q_rel_min'],
                             nonconvex=solph.NonConvex(),
@@ -289,7 +289,7 @@ class EnergySystem():
                 label='chp internal',
                 inputs={self.buses['chp_node']: solph.flows.Flow()},
                 outputs={self.buses['enw']: solph.flows.Flow(
-                    nominal_value=9999,
+                    nominal_capacity=9999,
                     max=1.0,
                     min=0.0
                     )},
@@ -418,19 +418,19 @@ class EnergySystem():
                     param_var = 'cap_N'
                 self.data_caps[f'cap_{unit}'] = unit_params[param_var]
 
+        if None in self.data_all.columns:
+            self.data_all.drop(columns=[None], inplace=True)
         for col in self.data_all.columns:
             if ('status' in col[-1]) or ('state' in col):
                 self.data_all.drop(columns=col, inplace=True)
 
         self.data_caps = self.data_caps.to_frame().transpose()
         self.data_caps.reset_index(inplace=True, drop=True)
+        if None in self.data_caps.columns:
+            self.data_caps.drop(columns=[None], inplace=True)
         for col in self.data_caps.columns:
             if ('total' in str(col)) or ('0' in str(col)):
                 self.data_caps.drop(columns=col, inplace=True)
-        if None in self.data_all.columns:
-            self.data_all.drop(columns=[None], inplace=True)
-        if None in self.data_caps.columns:
-            self.data_caps.drop(columns=[None], inplace=True)
 
         try:
             self.data_all = self.data_all.reindex(
