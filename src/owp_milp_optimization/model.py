@@ -27,6 +27,23 @@ class EnergySystem():
                 for u in self.param_units.keys()
                 ])
             )
+        self.gas_used = (
+            self.chp_used or any([
+                u.rstrip('0123456789') == 'plb'
+                for u in self.param_units.keys()
+                ])
+            )
+        self.el_used = (
+            self.chp_used
+            or any([
+                u.rstrip('0123456789') == 'hp'
+                for u in self.param_units.keys()
+                ])
+            or any([
+                u.rstrip('0123456789') == 'eb'
+                for u in self.param_units.keys()
+                ])
+            )
 
         self.periods = len(data.index)
         self.es = solph.EnergySystem(
@@ -45,44 +62,51 @@ class EnergySystem():
         self.comps = {}
 
     def generate_buses(self):
-        self.buses['gnw'] = solph.Bus(label='gas network')
-        self.buses['enw'] = solph.Bus(label='electricity network')
+        if self.gas_used:
+            self.buses['gnw'] = solph.Bus(label='gas network')
+        if self.el_used:
+            self.buses['enw'] = solph.Bus(label='electricity network')
         self.buses['hnw'] = solph.Bus(label='heat network')
-        self.buses['chp_node'] = solph.Bus(label='chp node')
+        if self.chp_used:
+            self.buses['chp_node'] = solph.Bus(label='chp node')
 
         self.es.add(*list(self.buses.values()))
 
     def generate_sources(self):
-        self.comps['gas_source'] = solph.components.Source(
-            label='gas source',
-            outputs={
-                self.buses['gnw']: solph.flows.Flow(
-                    variable_costs=(
-                        self.data['gas_price']
-                        + (self.data['co2_price'] * self.param_opt['ef_gas'])
+        if self.gas_used:
+            self.comps['gas_source'] = solph.components.Source(
+                label='gas source',
+                outputs={
+                    self.buses['gnw']: solph.flows.Flow(
+                        variable_costs=(
+                            self.data['gas_price']
+                            + (self.data['co2_price']
+                               * self.param_opt['ef_gas'])
+                            )
                         )
-                    )
-                }
-            )
+                    }
+                )
 
-        self.comps['elec_source'] = solph.components.Source(
-            label='electricity source',
-            outputs={
-                self.buses['enw']: solph.flows.Flow(
-                    variable_costs=(
-                        self.param_opt['elec_consumer_charges_grid']
-                        - self.param_opt['elec_consumer_charges_self']
-                        + self.data['el_spot_price']
+            self.es.add(self.comps['gas_source'])
+
+        if self.el_used:
+            self.comps['elec_source'] = solph.components.Source(
+                label='electricity source',
+                outputs={
+                    self.buses['enw']: solph.flows.Flow(
+                        variable_costs=(
+                            self.param_opt['elec_consumer_charges_grid']
+                            - self.param_opt['elec_consumer_charges_self']
+                            + self.data['el_spot_price']
+                            )
                         )
-                    )
-                }
-            )
+                    }
+                )
 
-        self.es.add(self.comps['gas_source'], self.comps['elec_source'])
+            self.es.add(self.comps['elec_source'])
 
         for unit, unit_params in self.param_units.items():
             unit_cat = unit.rstrip('0123456789')
-
             if unit_cat == 'sol':
                 if unit_params['invest_mode']:
                     nominal_capacity = solph.Investment(
@@ -146,18 +170,21 @@ class EnergySystem():
                 }
             )
 
-        self.comps['elec_sink'] = solph.components.Sink(
-            label='spotmarket',
-            inputs={
-                self.buses['chp_node']: solph.flows.Flow(
-                    variable_costs=(
-                        -self.data['el_spot_price'] - self.param_opt['vNNE']
-                        )
-                    )
-                }
-            )
+        self.es.add(self.comps['heat_sink'])
 
-        self.es.add(self.comps['heat_sink'], self.comps['elec_sink'])
+        if self.chp_used:
+            self.comps['elec_sink'] = solph.components.Sink(
+                label='spotmarket',
+                inputs={
+                    self.buses['chp_node']: solph.flows.Flow(
+                        variable_costs=(
+                            -self.data['el_spot_price'] - self.param_opt['vNNE']
+                            )
+                        )
+                    }
+                )
+
+            self.es.add(self.comps['elec_sink'])
 
     def generate_components(self):
         internal_el = False
@@ -346,19 +373,56 @@ class EnergySystem():
             # opt.config.stream_solver = True
             # opt.highs_options['output_flag'] = True
             # opt.highs_options['log_to_console'] = True
-            opt.solve(self.model)
+            try:
+                opt.solve(self.model)
+            except RuntimeError:
+                results = appsi.solvers.highs.HighsResults(opt)
+                tc = results.termination_condition
+
+        feasable_sols = [
+            TerminationCondition.optimal,
+            'optimal',
+            TerminationCondition.objectiveLimit,
+            'objectiveLimit',
+            TerminationCondition.maxTimeLimit,
+            'maxTimeLimit',
+        ]
+        infeasable_sols = [
+            TerminationCondition.infeasible,
+            'infeasible',
+            TerminationCondition.unbounded,
+            'unbounded',
+            TerminationCondition.infeasibleOrUnbounded,
+            'infeasibleOrUnbounded',
+        ]
+
+        if tc in feasable_sols:
+            return 'ok'
+        elif tc in infeasable_sols:
+            return 'infeasable'
+        else:
+            return 'unknown solver error'
 
     def get_results(self):
         self.results = solph.processing.results(self.model)
         # breakpoint()
         # self.meta_results = solph.processing.meta_results(self.model)
 
-        data_gnw = views.node(self.results, 'gas network')['sequences']
-        data_enw = views.node(self.results, 'electricity network')['sequences']
+        concat_data = []
+        if self.gas_used:
+            data_gnw = views.node(self.results, 'gas network')['sequences']
+            concat_data += [data_gnw]
+        if self.el_used:
+            data_enw = views.node(
+                self.results, 'electricity network'
+                )['sequences']
+            concat_data += [data_enw]
         data_hnw = views.node(self.results, 'heat network')['sequences']
+        concat_data += [data_hnw]
 
         if self.chp_used:
             data_chpnode = views.node(self.results, 'chp node')['sequences']
+            concat_data += [data_chpnode]
 
         try:
             self.data_caps = (
@@ -390,13 +454,10 @@ class EnergySystem():
                             next_cap_tes, index=[((unit, 'None'), 'invest')]
                             )
                         ])
+            concat_data += [data_tes]
 
         # Combine all data and relabel the column names
-        self.data_all = pd.concat([data_gnw, data_enw, data_hnw], axis=1)
-        if self.tes_used:
-            self.data_all = pd.concat([self.data_all, data_tes], axis=1)
-        if self.chp_used:
-            self.data_all = pd.concat([self.data_all, data_chpnode], axis=1)
+        self.data_all = pd.concat(concat_data, axis=1)
         if self.data_all.iloc[-1, :].isna().values.all():
             self.data_all.drop(self.data_all.tail(1).index, inplace=True)
 
