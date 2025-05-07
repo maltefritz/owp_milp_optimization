@@ -442,7 +442,7 @@ with tab_units:
                             uinfo['name'],
                             value=unit_params[uinput],
                             key=f'toggle_{unit}_{uinput}',
-                            help=uinfo.get('tooltip', None)
+                            help=ss.tt.get(f'toggle_{uinput}', None)
                         )
                     else:
                         if uinfo['unit'] == '%':
@@ -461,7 +461,7 @@ with tab_units:
                                 max_value=uinfo['max'],
                                 step=(uinfo['max']-uinfo['min'])/100,
                                 key=f'input_{unit}_{uinput}',
-                                help=uinfo.get('tooltip', None)
+                                help=ss.tt.get(f'toggle_{uinput}', None)
                                 )
                             )
                         if uinfo['unit'] == '%':
@@ -487,7 +487,7 @@ with tab_units:
                         if tooltip is None:
                             tooltip = (
                                 'Die variablen Betriebskosten von '
-                                + 'Solarthermie  werden in der '
+                                + 'Solarthermie werden in der '
                                 + 'zugrundeliegenden Quelle anhand der '
                                 + 'insgesamt produzierten Wärmemenge '
                                 + 'berechnet.'
@@ -495,7 +495,7 @@ with tab_units:
                         else:
                             tooltip += (
                                 '\nDie variablen Betriebskosten von '
-                                + 'Solarthermie  werden in der '
+                                + 'Solarthermie werden in der '
                                 + 'zugrundeliegenden Quelle anhand der '
                                 + 'insgesamt produzierten Wärmemenge '
                                 + 'berechnet.'
