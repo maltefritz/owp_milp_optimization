@@ -437,9 +437,9 @@ with tab_units:
 
             col_tech.subheader('Technische Parameter')
             unit_params['invest_mode'] = col_tech.toggle(
-                'Kapazität optimieren',
-                value=unit_params['invest_mode'],
-                key=f'toggle_{unit}_invest_mode'
+                'Kapazität optimieren', value=unit_params['invest_mode'],
+                key=f'toggle_{unit}_invest_mode',
+                help=ss.tt.get(f'toggle_invest', None)
             )
             for uinput, uinfo in ss.unit_inputs['Technische Parameter'].items():
                 if uinput in unit_params:
@@ -472,7 +472,7 @@ with tab_units:
                                 max_value=uinfo['max'],
                                 step=(uinfo['max']-uinfo['min'])/100,
                                 key=f'input_{unit}_{uinput}',
-                                help=ss.tt.get(f'toggle_{uinput}', None)
+                                help=ss.tt.get(f'input_{uinput}', None)
                                 )
                             )
                         if uinfo['unit'] == '%':
@@ -493,25 +493,9 @@ with tab_units:
                     else:
                         label = f"{uinfo['name']} in {uinfo['unit']}"
 
-                    tooltip = uinfo.get('tooltip', None)
+                    tooltip = ss.tt.get(f'input_{uinput}', None)
                     if unit_cat == 'sol' and uinput == 'op_cost_var':
-                        if tooltip is None:
-                            tooltip = (
-                                'Die variablen Betriebskosten von '
-                                + 'Solarthermie werden in der '
-                                + 'zugrundeliegenden Quelle anhand der '
-                                + 'insgesamt produzierten Wärmemenge '
-                                + 'berechnet.'
-                                )
-                        else:
-                            tooltip += (
-                                '\nDie variablen Betriebskosten von '
-                                + 'Solarthermie werden in der '
-                                + 'zugrundeliegenden Quelle anhand der '
-                                + 'insgesamt produzierten Wärmemenge '
-                                + 'berechnet.'
-                                )
-
+                        tooltip = ss.tt.get(f'input_{uinput}_{unit_cat}', None)
 
                     unit_params[uinput] = (
                         col_econ.number_input(
@@ -564,7 +548,7 @@ with tab_supply:
     if 'Solarthermie' in ss.units:
         with st.expander('Solarthermiedaten'):
             # solar_heat_flow wird bei der heat load berechnet
-            st.subheader('Solarthermie')
+            st.subheader('Solarthermiedaten')
             st.altair_chart(
                 alt.Chart(solar_heat_flow).mark_line(color='#EC6707').encode(
                     y=alt.Y('solar_heat_flow',
@@ -614,7 +598,8 @@ with tab_supply:
                         ),
                     min_value=dt.date(int(heat_load_year), 1, 1),
                     max_value=dt.date(int(heat_load_year), 12, 31),
-                    format='DD.MM.YYYY', key='date_picker_el_prices'
+                    format='DD.MM.YYYY', help=ss.tt['date_picker_el_prices'],
+                    key='date_picker_el_prices'
                     )
                 el_dates = [
                     dt.datetime(year=d.year, month=d.month, day=d.day) for d in el_dates
@@ -625,27 +610,29 @@ with tab_supply:
             scale_el = col_elp.toggle('Daten skalieren', key='scale_el')
             if scale_el:
                 scale_method_el = col_elp.selectbox(
-                    'Methode', ['Faktor', 'Erweitert'], key='scale_method_el'
+                    'Methode', ['Faktor', 'Erweitert'],
+                    help=ss.tt['scale_method_el'], key='scale_method_el'
                     )
                 if scale_method_el == 'Faktor':
                     scale_factor_el = col_elp.number_input(
-                        'Skalierungsfaktor', value=1.0, step=0.1, min_value=0.0,
+                        'Skalierungsfaktor', value=1.0, step=0.1,
+                        min_value=0.0, help=ss.tt['scale_factor_el'],
                         key='scale_factor_el'
                         )
                     el_prices['el_spot_price'] *= scale_factor_el
                 elif scale_method_el == 'Erweitert':
                     scale_amp_el = col_elp.number_input(
                         'Stauchungsfaktor', value=1.0, step=0.1, min_value=0.0,
-                        help='Staucht die Strompreise um den Median.', key='scale_amp_el'
+                        help=ss.tt['scale_amp_el'], key='scale_amp_el'
                         )
                     scale_off_el = col_elp.number_input(
                         'Offset', value=1.0, step=0.1,
-                        help='Verschiebt den Median der Strompreise.', key='scale_off_el'
+                        help=ss.tt['scale_off_el'], key='scale_off_el'
                         )
                     el_prices_median = el_prices['el_spot_price'].median()
                     el_prices['el_spot_price'] = (
-                        (el_prices['el_spot_price'] - el_prices_median) * scale_amp_el
-                        + el_prices_median + scale_off_el
+                        (el_prices['el_spot_price'] - el_prices_median)
+                        * scale_amp_el + el_prices_median + scale_off_el
                         )
 
             if any(heat_load):
@@ -659,10 +646,11 @@ with tab_supply:
                         + 'Daten angleichen.'
                         )
 
-            col_elp.subheader('Strompreisbestandteile in ct/kWh')
+            col_elp.subheader('Strompreisbestandteile in ct/kWh', help=ss.tt['el_elements'])
             col_elp.dataframe(
                 {k: v for k, v in ss.bound_inputs[str(el_prices_year)].items()},
-                use_container_width=True
+                use_container_width=True,
+                key='el_elements'
                 )
 
             cons_charger = ss.bound_inputs[str(el_prices_year)]
@@ -737,7 +725,8 @@ with tab_supply:
                         ),
                     min_value=dt.date(int(heat_load_year), 1, 1),
                     max_value=dt.date(int(heat_load_year), 12, 31),
-                    format='DD.MM.YYYY', key='date_picker_gas_prices'
+                    format='DD.MM.YYYY', help=ss.tt['date_picker_gas_prices'],
+                    key='date_picker_gas_prices'
                     )
                 gas_dates = [
                     dt.datetime(year=d.year, month=d.month, day=d.day) for d in gas_dates
@@ -748,22 +737,24 @@ with tab_supply:
             scale_gas = col_gas.toggle('Daten skalieren', key='scale_gas')
             if scale_gas:
                 scale_method_gas = col_gas.selectbox(
-                    'Methode', ['Faktor', 'Erweitert'], key='scale_method_gas'
+                    'Methode', ['Faktor', 'Erweitert'],
+                    help=ss.tt['scale_method_gas'], key='scale_method_gas'
                     )
                 if scale_method_gas == 'Faktor':
                     scale_factor_gas = col_gas.number_input(
-                        'Skalierungsfaktor', value=1.0, step=0.1, min_value=0.0,
+                        'Skalierungsfaktor', value=1.0, step=0.1,
+                        min_value=0.0, help=ss.tt['scale_factor_gas'],
                         key='scale_factor_gas'
                         )
                     gas_prices['gas_price'] *= scale_factor_gas
                 elif scale_method_gas == 'Erweitert':
                     scale_amp_gas = col_gas.number_input(
                         'Stauchungsfaktor', value=1.0, step=0.1, min_value=0.0,
-                        help='Staucht die Gaspreise um den Median.', key='scale_amp_gas'
+                        help=ss.tt['scale_amp_gas'], key='scale_amp_gas'
                         )
                     scale_off_gas = col_gas.number_input(
                         'Offset', value=1.0, step=0.1,
-                        help='Verschiebt den Median der Gaspreise.', key='scale_off_gas'
+                        help=ss.tt['scale_amp_gas'], key='scale_off_gas'
                         )
                     gas_prices_median = gas_prices['gas_price'].median()
                     gas_prices['gas_price'] = (
@@ -796,7 +787,8 @@ with tab_supply:
 
             col_gas.subheader('Emissionsfaktor Gas')
             ss.param_opt['ef_gas'] = col_gas.number_input(
-                'Emissionsfatkor in kg CO₂/MWh', value=ss.param_opt['ef_gas']*1e3,
+                'Emissionsfatkor in kg CO₂/MWh',
+                value=ss.param_opt['ef_gas']*1e3, help=ss.tt['ef_gas'],
                 key='ef_gas'
                 )
             ss.param_opt['ef_gas'] *= 1e-3
@@ -838,40 +830,31 @@ with tab_misc:
     ss.param_opt['capital_interest'] *= 100
     ss.param_opt['capital_interest'] = col_econ.number_input(
         'Kapitalzins in %', value=ss.param_opt['capital_interest'],
-        key='capital_interest'
+        help=ss.tt['capital_interest'], key='capital_interest'
         )
     ss.param_opt['capital_interest'] *= 1/100
 
     ss.param_opt['lifetime'] = col_econ.number_input(
         'Betrachtungsdauer in Jahre', value=ss.param_opt['lifetime'],
-        key='lifetime'
+        help=ss.tt['capital_interest'], key='lifetime'
         )
 
-    help_tax =(
-        'Beim Einsatz von Kraft- und Brennstoffen fällt die sogenannte '
-        + 'Energiesteuer an, was für die Nutzung von gasbefeuerten KWK-Anlangen '
-        + 'und Spitzenlastkesseln relevant ist '
-        + '[[Zoll (2021)](https://www.zoll.de/DE/Fachthemen/Steuern/Verbrauchsteuern/Energie/Steuerbeguenstigung/Steuerentlastung/KWK-Anlagen/Vollstaendige-Steuerentlastung/Steuerentlastungstatbestand/steuerentlastungstatbestand_node.html)].'
-    )
     ss.param_opt['energy_tax'] = col_econ.number_input(
         'Energiesteuer in €/MWh', value=ss.param_opt['energy_tax'],
-        help=help_tax, key='energy_tax'
+        help=ss.tt['energy_tax'], key='energy_tax'
         )
 
     ss.param_opt['vNNE'] = col_econ.number_input(
         'Vermiedene Netznutzungsentgelte in €/MWh', value=ss.param_opt['vNNE'],
-        key='vNNE'
+        help=ss.tt['vNNE'], key='vNNE'
         )
 
-    help_mip = (
-        'Der MIPGap-Parameter steuert die minimale Qualität der '
-        + 'zurückgegebenen Lösung. Er ist eine Obergrenze für die tatsächliche '
-        + 'Lücke der endgültigen Lösung.'
-    )
+
     col_opt.subheader('Optimierung')
 
     ss.param_opt['Solver'] = col_opt.selectbox(
-        'Solver', options=['Gurobi', 'SCIP', 'HiGHS']
+        'Solver', options=['Gurobi', 'SCIP', 'HiGHS'], help=ss.tt['solver'],
+        key='solver'
         )
 
     if ss.param_opt['Solver'] == 'HiGHS':
@@ -889,14 +872,15 @@ with tab_misc:
 
     ss.param_opt['MIPGap'] *= 100
     ss.param_opt['MIPGap'] = col_opt.number_input(
-        'MIP Gap in %', value=ss.param_opt['MIPGap'], help=help_mip,
+        'MIP Gap in %', value=ss.param_opt['MIPGap'], help=ss.tt['MIPGap'],
         key='MIPGap'
         )
     ss.param_opt['MIPGap'] *= 1/100
 
     ss.param_opt['TimeLimit'] = None
     timelimit = col_opt.toggle(
-        'Simulationsdauer begrenzen', key='ToggleTimeLimit'
+        'Simulationsdauer begrenzen', help=ss.tt['ToggleTimeLimit'],
+        key='ToggleTimeLimit'
         )
     if timelimit:
         ss.param_opt['TimeLimit'] = col_opt.number_input(

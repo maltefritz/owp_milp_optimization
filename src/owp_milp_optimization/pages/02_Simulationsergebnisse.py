@@ -109,6 +109,12 @@ colors = {
     'Externe Wärmequelle': '#74ADC0'
 }
 
+tooltippath = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..', 'input', 'tooltips.json')
+    )
+with open(tooltippath, 'r', encoding='utf-8') as file:
+    ss.tt = json.load(file)
+
 # %% MARK: Sidebar
 with st.sidebar:
     st.subheader('Offene Wärmespeicherplanung')
@@ -197,7 +203,9 @@ with tab_ov:
     # col_cap, col_sum = st.columns([2, 3], gap='large')
     col_cap, col_sum = st.columns([3, 2], gap='large')
 
-    col_cap.subheader('Optimierte Anlagenkapazitäten')
+    col_cap.subheader(
+        'Optimierte Anlagenkapazitäten', help=ss.tt['results_design']
+        )
     col_cap1, col_cap2 = col_cap.columns([2, 3], gap='large')
 
     topopath = os.path.abspath(
@@ -238,7 +246,7 @@ with tab_ov:
     col_cap2.dataframe(ss.overview_caps.T, use_container_width=True)
 
 
-    col_sum.subheader('Wärmeproduktion')
+    col_sum.subheader('Wärmeproduktion', help=ss.tt['results_heat_production'])
     qsum = pd.DataFrame(columns=['unit', 'qsum'])
     idx = 0
     for unit in ss.param_units.keys():
@@ -268,7 +276,7 @@ with tab_ov:
         use_container_width=True
         )
 
-    st.subheader('Wirtschaftliche Kennzahlen')
+    st.subheader('Wirtschaftliche Kennzahlen', help=ss.tt['results_econ'])
     col_lcoh, col_cost = st.columns([1, 5])
     col_lcoh.metric(
         'LCOH in €/MWh', round(ss.energy_system.key_params['LCOH'], 2)
@@ -296,7 +304,7 @@ with tab_ov:
 
     col_cost.dataframe(unit_cost, use_container_width=True)
 
-    st.subheader('Ökologische Kennzahlen')
+    st.subheader('Ökologische Kennzahlen', help=ss.tt['results_ecol'])
     met1, met2, met3, met4= st.columns([1, 1, 1, 1])
     met1.metric(
         'Gesamtemissionen in t',
@@ -351,7 +359,9 @@ with tab_ov:
 with tab_unit:
     col_sel, col_unit = st.columns([1, 2], gap='large')
 
-    col_unit.subheader('Geordnete Jahresdauerlinien des Anlageneinsatzes')
+    col_unit.subheader(
+        'Geordnete Jahresdauerlinien des Anlageneinsatzes', help=ss.tt['oadl']
+        )
 
     heatprod = pd.DataFrame()
     for col in ss.energy_system.data_all.columns:
@@ -374,7 +384,7 @@ with tab_unit:
             heatprod[collabel] = ss.energy_system.data_all[col].copy()
 
     selection = col_sel.multiselect(
-        'Wähle die Wärmeversorgungsanlagen aus.',
+        'Wähle die Wärmeversorgungsanlagen aus:',
         list(heatprod.columns),
         default=list(heatprod.columns),
         placeholder='Wärmeversorgungsanlagen'
@@ -400,7 +410,8 @@ with tab_unit:
     heatprod = heatprod.loc[dates[0]:dates[1], :]
 
     agg_results = col_sel.toggle(
-            'Ergebnisse aggregieren', key='toggle_agg_results'
+            'Ergebnisse aggregieren', help=ss.tt['toggle_agg_results'],
+            key='toggle_agg_results'
         )
     if agg_results:
         agg_periods = {
@@ -416,7 +427,8 @@ with tab_unit:
         agg_period = agg_periods[agg_period_name]
 
         agg_method = col_sel.selectbox(
-            'Aggregationsmethode wählen:', options=['Mittelwert', 'Summe']
+            'Aggregationsmethode wählen:', options=['Mittelwert', 'Summe'],
+            help=ss.tt['agg_method'], key='agg_method'
         )
     else:
         agg_period_name = 'Stündlich'
@@ -456,7 +468,7 @@ with tab_unit:
         use_container_width=True
         )
 
-    col_unit.subheader('Tatsächlicher Anlageneinsatz')
+    col_unit.subheader('Tatsächlicher Anlageneinsatz', help=ss.tt['adl'])
 
     if tes_used:
         for col in heatprod.columns:
