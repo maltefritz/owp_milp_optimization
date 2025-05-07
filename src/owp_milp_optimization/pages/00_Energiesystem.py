@@ -427,7 +427,8 @@ with tab_units:
             col_tech.subheader('Technische Parameter')
             unit_params['invest_mode'] = col_tech.toggle(
                 'Kapazität optimieren', value=unit_params['invest_mode'],
-                key=f'toggle_{unit}_invest_mode', help=ss.tt['invest']
+                key=f'toggle_{unit}_invest_mode',
+                help=ss.tt.get(f'toggle_invest', None)
             )
             for uinput, uinfo in ss.unit_inputs['Technische Parameter'].items():
                 if uinput in unit_params:
@@ -460,7 +461,7 @@ with tab_units:
                                 max_value=uinfo['max'],
                                 step=(uinfo['max']-uinfo['min'])/100,
                                 key=f'input_{unit}_{uinput}',
-                                help=ss.tt.get(f'toggle_{uinput}', None)
+                                help=ss.tt.get(f'input_{uinput}', None)
                                 )
                             )
                         if uinfo['unit'] == '%':
@@ -481,25 +482,9 @@ with tab_units:
                     else:
                         label = f"{uinfo['name']} in {uinfo['unit']}"
 
-                    tooltip = uinfo.get('tooltip', None)
+                    tooltip = ss.tt.get(f'input_{uinput}', None)
                     if unit_cat == 'sol' and uinput == 'op_cost_var':
-                        if tooltip is None:
-                            tooltip = (
-                                'Die variablen Betriebskosten von '
-                                + 'Solarthermie werden in der '
-                                + 'zugrundeliegenden Quelle anhand der '
-                                + 'insgesamt produzierten Wärmemenge '
-                                + 'berechnet.'
-                                )
-                        else:
-                            tooltip += (
-                                '\nDie variablen Betriebskosten von '
-                                + 'Solarthermie werden in der '
-                                + 'zugrundeliegenden Quelle anhand der '
-                                + 'insgesamt produzierten Wärmemenge '
-                                + 'berechnet.'
-                                )
-
+                        tooltip = ss.tt.get(f'input_{uinput}_{unit_cat}', None)
 
                     unit_params[uinput] = (
                         col_econ.number_input(
