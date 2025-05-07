@@ -513,7 +513,7 @@ with tab_supply:
             solar_heat_flow.reset_index(inplace=True)
             solar_heat_flow['solar_heat_flow'] *= 1e6
 
-            st.subheader('Solarthermie')
+            st.subheader('Solarthermiedaten')
             st.altair_chart(
                 alt.Chart(solar_heat_flow).mark_line(color='#EC6707').encode(
                     y=alt.Y('solar_heat_flow',
@@ -563,7 +563,8 @@ with tab_supply:
                         ),
                     min_value=dt.date(int(heat_load_year), 1, 1),
                     max_value=dt.date(int(heat_load_year), 12, 31),
-                    format='DD.MM.YYYY', key='date_picker_el_prices'
+                    format='DD.MM.YYYY', help=ss.tt['date_picker_el_prices'],
+                    key='date_picker_el_prices'
                     )
                 el_dates = [
                     dt.datetime(year=d.year, month=d.month, day=d.day) for d in el_dates
@@ -574,27 +575,29 @@ with tab_supply:
             scale_el = col_elp.toggle('Daten skalieren', key='scale_el')
             if scale_el:
                 scale_method_el = col_elp.selectbox(
-                    'Methode', ['Faktor', 'Erweitert'], key='scale_method_el'
+                    'Methode', ['Faktor', 'Erweitert'],
+                    help=ss.tt['scale_method_el'], key='scale_method_el'
                     )
                 if scale_method_el == 'Faktor':
                     scale_factor_el = col_elp.number_input(
-                        'Skalierungsfaktor', value=1.0, step=0.1, min_value=0.0,
+                        'Skalierungsfaktor', value=1.0, step=0.1,
+                        min_value=0.0, help=ss.tt['scale_factor_el'],
                         key='scale_factor_el'
                         )
                     el_prices['el_spot_price'] *= scale_factor_el
                 elif scale_method_el == 'Erweitert':
                     scale_amp_el = col_elp.number_input(
                         'Stauchungsfaktor', value=1.0, step=0.1, min_value=0.0,
-                        help='Staucht die Strompreise um den Median.', key='scale_amp_el'
+                        help=ss.tt['scale_amp_el'], key='scale_amp_el'
                         )
                     scale_off_el = col_elp.number_input(
                         'Offset', value=1.0, step=0.1,
-                        help='Verschiebt den Median der Strompreise.', key='scale_off_el'
+                        help=ss.tt['scale_off_el'], key='scale_off_el'
                         )
                     el_prices_median = el_prices['el_spot_price'].median()
                     el_prices['el_spot_price'] = (
-                        (el_prices['el_spot_price'] - el_prices_median) * scale_amp_el
-                        + el_prices_median + scale_off_el
+                        (el_prices['el_spot_price'] - el_prices_median)
+                        * scale_amp_el + el_prices_median + scale_off_el
                         )
 
             if any(heat_load):
@@ -608,10 +611,11 @@ with tab_supply:
                         + 'Daten angleichen.'
                         )
 
-            col_elp.subheader('Strompreisbestandteile in ct/kWh')
+            col_elp.subheader('Strompreisbestandteile in ct/kWh', help=ss.tt['el_elements'])
             col_elp.dataframe(
                 {k: v for k, v in ss.bound_inputs[str(el_prices_year)].items()},
-                use_container_width=True
+                use_container_width=True,
+                key='el_elements'
                 )
 
             cons_charger = ss.bound_inputs[str(el_prices_year)]
@@ -686,7 +690,8 @@ with tab_supply:
                         ),
                     min_value=dt.date(int(heat_load_year), 1, 1),
                     max_value=dt.date(int(heat_load_year), 12, 31),
-                    format='DD.MM.YYYY', key='date_picker_gas_prices'
+                    format='DD.MM.YYYY', help=ss.tt['date_picker_gas_prices'],
+                    key='date_picker_gas_prices'
                     )
                 gas_dates = [
                     dt.datetime(year=d.year, month=d.month, day=d.day) for d in gas_dates
@@ -697,22 +702,24 @@ with tab_supply:
             scale_gas = col_gas.toggle('Daten skalieren', key='scale_gas')
             if scale_gas:
                 scale_method_gas = col_gas.selectbox(
-                    'Methode', ['Faktor', 'Erweitert'], key='scale_method_gas'
+                    'Methode', ['Faktor', 'Erweitert'],
+                    help=ss.tt['scale_method_gas'], key='scale_method_gas'
                     )
                 if scale_method_gas == 'Faktor':
                     scale_factor_gas = col_gas.number_input(
-                        'Skalierungsfaktor', value=1.0, step=0.1, min_value=0.0,
+                        'Skalierungsfaktor', value=1.0, step=0.1,
+                        min_value=0.0, help=ss.tt['scale_factor_gas'],
                         key='scale_factor_gas'
                         )
                     gas_prices['gas_price'] *= scale_factor_gas
                 elif scale_method_gas == 'Erweitert':
                     scale_amp_gas = col_gas.number_input(
                         'Stauchungsfaktor', value=1.0, step=0.1, min_value=0.0,
-                        help='Staucht die Gaspreise um den Median.', key='scale_amp_gas'
+                        help=ss.tt['scale_amp_gas'], key='scale_amp_gas'
                         )
                     scale_off_gas = col_gas.number_input(
                         'Offset', value=1.0, step=0.1,
-                        help='Verschiebt den Median der Gaspreise.', key='scale_off_gas'
+                        help=ss.tt['scale_amp_gas'], key='scale_off_gas'
                         )
                     gas_prices_median = gas_prices['gas_price'].median()
                     gas_prices['gas_price'] = (
@@ -745,7 +752,8 @@ with tab_supply:
 
             col_gas.subheader('Emissionsfaktor Gas')
             ss.param_opt['ef_gas'] = col_gas.number_input(
-                'Emissionsfatkor in kg CO₂/MWh', value=ss.param_opt['ef_gas']*1e3,
+                'Emissionsfatkor in kg CO₂/MWh',
+                value=ss.param_opt['ef_gas']*1e3, help=ss.tt['ef_gas'],
                 key='ef_gas'
                 )
             ss.param_opt['ef_gas'] *= 1e-3
