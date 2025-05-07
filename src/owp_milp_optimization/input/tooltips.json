@@ -59,7 +59,7 @@
     "results_econ": "Der LCOH (Levelized Cost Of Heat) bezeichnet die spezifischen Wärmegestehungskosten. Dies sind die durchschnittlichen Kosten, um 1 MWh Wärme über die gesamte Lebensdauer bereitzustellen.\n\n Zusätzlich sind in der Tabelle die tatsächlich anfallenden Investitions- sowie variablen und fixen Betriebskosten aller im System vorkommenden Anlagen abgebildet.",
     "results_ecol": "Als ökologische Kennzahl werden die Gesamtemissionen in t angegeben. Diese setzen sich aus der Summe der durch den Gasbezug und Strombezug resultierenden Emissionen zusammen. Zusätzlich kann eine Emissionensgutschrift durch den Verlauf vom Strom am Spotmarkt generiert werden.",
     "oadl": "Der stündliche Wärmebedarf sowie die Wärmeproduktion aller Wärmeversorgungsanlagen, sortiert nach absteigender Größe.\n\n Die Schrittweite verändert sich nach Wahl eines anderen Aggregationszeitraums.",
-    "toggle_agg_results": "Wenn dies aktiviert ist, kann die Anzahl der Zeitschritt und Aggregationsmethode der geordneten Jahresdauerlinie und des täglichen Anlageneinsatzes angepasst werden.",
+    "toggle_agg_results": "Wenn dies aktiviert ist, kann die Anzahl der Zeitschritte und Aggregationsmethode der geordneten Jahresdauerlinie und des täglichen Anlageneinsatzes angepasst werden.",
     "agg_method": "Wenn ein anderer Aggregationszeitraums als stündlich gewählt wird, werden die Ergebnisse entweder aufsummiert oder der Mittelwert über dem Aggregationszeitraum gebildet.",
     "adl": "Der Anlageneinsatz gibt den aus der Einsatzoptimierung resultierenden tatsächlichen Anlageneinsatz entsprechend des gewählten Zeitraums wieder.\n\n Bei negativen Werten handelt es sich um Wärmemengen, die in den Wärmespeicher eingespeichert werden."
 }
