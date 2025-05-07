@@ -795,40 +795,31 @@ with tab_misc:
     ss.param_opt['capital_interest'] *= 100
     ss.param_opt['capital_interest'] = col_econ.number_input(
         'Kapitalzins in %', value=ss.param_opt['capital_interest'],
-        key='capital_interest'
+        help=ss.tt['capital_interest'], key='capital_interest'
         )
     ss.param_opt['capital_interest'] *= 1/100
 
     ss.param_opt['lifetime'] = col_econ.number_input(
         'Betrachtungsdauer in Jahre', value=ss.param_opt['lifetime'],
-        key='lifetime'
+        help=ss.tt['capital_interest'], key='lifetime'
         )
 
-    help_tax =(
-        'Beim Einsatz von Kraft- und Brennstoffen fällt die sogenannte '
-        + 'Energiesteuer an, was für die Nutzung von gasbefeuerten KWK-Anlangen '
-        + 'und Spitzenlastkesseln relevant ist '
-        + '[[Zoll (2021)](https://www.zoll.de/DE/Fachthemen/Steuern/Verbrauchsteuern/Energie/Steuerbeguenstigung/Steuerentlastung/KWK-Anlagen/Vollstaendige-Steuerentlastung/Steuerentlastungstatbestand/steuerentlastungstatbestand_node.html)].'
-    )
     ss.param_opt['energy_tax'] = col_econ.number_input(
         'Energiesteuer in €/MWh', value=ss.param_opt['energy_tax'],
-        help=help_tax, key='energy_tax'
+        help=ss.tt['energy_tax'], key='energy_tax'
         )
 
     ss.param_opt['vNNE'] = col_econ.number_input(
         'Vermiedene Netznutzungsentgelte in €/MWh', value=ss.param_opt['vNNE'],
-        key='vNNE'
+        help=ss.tt['vNNE'], key='vNNE'
         )
 
-    help_mip = (
-        'Der MIPGap-Parameter steuert die minimale Qualität der '
-        + 'zurückgegebenen Lösung. Er ist eine Obergrenze für die tatsächliche '
-        + 'Lücke der endgültigen Lösung.'
-    )
+
     col_opt.subheader('Optimierung')
 
     ss.param_opt['Solver'] = col_opt.selectbox(
-        'Solver', options=['Gurobi', 'SCIP', 'HiGHS']
+        'Solver', options=['Gurobi', 'SCIP', 'HiGHS'], help=ss.tt['solver'],
+        key='solver'
         )
 
     if ss.param_opt['Solver'] == 'HiGHS':
@@ -846,14 +837,15 @@ with tab_misc:
 
     ss.param_opt['MIPGap'] *= 100
     ss.param_opt['MIPGap'] = col_opt.number_input(
-        'MIP Gap in %', value=ss.param_opt['MIPGap'], help=help_mip,
+        'MIP Gap in %', value=ss.param_opt['MIPGap'], help=ss.tt['MIPGap'],
         key='MIPGap'
         )
     ss.param_opt['MIPGap'] *= 1/100
 
     ss.param_opt['TimeLimit'] = None
     timelimit = col_opt.toggle(
-        'Simulationsdauer begrenzen', key='ToggleTimeLimit'
+        'Simulationsdauer begrenzen', help=ss.tt['ToggleTimeLimit'],
+        key='ToggleTimeLimit'
         )
     if timelimit:
         ss.param_opt['TimeLimit'] = col_opt.number_input(

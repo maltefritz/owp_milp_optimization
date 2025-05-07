@@ -46,5 +46,12 @@
     "scale_factor_gas": "Multipliziert die Gaspreise mit dem angegebenden Wert.",
     "scale_amp_gas": "Staucht die Gaspreise um den Median.",
     "scale_off_gas": "Verschiebt den Median der Gaspreise.",
-    "ef_gas": "Der Emissionsfaktor beschreibt die Menge an CO₂-Emissionen, die bei der Nutzung von 1 MWh Erdgas freigesetzt wird freigesetzt wird."
+    "ef_gas": "Der Emissionsfaktor beschreibt die Menge an CO₂-Emissionen, die bei der Nutzung von 1 MWh Erdgas freigesetzt wird freigesetzt wird.",
+    "capital_interest": "Der Kapitalzins ist ein prozentualer Zinssatz, der angibt, wie stark Investitionen mit der Zeit bewertet oder abgezinst werden. Er spiegelt die Kosten des eingesetzten Kapitals wider – also den „Preis des Geldes“ über die Laufzeit einer Investition.",
+    "lifetime": "Die Betrachtungsdauer ist der Zeitraum, über den Kosten, Erträge und Wirkungen eines Systems oder Projekts erfasst und bilanziert werden.",
+    "energy_tax": "Beim Einsatz von Kraft- und Brennstoffen fällt die sogenannte Energiesteuer an, was für die Nutzung von gasbefeuerten KWK-Anlangen und Spitzenlastkesseln relevant ist.",
+    "vNNE": "Vermiedene Netznutzungsentgelte (vNNE) sind finanzielle Vergütungen, die Betreiber dezentraler Energieanlagen erhalten, weil ihre Einspeisung Netzbelastung vermeidet oder reduziert. Sie sollen Anreize für dezentrale Einspeisung schaffen, da diese das Stromnetz entlasten kann.",
+    "solver": "Ein Solver dient dazu mathematische Optimierungsprobleme oder Gleichungssysteme zu lösen.\n\nGurobi: Lizenzpflichtig, aber kostenlos für Lehre/Forschung\n\nSCIP: Open Source\n\nHiGHS: Open Source",
+    "MIPGap": "Der MIPGap-Parameter steuert die minimale Qualität der zurückgegebenen Lösung. Er ist eine Obergrenze für die tatsächliche Lücke der endgültigen Lösung.",
+    "ToggleTimeLimit": "Wenn dies aktiviert ist, wird die maximale Simulationsdauer begrenzt. Falls der MIPGap noch nicht unterschritten ist, wird die momentane Lösung zurückgegeben, die möglicherweise ungenauer ist. Im Extremfall kann auch keine Lösung vorliegen."
 }
