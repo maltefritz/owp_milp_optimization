@@ -291,6 +291,15 @@ with tab_heat:
         help=ss.tt['heat_revenue'], key='heat_revenue'
         )
 
+    # %% Solarthermie wird anhand der Wärmelastdaten ausgewählt
+    solar_heat_flow = ss.all_solar_heat_flow[
+        ss.all_solar_heat_flow.index.year == heat_load_year
+        ].copy()
+    if precise_dates:
+        solar_heat_flow = solar_heat_flow.loc[dates[0]:dates[1], :]
+    solar_heat_flow.reset_index(inplace=True)
+    solar_heat_flow['solar_heat_flow'] *= 1e6
+
 # %% MARK: Energy System
 with tab_system:
     st.header('Auswahl des Wärmeversorgungssystem')
@@ -414,6 +423,8 @@ disp_opt_params = ['cap_N', 'Q_N', 'A_N']
 with tab_units:
     st.header('Parametrisierung der Wärmeversorgungsanlagen')
 
+    placeholder_infeasable = st.empty()
+
     if ss.param_units:
         ss.param_units = dict(sorted(ss.param_units.items()))
 
@@ -500,19 +511,43 @@ with tab_units:
                             )
                         )
 
+    Q_tot_max = 0
+    residual_heat_demand = heat_load.copy()
+    for unit, unit_params in ss.param_units.items():
+        unit_cat = unit.rstrip('0123456789')
+        if unit_params['invest_mode']:
+            if unit_cat not in ['sol', 'tes']:
+                Q_tot_max += unit_params['cap_max']
+            elif unit_cat == 'sol':
+                residual_heat_demand['heat_demand'] -= (
+                    unit_params['A_max'] * solar_heat_flow['solar_heat_flow']
+                    )
+            elif unit_cat == 'tes':
+                Q_tot_max += unit_params['Q_max'] * unit_params['Q_out_to_cap']
+        else:
+            if unit_cat not in ['sol', 'tes']:
+                Q_tot_max += unit_params['cap_N']
+            elif unit_cat == 'sol':
+                residual_heat_demand['heat_demand'] -= (
+                    unit_params['A_N'] * solar_heat_flow['solar_heat_flow']
+                    )
+            elif unit_cat == 'tes':
+                Q_tot_max += unit_params['Q_N'] * unit_params['Q_out_to_cap']
+
+    if Q_tot_max != 0:
+        if residual_heat_demand['heat_demand'].max() > Q_tot_max:
+            placeholder_infeasable.error(
+                'Die gewählten Wärmeanlagen genügen nicht um den maximalen '
+                + 'Wärmebedarf zu decken. Erhöhe die installierte oder '
+                + 'maximal zu installierende Leistung der Anlagen.'
+                )
+
 # %% MARK: Solar Thermal
 # if 'Solarthermie' in ss.units:
 with tab_supply:
     if 'Solarthermie' in ss.units:
         with st.expander('Solarthermiedaten'):
-            solar_heat_flow = ss.all_solar_heat_flow[
-                ss.all_solar_heat_flow.index.year == heat_load_year
-                ].copy()
-            if precise_dates:
-                solar_heat_flow = solar_heat_flow.loc[dates[0]:dates[1], :]
-            solar_heat_flow.reset_index(inplace=True)
-            solar_heat_flow['solar_heat_flow'] *= 1e6
-
+            # solar_heat_flow wird bei der heat load berechnet
             st.subheader('Solarthermiedaten')
             st.altair_chart(
                 alt.Chart(solar_heat_flow).mark_line(color='#EC6707').encode(
