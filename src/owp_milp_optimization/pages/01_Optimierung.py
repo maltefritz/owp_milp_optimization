@@ -274,13 +274,18 @@ if solver_status is not None:
             'Das Optimierungsproblem konnte nicht gelöst werden.\n\n'
             + 'Möglicherweise wurden die Anlagengrößen so gewählt, dass diese '
             + 'nicht in der Lage sind die Wärmelast in jedem Zeitschritt zu'
-            + 'decken und/oder einen Wärmespeicher zu beladen.'
+            + 'decken und/oder einen Wärmespeicher zu beladen.\n\n'
+            + 'Mögliche Ansätze zur Lösung des Problems könnten sein:\n\n'
+            + '- Installierte oder Grenzen der zu installierenden Leistung '
+            + 'der Anlagen anpassen\n\n'
+            + '- Einen Wärmespeicher hinzufügen\n\n'
+            + '- Eine flexible externe Wärmequelle hinzufügen\n\n'
             )
     elif solver_status == 'unknown solver error':
         st.error(
             'Bei der Optimierung ist ein unbekannter Fehler aufgetreten.\n\n'
-            + 'Überprüfen Sie die gewählten Parameter und versuchen Sie eine '
-            + 'neue Optimierung zu starten.'
+            + 'Überprüfe die gewählten Parameter und versuche eine neue '
+            + 'Optimierung zu starten.'
             )
 if opt:
     if solver_status is not None and solver_status == 'ok':
