@@ -279,8 +279,8 @@ if solver_status is not None:
     elif solver_status == 'unknown solver error':
         st.error(
             'Bei der Optimierung ist ein unbekannter Fehler aufgetreten.\n\n'
-            + 'Überprüfen Sie die gewählten Parameter und versuchen Sie eine '
-            + 'neue Optimierung zu starten.'
+            + 'Überprüfe die gewählten Parameter und versuche eine neue '
+            + 'Optimierung zu starten.'
             )
 if opt:
     if solver_status is not None and solver_status == 'ok':
