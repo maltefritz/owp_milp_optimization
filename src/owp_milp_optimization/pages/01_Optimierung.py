@@ -241,6 +241,7 @@ if reset_es:
     st.switch_page('pages/00_Energiesystem.py')
 
 with st.container(border=True):
+    solver_status = None
     opt = st.button(label='🖥️**Optimierung starten**', use_container_width=True)
     if opt:
         with st.spinner('Optimierung wird durchgeführt...'):
@@ -255,25 +256,40 @@ with st.container(border=True):
             ss.energy_system.generate_components()
             st.toast('Modell ist erzeugt')
 
-            ss.energy_system.solve_model()
-            st.toast('Optimierungsproblem ist gelöst')
+            st.toast('Optimierung ist gestartet')
+            solver_status = ss.energy_system.solve_model()
 
-            ss.energy_system.get_results()
-            st.toast('Ergebnisse sind ausgelesen')
+            if solver_status == 'ok':
+                st.toast('Optimierungsproblem ist gelöst')
+                ss.energy_system.get_results()
+                st.toast('Ergebnisse sind ausgelesen')
 
-            ss.energy_system.calc_econ_params()
-            ss.energy_system.calc_ecol_params()
-            st.toast('Postprocessing ist durchgeführt')
+                ss.energy_system.calc_econ_params()
+                ss.energy_system.calc_ecol_params()
+                st.toast('Postprocessing ist durchgeführt')
 
-            # breakpoint()
-
-if opt:
-    with st.container(border=True):
-        st.page_link(
-            'pages/02_Simulationsergebnisse.py',
-            label='**Zu den Ergebnissen**',
-            icon='📊', use_container_width=True
+if solver_status is not None:
+    if solver_status == 'infeasable':
+        st.error(
+            'Das Optimierungsproblem konnte nicht gelöst werden.\n\n'
+            + 'Möglicherweise wurden die Anlagengrößen so gewählt, dass diese '
+            + 'nicht in der Lage sind die Wärmelast in jedem Zeitschritt zu'
+            + 'decken und/oder einen Wärmespeicher zu beladen.'
             )
+    elif solver_status == 'unknown solver error':
+        st.error(
+            'Bei der Optimierung ist ein unbekannter Fehler aufgetreten.\n\n'
+            + 'Überprüfen Sie die gewählten Parameter und versuchen Sie eine '
+            + 'neue Optimierung zu starten.'
+            )
+if opt:
+    if solver_status is not None and solver_status == 'ok':
+        with st.container(border=True):
+            st.page_link(
+                'pages/02_Simulationsergebnisse.py',
+                label='**Zu den Ergebnissen**',
+                icon='📊', use_container_width=True
+                )
 
 # %% MARK: Footer
 icon_path = os.path.join(os.path.dirname(__file__), '..', 'img', 'icons')
