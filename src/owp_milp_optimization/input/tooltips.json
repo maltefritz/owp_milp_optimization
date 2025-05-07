@@ -10,6 +10,7 @@
     "scale_off_hl": "Verschiebt den Median der Lastdaten.",
     "heat_revenue": "Die erzielbaren Wärmeerlöse berechnen sich typischerweise aus einer Mischkalkulation eines Leistungs- und Arbeitspreises, welche jährlich festgelegt werden.",
     "own_es": "Aktuell nicht vollständig funktionsfähig",
+    "invest": "Wenn dies aktiviert wird, wird eine kombinierte Auslegungs- und Einsatzoptimierung für diese Versorgungsanlage ausgeführt.\n\n Ansonsten wird der Einsatz mit vorgegebenen Kapazitäten optimiert.",
     "toggle_eta": "Der Wirkungsgrad einer Wärmeversorgungsanlage beschreibt, wie viel der eingesetzten Primärenergie (z.B. Gas, Strom) tatsächlich in nutzbare Wärme umgesetzt wird.",
     "toggle_eta_th": "Die Wärmeausbeute einer KWK-Anlage bezeichnet den Anteil der eingesetzten Primärenergie, der in nutzbare Wärme umgewandelt wird.",
     "toggle_eta_el": "Die Stromausbeute einer KWK-Anlage beschreibt den Anteil der eingesetzten Primärenergie, der in elektrische Energie umgewandelt wird.",
@@ -28,5 +29,6 @@
     "toggle_init_storage": "Der Initialspeicherstand gibt den den relativer Speicherfüllstand zu Beginn (im ersten Zeitschritt) der Simulation an.",
     "toggle_balanced": "Wenn dies aktiviert wird, muss die Einsatzoptimierung dafür sorgen, dass der Speicher im letzten Zeitschritt den gleichen Füllstand aufweist, wie im ersten.",
     "toggle_Q_in_to_cap": "Das Verhältnis der Beladeleistung zur Speicherkapazität gibt an, wie viel Wärme pro Zeiteinheit in den Speicher aufgenommen wird, im Verhältnis zur maximalen Wärmemenge, die der Speicher insgesamt halten kann.",
-    "toggle_Q_out_to_cap": "Das Verhältnis der Entladeleistung zur Speicherkapazität gibt an, wie viel Wärme pro Zeiteinheit aus den Speicher entnommen wird, im Verhältnis zur maximalen Wärmemenge, die der Speicher insgesamt halten kann."
+    "toggle_Q_out_to_cap": "Das Verhältnis der Entladeleistung zur Speicherkapazität gibt an, wie viel Wärme pro Zeiteinheit aus den Speicher entnommen wird, im Verhältnis zur maximalen Wärmemenge, die der Speicher insgesamt halten kann.",
+    "toggle_fix": "Wenn dieser Schalter aktiviert ist, muss die installierte Leistung in jedem Zeitschritt dem Wärmenetz oder Speicher hinzugefügt werden (z.B.: feste Abwärmemenge aus Industriebetrieben, Kraftwerken oder Rechenzentren).\n\n Ansonsten kann der Wärmestrom nach belieben verwendet werden (z.B. Anschluss an ein übergeordnetes Fernwärmenetz oder Wärme aus Holzheizanlage.)"
 }

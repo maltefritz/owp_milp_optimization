@@ -426,9 +426,8 @@ with tab_units:
 
             col_tech.subheader('Technische Parameter')
             unit_params['invest_mode'] = col_tech.toggle(
-                'Kapazität optimieren',
-                value=unit_params['invest_mode'],
-                key=f'toggle_{unit}_invest_mode'
+                'Kapazität optimieren', value=unit_params['invest_mode'],
+                key=f'toggle_{unit}_invest_mode', help=ss.tt['invest']
             )
             for uinput, uinfo in ss.unit_inputs['Technische Parameter'].items():
                 if uinput in unit_params:
