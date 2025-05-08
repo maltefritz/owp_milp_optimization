@@ -135,7 +135,9 @@ with st.sidebar:
 
     col_qr, _ = st.columns([2, 1])
     link_url = 'https://app.edkimo.com/feedback/sotneblun?utm_source=pwa&utm_medium=fbc-copy'
-    image_path = os.path.join(os.path.dirname(__file__), '..', 'img', 'Edkimo_Befragung.png')
+    image_path = os.path.join(
+        os.path.dirname(__file__), '..', 'img', 'Edkimo_Befragung.png'
+        )
 
     with open(image_path, 'rb') as f:
         data = f.read()
@@ -514,8 +516,6 @@ with tab_unit:
 # %% MARK: Electricity Production
 if chp_used:
     with tab_el:
-        st.subheader('Stromproduktion und -erlöse')
-
         col_sel, col_el = st.columns([1, 2], gap='large')
 
         dates = col_sel.date_input(
@@ -535,14 +535,44 @@ if chp_used:
         if len(dates) == 1:
             dates.append(dates[0] + dt.timedelta(days=1))
 
-        elprod = ss.energy_system.data_all.loc[
+        elprod_ex = ss.energy_system.data_all.loc[
             dates[0]:dates[1], 'P_spotmarket'
             ].copy().to_frame()
-        elprod.index.names = ['Date']
-        elprod.reset_index(inplace=True)
+        elprod_ex.index.names = ['Date']
+        elprod_ex.reset_index(inplace=True)
 
+        elprod_in = ss.energy_system.data_all.loc[
+            dates[0]:dates[1], 'P_internal'
+            ].copy().to_frame()
+        elprod_in.index.names = ['Date']
+        elprod_in.reset_index(inplace=True)
+
+        elprice = ss.all_el_prices.loc[
+            dates[0]:dates[1], 'el_spot_price'
+            ].copy().to_frame()
+        elprice.index.names = ['Date']
+        elprice.reset_index(inplace=True)
+
+        col_sel.subheader('Kennzahlen')
+        met1, met2, met3 = col_sel.columns([1, 1, 1])
+        met1.metric(
+            'Stromerlöse in €',
+            round(
+                (elprod_ex['P_spotmarket']*elprice['el_spot_price']).sum()
+                ), 1
+            )
+        met2.metric(
+            'Stromproduktion (Netz) in MWh',
+            round(elprod_ex['P_spotmarket'].sum(), 1)
+            )
+        met3.metric(
+            'Stromproduktion (intern) in MWh',
+            round(elprod_in['P_internal'].sum(), 1)
+            )
+
+        col_el.subheader('Stromproduktion')
         col_el.altair_chart(
-            alt.Chart(elprod).mark_line(color='#00395B').encode(
+            alt.Chart(elprod_ex).mark_line(color='#00395B').encode(
                 y=alt.Y(
                     'P_spotmarket',
                     title='Ins Netz eingespeiste Elektrizität in MWh'
@@ -552,12 +582,18 @@ if chp_used:
             use_container_width=True
             )
 
-        elprice = ss.all_el_prices.loc[
-            dates[0]:dates[1], 'el_spot_price'
-            ].copy().to_frame()
-        elprice.index.names = ['Date']
-        elprice.reset_index(inplace=True)
+        col_el.altair_chart(
+            alt.Chart(elprod_in).mark_line(color='#74ADC0').encode(
+                y=alt.Y(
+                    'P_internal',
+                    title='Intern genutze Elektrizität in MWh'
+                    ),
+                x=alt.X('Date', title='Datum')
+            ),
+            use_container_width=True
+            )
 
+        col_el.subheader('Spotmarktpreise')
         col_el.altair_chart(
             alt.Chart(elprice).mark_line(color='#00395B').encode(
                 y=alt.Y('el_spot_price', title='Spotmarkt Strompreis in €/MWh'),
