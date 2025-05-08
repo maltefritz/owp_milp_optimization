@@ -9,7 +9,7 @@ import altair as alt
 import numpy as np
 import pandas as pd
 import streamlit as st
-from helpers import footer, load_icon_base64s
+from helpers import footer, format_sep, load_icon_base64s
 from streamlit import session_state as ss
 
 
@@ -279,11 +279,37 @@ with tab_ov:
         )
 
     st.subheader('Wirtschaftliche Kennzahlen', help=ss.tt['results_econ'])
-    col_lcoh, col_cost = st.columns([1, 5])
-    col_lcoh.metric(
-        'LCOH in €/MWh', round(ss.energy_system.key_params['LCOH'], 2),
+    col1, col2, col3= st.columns(3)
+
+    col1.metric(
+        'LCOH in €/MWh', f'{ss.energy_system.key_params["LCOH"]:,.2f}',
+        border=True, help=ss.tt['results_econ']
+        )
+    col2.metric(
+        'Wärmeerlöse in €',
+        format_sep(ss.energy_system.key_params["revenues_heat"]),
+        border=True
+    )
+    col3.metric(
+        'Stromerlöse in €',
+        format_sep(ss.energy_system.key_params['revenues_spotmarket']),
+        border=True
+    )
+    col1.metric(
+        'Stromkosten in €',
+        format_sep(ss.energy_system.key_params['cost_el']),
+        border=True
+    )
+    col2.metric(
+        'Gaskosten in €',
+        format_sep(ss.energy_system.key_params['cost_gas']),
         border=True
         )
+    col3.metric(
+        'Anlagenkosten (gesamt)',
+        format_sep(ss.energy_system.cost_df.sum().sum()),
+        border=True
+    )
 
     unit_cost = ss.energy_system.cost_df.copy()
     renamedict = {}
@@ -303,31 +329,31 @@ with tab_ov:
         )
 
     unit_cost.drop('Gesamtbetriebskosten (€)', axis=0, inplace=True)
-    unit_cost = unit_cost.apply(lambda x: round(x, 2))
+    unit_cost = unit_cost.map(format_sep)
 
-    col_cost.dataframe(unit_cost, use_container_width=True)
+    st.dataframe(unit_cost, use_container_width=True)
 
     st.subheader('Ökologische Kennzahlen', help=ss.tt['results_ecol'])
     met1, met2, met3, met4= st.columns([1, 1, 1, 1])
     met1.metric(
         'Gesamtemissionen in t',
-        round(ss.energy_system.key_params['Total Emissions OM']/1e3, 1),
+        format_sep(ss.energy_system.key_params['Total Emissions OM']/1e3, 1),
         border=True
         )
     met2.metric(
         'Emissionen durch Gasbezug in t',
-        round(ss.energy_system.key_params['Emissions OM (Gas)']/1e3, 1),
+        format_sep(ss.energy_system.key_params['Emissions OM (Gas)']/1e3, 1),
         border=True
         )
     met3.metric(
         'Emissionen durch Strombezug in t',
-        round(ss.energy_system.key_params['Emissions OM (Electricity)']/1e3, 1),
+        format_sep(ss.energy_system.key_params['Emissions OM (Electricity)']/1e3, 1),
         border=True
         )
 
     met4.metric(
         'Emissionsgutschriften durch Stromproduktion in t',
-        round(ss.energy_system.key_params['Emissions OM (Spotmarket)']/1e3, 1),
+        format_sep(ss.energy_system.key_params['Emissions OM (Spotmarket)']/1e3, 1),
         border=True
         )
 
@@ -561,32 +587,32 @@ if chp_used:
         met1, met2 = col_sel.columns([1, 1])
         met1.metric(
             'Stromerlöse in €',
-            round(ss.energy_system.key_params['revenues_spotmarket'], 2),
+            format_sep(ss.energy_system.key_params['revenues_spotmarket'], 2),
             border=True
         )
         met2.metric(
             'Stromkosten in €',
-            round(ss.energy_system.key_params['cost_el'], 2),
+            format_sep(ss.energy_system.key_params['cost_el'], 2),
             border=True
         )
         met1.metric(
             'Stromkosten in € (Netz)',
-            round(round(ss.energy_system.key_params['cost_el_grid'], 2)),
+            format_sep(ss.energy_system.key_params['cost_el_grid'], 2),
             border=True
         )
         met2.metric(
             'Stromkosten in € (intern)',
-            round(ss.energy_system.key_params['cost_el_internal'], 2),
+            format_sep(ss.energy_system.key_params['cost_el_internal'], 2),
             border=True
         )
         met1.metric(
             'Stromproduktion in MWh (Netz)',
-            round(elprod['P_spotmarket'].sum(), 1),
+            format_sep(elprod['P_spotmarket'].sum(), 1),
             border=True
         )
         met2.metric(
             'Stromproduktion in MWh (intern)',
-            round(elprod['P_internal'].sum(), 1),
+            format_sep(elprod['P_internal'].sum(), 1),
             border=True
         )
 
