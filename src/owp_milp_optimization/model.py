@@ -343,6 +343,7 @@ class EnergySystem():
         if os.path.exists(logpath):
             os.remove(logpath)
 
+        tc = None
         if self.param_opt['Solver'] == 'Gurobi':
             options = {
                     'MIPGap': self.param_opt['MIPGap'],
@@ -377,10 +378,10 @@ class EnergySystem():
             # opt.highs_options['output_flag'] = True
             # opt.highs_options['log_to_console'] = True
             try:
-                opt.solve(self.model)
+                results = opt.solve(self.model)
             except RuntimeError:
                 results = appsi.solvers.highs.HighsResults(opt)
-                tc = results.termination_condition
+            tc = results.termination_condition
 
         feasable_sols = [
             TerminationCondition.optimal,
@@ -404,6 +405,7 @@ class EnergySystem():
         elif tc in infeasable_sols:
             return 'infeasable'
         else:
+            print(f'UNKOWN SOVLER ERROR:: Termination Condition: {tc}')
             return 'unknown solver error'
 
     def get_results(self):
