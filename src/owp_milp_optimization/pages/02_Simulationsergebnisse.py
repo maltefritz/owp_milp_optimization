@@ -202,160 +202,168 @@ else:
 
 # %% MARK: Overview
 with tab_ov:
-    # col_cap, col_sum = st.columns([2, 3], gap='large')
-    col_cap, col_sum = st.columns([3, 2], gap='large')
+    with st.expander('Auslegung', expanded=True):
+        col_cap, col_sum = st.columns([3, 2], gap='large')
 
-    col_cap.subheader(
-        'Optimierte Anlagenkapazitäten', help=ss.tt['results_design']
-        )
-    col_cap1, col_cap2 = col_cap.columns([2, 3], gap='large')
+        col_cap.subheader(
+            'Optimierte Anlagenkapazitäten', help=ss.tt['results_design']
+            )
+        col_cap1, col_cap2 = col_cap.columns([2, 3], gap='large')
 
-    topopath = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'img', 'es_topology_')
-        )
-    col_cap1.image(f'{topopath}header.png', use_container_width=True)
-
-    for unit in ss.param_units.keys():
-        if ss.energy_system.data_caps.loc[0, f'cap_{unit}'] > 0:
-            unit_cat = unit.rstrip('0123456789')
-
-            col_cap1.image(
-                f'{topopath+unit_cat}.png', use_container_width=True
+        topopath = os.path.abspath(
+            os.path.join(
+                os.path.dirname(__file__), '..', 'img', 'es_topology_'
                 )
+            )
+        col_cap1.image(f'{topopath}header.png', use_container_width=True)
 
-    ss.overview_caps = ss.energy_system.data_caps.copy()
-    if tes_used:
-        drop_cols = []
+        for unit in ss.param_units.keys():
+            if ss.energy_system.data_caps.loc[0, f'cap_{unit}'] > 0:
+                unit_cat = unit.rstrip('0123456789')
+
+                col_cap1.image(
+                    f'{topopath+unit_cat}.png', use_container_width=True
+                    )
+
+        ss.overview_caps = ss.energy_system.data_caps.copy()
+        if tes_used:
+            drop_cols = []
+            for col in ss.overview_caps.columns:
+                if 'cap_in_tes' in col or 'cap_out_tes' in col:
+                    drop_cols.append(col)
+            ss.overview_caps.drop(columns=drop_cols, inplace=True)
+        renamedict = {}
         for col in ss.overview_caps.columns:
-            if 'cap_in_tes' in col or 'cap_out_tes' in col:
-                drop_cols.append(col)
-        ss.overview_caps.drop(columns=drop_cols, inplace=True)
-    renamedict = {}
-    for col in ss.overview_caps.columns:
-        ucat = col.split('_')[-1].rstrip('0123456789')
-        unr = col.split('_')[-1][len(ucat):]
-        if 'tes' in col:
-            renamedict[col] = f'{longnames[ucat]} {unr} (MWh)'
-        elif 'sol' in col:
-            renamedict[col] = f'{longnames[ucat]} {unr} (m²)'
-        else:
-            renamedict[col] = f'{longnames[ucat]} {unr} (MW)'
+            ucat = col.split('_')[-1].rstrip('0123456789')
+            unr = col.split('_')[-1][len(ucat):]
+            if 'tes' in col:
+                renamedict[col] = f'{longnames[ucat]} {unr} (MWh)'
+            elif 'sol' in col:
+                renamedict[col] = f'{longnames[ucat]} {unr} (m²)'
+            else:
+                renamedict[col] = f'{longnames[ucat]} {unr} (MW)'
 
-    ss.overview_caps.rename(columns=renamedict, inplace=True)
-    ss.overview_caps.rename(index={0: 'Kapazität'}, inplace=True)
-    ss.overview_caps = ss.overview_caps.apply(lambda x: round(x, 1))
+        ss.overview_caps.rename(columns=renamedict, inplace=True)
+        ss.overview_caps.rename(index={0: 'Kapazität'}, inplace=True)
+        ss.overview_caps = ss.overview_caps.apply(lambda x: round(x, 1))
 
-    col_cap2.dataframe(ss.overview_caps.T, use_container_width=True)
+        col_cap2.dataframe(ss.overview_caps.T, use_container_width=True)
 
-
-    col_sum.subheader('Wärmeproduktion', help=ss.tt['results_heat_production'])
-    qsum = pd.DataFrame(columns=['unit', 'qsum'])
-    idx = 0
-    for unit in ss.param_units.keys():
-        ucat = unit.rstrip('0123456789')
-        unr = unit[len(ucat):]
-        if ucat == 'tes':
-            tl = {'in': 'Ein', 'out': 'Aus'}
-            for var in ['in', 'out']:
-                unit_col = f'Q_{var}_{unit}'
-                qsum.loc[idx, 'unit'] = f'{longnames[ucat]} {unr} {tl[var]}'
+        col_sum.subheader(
+            'Wärmeproduktion', help=ss.tt['results_heat_production']
+            )
+        qsum = pd.DataFrame(columns=['unit', 'qsum'])
+        idx = 0
+        for unit in ss.param_units.keys():
+            ucat = unit.rstrip('0123456789')
+            unr = unit[len(ucat):]
+            if ucat == 'tes':
+                tl = {'in': 'Ein', 'out': 'Aus'}
+                for var in ['in', 'out']:
+                    unit_col = f'Q_{var}_{unit}'
+                    qsum.loc[idx, 'unit'] = (
+                        f'{longnames[ucat]} {unr} {tl[var]}'
+                        )
+                    qsum.loc[idx, 'qsum'] = (
+                        ss.energy_system.data_all[unit_col].sum()
+                        )
+                    idx += 1
+            else:
+                if (ucat == 'hp') or (ucat == 'tes'):
+                    unit_col = f'Q_out_{unit}'
+                else:
+                    unit_col = f'Q_{unit}'
+                qsum.loc[idx, 'unit'] = f'{longnames[ucat]} {unr}'
                 qsum.loc[idx, 'qsum'] = ss.energy_system.data_all[unit_col].sum()
                 idx += 1
-        else:
-            if (ucat == 'hp') or (ucat == 'tes'):
-                unit_col = f'Q_out_{unit}'
-            else:
-                unit_col = f'Q_{unit}'
-            qsum.loc[idx, 'unit'] = f'{longnames[ucat]} {unr}'
-            qsum.loc[idx, 'qsum'] = ss.energy_system.data_all[unit_col].sum()
-            idx += 1
 
-    col_sum.altair_chart(
-        alt.Chart(qsum).mark_bar(color='#B54036').encode(
-            y=alt.Y('unit', title=None),
-            x=alt.X('qsum', title='Gesamtwärmebereitstellung in MWh')
-            ),
-        use_container_width=True
-        )
+        col_sum.altair_chart(
+            alt.Chart(qsum).mark_bar(color='#B54036').encode(
+                y=alt.Y('unit', title=None),
+                x=alt.X('qsum', title='Gesamtwärmebereitstellung in MWh')
+                ),
+            use_container_width=True
+            )
 
-    st.subheader('Wirtschaftliche Kennzahlen', help=ss.tt['results_econ'])
-    col1, col2, col3= st.columns(3)
+    with st.expander('Wirtschaftliche Kennzahlen'):
+        st.subheader('Wirtschaftliche Kennzahlen', help=ss.tt['results_econ'] )
+        col1, col2, col3= st.columns(3)
+        col1.metric(
+            'LCOH in €/MWh', f'{ss.energy_system.key_params["LCOH"]:,.2f}',
+            border=True, help=ss.tt['results_econ']
+            )
+        col2.metric(
+            'Wärmeerlöse in €',
+            format_sep(ss.energy_system.key_params["revenues_heat"]),
+            border=True
+            )
+        col3.metric(
+            'Stromerlöse in €',
+            format_sep(ss.energy_system.key_params['revenues_spotmarket']),
+            border=True
+            )
+        col1.metric(
+            'Stromkosten in €',
+            format_sep(ss.energy_system.key_params['cost_el']),
+            border=True
+            )
+        col2.metric(
+            'Gaskosten in €',
+            format_sep(ss.energy_system.key_params['cost_gas']),
+            border=True
+            )
+        col3.metric(
+            'Anlagenkosten (gesamt)',
+            format_sep(ss.energy_system.cost_df.sum().sum()),
+            border=True
+            )
 
-    col1.metric(
-        'LCOH in €/MWh', f'{ss.energy_system.key_params["LCOH"]:,.2f}',
-        border=True, help=ss.tt['results_econ']
-        )
-    col2.metric(
-        'Wärmeerlöse in €',
-        format_sep(ss.energy_system.key_params["revenues_heat"]),
-        border=True
-    )
-    col3.metric(
-        'Stromerlöse in €',
-        format_sep(ss.energy_system.key_params['revenues_spotmarket']),
-        border=True
-    )
-    col1.metric(
-        'Stromkosten in €',
-        format_sep(ss.energy_system.key_params['cost_el']),
-        border=True
-    )
-    col2.metric(
-        'Gaskosten in €',
-        format_sep(ss.energy_system.key_params['cost_gas']),
-        border=True
-        )
-    col3.metric(
-        'Anlagenkosten (gesamt)',
-        format_sep(ss.energy_system.cost_df.sum().sum()),
-        border=True
-    )
+        unit_cost = ss.energy_system.cost_df.copy()
+        renamedict = {}
+        for unit in ss.param_units.keys():
+            ucat = unit.rstrip('0123456789')
+            unr = unit[len(ucat):]
+            renamedict[unit] = f'{longnames[ucat]} {unr}'
+        unit_cost.rename(columns=renamedict, inplace=True)
+        unit_cost.rename(
+            index={
+                'invest': 'Investitionskosten (€)',
+                'op_cost_var': 'Variable Betriebskosten (€)',
+                'op_cost_fix': 'Fixe Betriebskosten (€)',
+                'op_cost': 'Gesamtbetriebskosten (€)'
+                },
+            inplace=True
+            )
 
-    unit_cost = ss.energy_system.cost_df.copy()
-    renamedict = {}
-    for unit in ss.param_units.keys():
-        ucat = unit.rstrip('0123456789')
-        unr = unit[len(ucat):]
-        renamedict[unit] = f'{longnames[ucat]} {unr}'
-    unit_cost.rename(columns=renamedict, inplace=True)
-    unit_cost.rename(
-        index={
-            'invest': 'Investitionskosten (€)',
-            'op_cost_var': 'Variable Betriebskosten (€)',
-            'op_cost_fix': 'Fixe Betriebskosten (€)',
-            'op_cost': 'Gesamtbetriebskosten (€)'
-            },
-        inplace=True
-        )
+        unit_cost.drop('Gesamtbetriebskosten (€)', axis=0, inplace=True)
+        unit_cost = unit_cost.map(format_sep)
 
-    unit_cost.drop('Gesamtbetriebskosten (€)', axis=0, inplace=True)
-    unit_cost = unit_cost.map(format_sep)
+        st.dataframe(unit_cost, use_container_width=True)
 
-    st.dataframe(unit_cost, use_container_width=True)
+    with st.expander('Ökologische Kennzahlen'):
+    # st.subheader('Ökologische Kennzahlen', help=ss.tt['results_ecol'])
+        met1, met2, met3, met4= st.columns([1, 1, 1, 1])
+        met1.metric(
+            'Gesamtemissionen in t',
+            format_sep(ss.energy_system.key_params['Total Emissions OM']/1e3, 1),
+            border=True
+            )
+        met2.metric(
+            'Emissionen durch Gasbezug in t',
+            format_sep(ss.energy_system.key_params['Emissions OM (Gas)']/1e3, 1),
+            border=True
+            )
+        met3.metric(
+            'Emissionen durch Strombezug in t',
+            format_sep(ss.energy_system.key_params['Emissions OM (Electricity)']/1e3, 1),
+            border=True
+            )
 
-    st.subheader('Ökologische Kennzahlen', help=ss.tt['results_ecol'])
-    met1, met2, met3, met4= st.columns([1, 1, 1, 1])
-    met1.metric(
-        'Gesamtemissionen in t',
-        format_sep(ss.energy_system.key_params['Total Emissions OM']/1e3, 1),
-        border=True
-        )
-    met2.metric(
-        'Emissionen durch Gasbezug in t',
-        format_sep(ss.energy_system.key_params['Emissions OM (Gas)']/1e3, 1),
-        border=True
-        )
-    met3.metric(
-        'Emissionen durch Strombezug in t',
-        format_sep(ss.energy_system.key_params['Emissions OM (Electricity)']/1e3, 1),
-        border=True
-        )
-
-    met4.metric(
-        'Emissionsgutschriften durch Stromproduktion in t',
-        format_sep(ss.energy_system.key_params['Emissions OM (Spotmarket)']/1e3, 1),
-        border=True
-        )
+        met4.metric(
+            'Emissionsgutschriften durch Stromproduktion in t',
+            format_sep(ss.energy_system.key_params['Emissions OM (Spotmarket)']/1e3, 1),
+            border=True
+            )
 
     with st.container(border=True):
 
