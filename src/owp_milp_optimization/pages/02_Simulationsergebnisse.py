@@ -281,7 +281,8 @@ with tab_ov:
     st.subheader('Wirtschaftliche Kennzahlen', help=ss.tt['results_econ'])
     col_lcoh, col_cost = st.columns([1, 5])
     col_lcoh.metric(
-        'LCOH in €/MWh', round(ss.energy_system.key_params['LCOH'], 2)
+        'LCOH in €/MWh', round(ss.energy_system.key_params['LCOH'], 2),
+        border=True
         )
 
     unit_cost = ss.energy_system.cost_df.copy()
@@ -310,19 +311,24 @@ with tab_ov:
     met1, met2, met3, met4= st.columns([1, 1, 1, 1])
     met1.metric(
         'Gesamtemissionen in t',
-        round(ss.energy_system.key_params['Total Emissions OM']/1e3, 1)
+        round(ss.energy_system.key_params['Total Emissions OM']/1e3, 1),
+        border=True
         )
     met2.metric(
         'Emissionen durch Gasbezug in t',
-        round(ss.energy_system.key_params['Emissions OM (Gas)']/1e3, 1)
+        round(ss.energy_system.key_params['Emissions OM (Gas)']/1e3, 1),
+        border=True
         )
     met3.metric(
         'Emissionen durch Strombezug in t',
-        round(ss.energy_system.key_params['Emissions OM (Electricity)']/1e3, 1)
+        round(ss.energy_system.key_params['Emissions OM (Electricity)']/1e3, 1),
+        border=True
         )
+
     met4.metric(
         'Emissionsgutschriften durch Stromproduktion in t',
-        round(ss.energy_system.key_params['Emissions OM (Spotmarket)']/1e3, 1)
+        round(ss.energy_system.key_params['Emissions OM (Spotmarket)']/1e3, 1),
+        border=True
         )
 
     with st.container(border=True):
@@ -535,44 +541,96 @@ if chp_used:
         if len(dates) == 1:
             dates.append(dates[0] + dt.timedelta(days=1))
 
-        elprod_ex = ss.energy_system.data_all.loc[
+        elprod = pd.DataFrame(
+            columns=['P_spotmarket', 'P_internal', 'el_spot_price']
+            )
+
+        elprod['P_spotmarket'] = ss.energy_system.data_all.loc[
             dates[0]:dates[1], 'P_spotmarket'
-            ].copy().to_frame()
-        elprod_ex.index.names = ['Date']
-        elprod_ex.reset_index(inplace=True)
-
-        elprod_in = ss.energy_system.data_all.loc[
+            ]
+        elprod['P_internal'] = ss.energy_system.data_all.loc[
             dates[0]:dates[1], 'P_internal'
-            ].copy().to_frame()
-        elprod_in.index.names = ['Date']
-        elprod_in.reset_index(inplace=True)
-
-        elprice = ss.all_el_prices.loc[
+            ]
+        elprod['el_spot_price'] = ss.all_el_prices.loc[
             dates[0]:dates[1], 'el_spot_price'
-            ].copy().to_frame()
-        elprice.index.names = ['Date']
-        elprice.reset_index(inplace=True)
+            ]
+        elprod.index.names = ['Date']
+        elprod.reset_index(inplace=True)
 
         col_sel.subheader('Kennzahlen')
-        met1, met2, met3 = col_sel.columns([1, 1, 1])
+        met1, met2 = col_sel.columns([1, 1])
         met1.metric(
             'Stromerlöse in €',
-            round(
-                (elprod_ex['P_spotmarket']*elprice['el_spot_price']).sum()
-                ), 1
-            )
+            round(ss.energy_system.key_params['revenues_spotmarket'], 2),
+            border=True
+        )
         met2.metric(
-            'Stromproduktion (Netz) in MWh',
-            round(elprod_ex['P_spotmarket'].sum(), 1)
-            )
-        met3.metric(
-            'Stromproduktion (intern) in MWh',
-            round(elprod_in['P_internal'].sum(), 1)
-            )
+            'Stromkosten in €',
+            round(ss.energy_system.key_params['cost_el'], 2),
+            border=True
+        )
+        met1.metric(
+            'Stromkosten in € (Netz)',
+            round(round(ss.energy_system.key_params['cost_el_grid'], 2)),
+            border=True
+        )
+        met2.metric(
+            'Stromkosten in € (intern)',
+            round(ss.energy_system.key_params['cost_el_internal'], 2),
+            border=True
+        )
+        met1.metric(
+            'Stromproduktion in MWh (Netz)',
+            round(elprod['P_spotmarket'].sum(), 1),
+            border=True
+        )
+        met2.metric(
+            'Stromproduktion in MWh (intern)',
+            round(elprod['P_internal'].sum(), 1),
+            border=True
+        )
 
-        col_el.subheader('Stromproduktion')
+        agg_results = col_sel.toggle(
+                'Ergebnisse aggregieren', help=ss.tt['toggle_agg_results'],
+                key='toggle_agg_results_el'
+            )
+        if agg_results:
+            agg_periods = {
+                'Stündlich': 'h',
+                'Täglich': 'd',
+                'Wöchentlich': 'W',
+                'Monatlich': 'ME',
+                'Quartalsweise': 'QE'
+            }
+            agg_period_name = col_sel.selectbox(
+                'Aggregationszeitraum wählen:',
+                options=list(agg_periods.keys())
+            )
+            agg_period = agg_periods[agg_period_name]
+
+            agg_method = col_sel.selectbox(
+                'Aggregationsmethode wählen:', options=['Mittelwert', 'Summe'],
+                help=ss.tt['agg_method'], key='agg_method_el'
+            )
+        else:
+            agg_period_name = 'Stündlich'
+
+        if agg_results:
+            elprod.set_index('Date', inplace=True)
+            if agg_method == 'Mittelwert':
+                elprod = elprod.resample(agg_period).mean().reset_index()
+            elif agg_method == 'Summe':
+                elprod = elprod.resample(agg_period).sum().reset_index()
+
+        elprod_sorted = pd.DataFrame(
+            np.sort(elprod.values, axis=0)[::-1], columns=elprod.columns
+            )
+        elprod_sorted.index.names = ['Stunde']
+        elprod_sorted.reset_index(inplace=True)
+
+        col_el.subheader('Stromproduktion - Netzeinspeisung')
         col_el.altair_chart(
-            alt.Chart(elprod_ex).mark_line(color='#00395B').encode(
+            alt.Chart(elprod).mark_line(color='#00395B').encode(
                 y=alt.Y(
                     'P_spotmarket',
                     title='Ins Netz eingespeiste Elektrizität in MWh'
@@ -582,8 +640,9 @@ if chp_used:
             use_container_width=True
             )
 
+        col_el.subheader('Stromproduktion - interne Nutzung')
         col_el.altair_chart(
-            alt.Chart(elprod_in).mark_line(color='#74ADC0').encode(
+            alt.Chart(elprod).mark_line(color='#74ADC0').encode(
                 y=alt.Y(
                     'P_internal',
                     title='Intern genutze Elektrizität in MWh'
@@ -595,7 +654,7 @@ if chp_used:
 
         col_el.subheader('Spotmarktpreise')
         col_el.altair_chart(
-            alt.Chart(elprice).mark_line(color='#00395B').encode(
+            alt.Chart(elprod).mark_line(color='#00395B').encode(
                 y=alt.Y('el_spot_price', title='Spotmarkt Strompreis in €/MWh'),
                 x=alt.X('Date', title='Datum')
             ),
