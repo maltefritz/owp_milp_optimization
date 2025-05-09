@@ -38,7 +38,7 @@ def read_input_data():
 # %% MARK: Parameters
 shortnames = {
     'Wärmepumpe': 'hp',
-    'Gas- und Dampfkratwerk': 'ccet',
+    'Gas- und Dampfkraftwerk': 'ccet',
     'Blockheizkraftwerk': 'ice',
     'Solarthermie': 'sol',
     'Spitzenlastkessel': 'plb',
@@ -48,7 +48,7 @@ shortnames = {
 }
 longnames = {
     'hp': 'Wärmepumpe',
-    'ccet': 'Gas- und Dampfkratwerk',
+    'ccet': 'Gas- und Dampfkraftwerk',
     'ice': 'Blockheizkraftwerk',
     'sol': 'Solarthermie',
     'plb': 'Spitzenlastkessel',
@@ -566,7 +566,7 @@ with tab_supply:
 
 # %% MARK: Electricity
     el_units = [
-        'Wärmepumpe', 'Elektrodenheizkessel', 'Gas- und Dampfkratwerk',
+        'Wärmepumpe', 'Elektrodenheizkessel', 'Gas- und Dampfkraftwerk',
         'Blockheizkraftwerk'
         ]
     if any(unit in ss.units for unit in el_units):
@@ -697,7 +697,7 @@ with tab_supply:
 
 # %% MARK: Gas & CO₂
     gas_units = [
-        'Spitzenlastkessel', 'Gas- und Dampfkratwerk', 'Blockheizkraftwerk'
+        'Spitzenlastkessel', 'Gas- und Dampfkraftwerk', 'Blockheizkraftwerk'
         ]
     if any(unit in ss.units for unit in gas_units):
         with st.expander('Gasversorgungsdaten'):

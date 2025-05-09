@@ -51,7 +51,7 @@ def download_energy_system():
 
 shortnames = {
     'Wärmepumpe': 'hp',
-    'Gas- und Dampfkratwerk': 'ccet',
+    'Gas- und Dampfkraftwerk': 'ccet',
     'Blockheizkraftwerk': 'ice',
     'Solarthermie': 'sol',
     'Spitzenlastkessel': 'plb',
