@@ -592,7 +592,6 @@ if chp_used:
         elprod.reset_index(inplace=True)
 
         col_sel.subheader('Kennzahlen')
-        # met1, met2 = col_sel.columns([1, 1])
         col_sel.metric(
             'Stromerlöse in €',
             format_sep(ss.energy_system.key_params['revenues_spotmarket'], 2),
@@ -719,6 +718,13 @@ if tes_used:
         if len(dates) == 1:
             dates.append(dates[0] + dt.timedelta(days=1))
 
+        # for col in ss.overview_caps:
+        #     if "Wärmespeicher" in col:
+        #         col_sel.metric(
+        #             f'Kapazität {col}', format_sep(ss.overview_caps[col].iloc[0], 1),
+        #             border=True, help=ss.tt['el_ext']
+        #         )
+
         for unit in ss.param_units.keys():
             ucat = unit.rstrip('0123456789')
             unr = unit[len(ucat):]
@@ -765,6 +771,34 @@ if tes_used:
                         ),
                     use_container_width=True
                     )
+
+                col_sel.write(f'Speicher {unr}')
+                if f'Wärmespeicher {unr} (MWh)' in ss.overview_caps.columns:
+                    col_sel.metric(
+                        'Kapazität in MWh',
+                        format_sep(ss.overview_caps[f'Wärmespeicher {unr} (MWh)'].iloc[0], 1),
+                        border=True
+                    )
+                col_sel.metric(
+                    'Summe der Speicherntladung in MWh',
+                    format_sep(tesdata[f'Wärmespeicher {unr} Aus'].sum(), 1),
+                    border=True
+                )
+                col_sel.metric(
+                    'Summe der Speicherbeladung in MWh',
+                    format_sep(abs(tesdata[f'Wärmespeicher {unr} Ein'].sum()), 1),
+                    border=True
+                )
+                losses = (
+                    abs(tesdata[f'Wärmespeicher {unr} Ein'].sum())
+                    - tesdata[f'Wärmespeicher {unr} Aus'].sum()
+                    )
+                col_sel.metric(
+                    'Speicherverluste in MWh',
+                    format_sep(losses, 1),
+                    border=True
+                )
+
 
 # %% MARK: Solver Log
 with tab_pro:
