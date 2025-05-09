@@ -91,3 +91,6 @@ def footer(icon_base64s):
         type='tertiary', use_container_width=True, key='contact_button'
     ):
         show_footer_dialog(icon_base64s)()
+
+def format_sep(value, dec=2):
+    return f"{value:,.{dec}f}".replace(",", "X").replace(".", ",").replace("X", ".")

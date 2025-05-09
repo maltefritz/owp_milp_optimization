@@ -38,7 +38,7 @@ def read_input_data():
 # %% MARK: Parameters
 shortnames = {
     'Wärmepumpe': 'hp',
-    'Gas- und Dampfkratwerk': 'ccet',
+    'Gas- und Dampfkraftwerk': 'ccet',
     'Blockheizkraftwerk': 'ice',
     'Solarthermie': 'sol',
     'Spitzenlastkessel': 'plb',
@@ -48,7 +48,7 @@ shortnames = {
 }
 longnames = {
     'hp': 'Wärmepumpe',
-    'ccet': 'Gas- und Dampfkratwerk',
+    'ccet': 'Gas- und Dampfkraftwerk',
     'ice': 'Blockheizkraftwerk',
     'sol': 'Solarthermie',
     'plb': 'Spitzenlastkessel',
@@ -538,8 +538,13 @@ with tab_units:
         if residual_heat_demand['heat_demand'].max() > Q_tot_max:
             placeholder_infeasable.error(
                 'Die gewählten Wärmeanlagen genügen nicht um den maximalen '
-                + 'Wärmebedarf zu decken. Erhöhe die installierte oder '
-                + 'maximal zu installierende Leistung der Anlagen.'
+                + 'Wärmebedarf zu decken. Mögliche Ansätze zur Lösung des '
+                + 'Problems könnten sein:\n\n'
+                + '- Erhöhe die installierte oder maximal zu installierende'
+                + ' Leistung der Anlagen\n\n'
+                + '- Füge andere Anlagen hinzu oder erhöhe die Anzahl der '
+                + 'vorhandenen Anlagen\n\n'
+                + '- Füge einen Wärmespeicher hinzu'
                 )
 
 # %% MARK: Solar Thermal
@@ -561,7 +566,7 @@ with tab_supply:
 
 # %% MARK: Electricity
     el_units = [
-        'Wärmepumpe', 'Elektrodenheizkessel', 'Gas- und Dampfkratwerk',
+        'Wärmepumpe', 'Elektrodenheizkessel', 'Gas- und Dampfkraftwerk',
         'Blockheizkraftwerk'
         ]
     if any(unit in ss.units for unit in el_units):
@@ -642,11 +647,13 @@ with tab_supply:
                     st.error(
                         'Die Anzahl der Zeitschritte der Wärmelastdaten '
                         + f'({nr_steps_hl}) stimmt nicht mit denen der '
-                        + f' Strompreiszeitreihe ({nr_steps_el}) überein. Bitte die '
-                        + 'Daten angleichen.'
+                        + f' Strompreiszeitreihe ({nr_steps_el}) überein. '
+                        + 'Bitte die Daten angleichen.'
                         )
 
-            col_elp.subheader('Strompreisbestandteile in ct/kWh', help=ss.tt['el_elements'])
+            col_elp.subheader(
+                'Strompreisbestandteile in ct/kWh', help=ss.tt['el_elements']
+                )
             col_elp.dataframe(
                 {k: v for k, v in ss.bound_inputs[str(el_prices_year)].items()},
                 use_container_width=True,
@@ -667,7 +674,8 @@ with tab_supply:
             col_vis_el.altair_chart(
                 alt.Chart(el_prices).mark_line(color='#00395B').encode(
                     y=alt.Y(
-                        'el_spot_price', title='Day-Ahead Spotmarkt Strompreise in €/MWh'
+                        'el_spot_price',
+                        title='Day-Ahead Spotmarkt Strompreise in €/MWh'
                         ),
                     x=alt.X('Date', title='Datum')
                     ),
@@ -689,7 +697,7 @@ with tab_supply:
 
 # %% MARK: Gas & CO₂
     gas_units = [
-        'Spitzenlastkessel', 'Gas- und Dampfkratwerk', 'Blockheizkraftwerk'
+        'Spitzenlastkessel', 'Gas- und Dampfkraftwerk', 'Blockheizkraftwerk'
         ]
     if any(unit in ss.units for unit in gas_units):
         with st.expander('Gasversorgungsdaten'):
@@ -758,8 +766,8 @@ with tab_supply:
                         )
                     gas_prices_median = gas_prices['gas_price'].median()
                     gas_prices['gas_price'] = (
-                        (gas_prices['gas_price'] - gas_prices_median) * scale_amp_gas
-                        + gas_prices_median + scale_off_gas
+                        (gas_prices['gas_price'] - gas_prices_median)
+                        * scale_amp_gas + gas_prices_median + scale_off_gas
                         )
 
             if any(heat_load):
@@ -769,8 +777,8 @@ with tab_supply:
                     st.error(
                         'Die Anzahl der Zeitschritte der Wärmelastdaten '
                         + f'({nr_steps_hl}) stimmt nicht mit denen der '
-                        + f' Gaspreiszeitreihe ({nr_steps_gas}) überein. Bitte die '
-                        + 'Daten angleichen.'
+                        + f' Gaspreiszeitreihe ({nr_steps_gas}) überein. '
+                        + 'Bitte die Daten angleichen.'
                         )
 
             col_vis_gas.subheader('Gaspreis')
