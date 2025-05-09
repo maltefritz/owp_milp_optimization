@@ -77,7 +77,7 @@ def save_results():
 # %% MARK: Parameters
 shortnames = {
     'Wärmepumpe': 'hp',
-    'Gas- und Dampfkratwerk': 'ccet',
+    'Gas- und Dampfkraftwerk': 'ccet',
     'Blockheizkraftwerk': 'ice',
     'Solarthermie': 'sol',
     'Spitzenlastkessel': 'plb',
@@ -87,7 +87,7 @@ shortnames = {
 }
 longnames = {
     'hp': 'Wärmepumpe',
-    'ccet': 'Gas- und Dampfkratwerk',
+    'ccet': 'Gas- und Dampfkraftwerk',
     'ice': 'Blockheizkraftwerk',
     'sol': 'Solarthermie',
     'plb': 'Spitzenlastkessel',
@@ -98,7 +98,7 @@ longnames = {
 
 colors = {
     'Wärmepumpe': '#B54036',
-    'Gas- und Dampfkratwerk': '#00395B',
+    'Gas- und Dampfkraftwerk': '#00395B',
     'Blockheizkraftwerk': '#00395B',
     'Spitzenlastkessel': '#EC6707',
     'Solarthermie': '#EC6707',
@@ -286,36 +286,36 @@ with tab_ov:
             )
 
     with st.expander('Wirtschaftliche Kennzahlen'):
-        st.subheader('Wirtschaftliche Kennzahlen', help=ss.tt['results_econ'] )
+        st.subheader('Wirtschaftliche Kennzahlen')
         col1, col2, col3= st.columns(3)
         col1.metric(
             'LCOH in €/MWh', f'{ss.energy_system.key_params["LCOH"]:,.2f}',
-            border=True, help=ss.tt['results_econ']
+            border=True, help=ss.tt['lcoh']
             )
         col2.metric(
             'Wärmeerlöse in €',
             format_sep(ss.energy_system.key_params["revenues_heat"]),
-            border=True
+            border=True, help=ss.tt['rev_heat']
             )
         col3.metric(
             'Stromerlöse in €',
             format_sep(ss.energy_system.key_params['revenues_spotmarket']),
-            border=True
+            border=True, help=ss.tt['rev_el']
             )
         col1.metric(
             'Stromkosten in €',
             format_sep(ss.energy_system.key_params['cost_el']),
-            border=True
+            border=True, help=ss.tt['cost_el']
             )
         col2.metric(
             'Gaskosten in €',
             format_sep(ss.energy_system.key_params['cost_gas']),
-            border=True
+            border=True, help=ss.tt['cost_gas']
             )
         col3.metric(
             'Anlagenkosten (gesamt)',
             format_sep(ss.energy_system.cost_df.sum().sum()),
-            border=True
+            border=True, help=ss.tt['cost_units']
             )
 
         unit_cost = ss.energy_system.cost_df.copy()
@@ -346,23 +346,23 @@ with tab_ov:
         met1.metric(
             'Gesamtemissionen in t',
             format_sep(ss.energy_system.key_params['Total Emissions OM']/1e3, 1),
-            border=True
+            border=True, help=ss.tt['em_ges']
             )
         met2.metric(
             'Emissionen durch Gasbezug in t',
             format_sep(ss.energy_system.key_params['Emissions OM (Gas)']/1e3, 1),
-            border=True
+            border=True, help=ss.tt['em_gas']
             )
         met3.metric(
             'Emissionen durch Strombezug in t',
             format_sep(ss.energy_system.key_params['Emissions OM (Electricity)']/1e3, 1),
-            border=True
+            border=True, help=ss.tt['em_el']
             )
 
         met4.metric(
             'Emissionsgutschriften durch Stromproduktion in t',
             format_sep(ss.energy_system.key_params['Emissions OM (Spotmarket)']/1e3, 1),
-            border=True
+            border=True, help=ss.tt['em_spot']
             )
 
     with st.container(border=True):
@@ -592,36 +592,36 @@ if chp_used:
         elprod.reset_index(inplace=True)
 
         col_sel.subheader('Kennzahlen')
-        met1, met2 = col_sel.columns([1, 1])
-        met1.metric(
+        # met1, met2 = col_sel.columns([1, 1])
+        col_sel.metric(
             'Stromerlöse in €',
             format_sep(ss.energy_system.key_params['revenues_spotmarket'], 2),
-            border=True
+            border=True, help=ss.tt['rev_el']
         )
-        met2.metric(
+        col_sel.metric(
             'Stromkosten in €',
             format_sep(ss.energy_system.key_params['cost_el'], 2),
-            border=True
+            border=True, help=ss.tt['cost_el']
         )
-        met1.metric(
+        col_sel.metric(
             'Stromkosten in € (Netz)',
             format_sep(ss.energy_system.key_params['cost_el_grid'], 2),
-            border=True
+            border=True, help=ss.tt['cost_el_int']
         )
-        met2.metric(
+        col_sel.metric(
             'Stromkosten in € (intern)',
             format_sep(ss.energy_system.key_params['cost_el_internal'], 2),
-            border=True
+            border=True, help=ss.tt['cost_el_ext']
         )
-        met1.metric(
-            'Stromproduktion in MWh (Netz)',
+        col_sel.metric(
+            'Stromproduktion in MWh (Spotmarkt)',
             format_sep(elprod['P_spotmarket'].sum(), 1),
-            border=True
+            border=True, help=ss.tt['el_ext']
         )
-        met2.metric(
+        col_sel.metric(
             'Stromproduktion in MWh (intern)',
             format_sep(elprod['P_internal'].sum(), 1),
-            border=True
+            border=True, help=ss.tt['el_int']
         )
 
         agg_results = col_sel.toggle(
