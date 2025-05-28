@@ -591,38 +591,6 @@ if chp_used:
         elprod.index.names = ['Date']
         elprod.reset_index(inplace=True)
 
-        col_sel.subheader('Kennzahlen')
-        col_sel.metric(
-            'Stromerlöse in €',
-            format_sep(ss.energy_system.key_params['revenues_spotmarket'], 2),
-            border=True, help=ss.tt['rev_el']
-        )
-        col_sel.metric(
-            'Stromkosten in €',
-            format_sep(ss.energy_system.key_params['cost_el'], 2),
-            border=True, help=ss.tt['cost_el']
-        )
-        col_sel.metric(
-            'Stromkosten in € (Netz)',
-            format_sep(ss.energy_system.key_params['cost_el_grid'], 2),
-            border=True, help=ss.tt['cost_el_int']
-        )
-        col_sel.metric(
-            'Stromkosten in € (intern)',
-            format_sep(ss.energy_system.key_params['cost_el_internal'], 2),
-            border=True, help=ss.tt['cost_el_ext']
-        )
-        col_sel.metric(
-            'Stromproduktion in MWh (Spotmarkt)',
-            format_sep(elprod['P_spotmarket'].sum(), 1),
-            border=True, help=ss.tt['el_ext']
-        )
-        col_sel.metric(
-            'Stromproduktion in MWh (intern)',
-            format_sep(elprod['P_internal'].sum(), 1),
-            border=True, help=ss.tt['el_int']
-        )
-
         agg_results = col_sel.toggle(
                 'Ergebnisse aggregieren', help=ss.tt['toggle_agg_results'],
                 key='toggle_agg_results_el'
@@ -660,6 +628,38 @@ if chp_used:
             )
         elprod_sorted.index.names = ['Stunde']
         elprod_sorted.reset_index(inplace=True)
+
+        col_sel.subheader('Kennzahlen')
+        col_sel.metric(
+            'Stromerlöse in €',
+            format_sep(ss.energy_system.key_params['revenues_spotmarket'], 2),
+            border=True, help=ss.tt['rev_el']
+        )
+        col_sel.metric(
+            'Stromkosten in €',
+            format_sep(ss.energy_system.key_params['cost_el'], 2),
+            border=True, help=ss.tt['cost_el']
+        )
+        col_sel.metric(
+            'Stromkosten in € (Netz)',
+            format_sep(ss.energy_system.key_params['cost_el_grid'], 2),
+            border=True, help=ss.tt['cost_el_int']
+        )
+        col_sel.metric(
+            'Stromkosten in € (intern)',
+            format_sep(ss.energy_system.key_params['cost_el_internal'], 2),
+            border=True, help=ss.tt['cost_el_ext']
+        )
+        col_sel.metric(
+            'Stromproduktion in MWh (Spotmarkt)',
+            format_sep(elprod['P_spotmarket'].sum(), 1),
+            border=True, help=ss.tt['el_ext']
+        )
+        col_sel.metric(
+            'Stromproduktion in MWh (intern)',
+            format_sep(elprod['P_internal'].sum(), 1),
+            border=True, help=ss.tt['el_int']
+        )
 
         col_el.subheader('Stromproduktion - Netzeinspeisung')
         col_el.altair_chart(
