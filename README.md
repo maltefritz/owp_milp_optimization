@@ -1,3 +1,5 @@
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://heatpumps.streamlit.app)
+
 # OWP Optimization Dashboard
 
 Energy system optimization dashboard using mixed integer linear programming.
