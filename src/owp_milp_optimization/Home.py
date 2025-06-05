@@ -86,7 +86,7 @@ st.write(
     (OWP) der Initiative Inno!Nord. 
 
     Mit diesem Dashboard lassen sich multivalente Wärmeversorgungssysteme und
-    die darin eingesetzen Versorgungsanlagen simulieren. Dazu kann aus einer
+    die darin eingesetzten Versorgungsanlagen simulieren. Dazu kann aus einer
     Reihe von Anlagentypen gewählt werden, die Ihr individuelles Wärmesystem
     bilden. Diese Anlagen werden anschließend parametrisiert, die
     energiewirtschaftlichen und -politischen Rahmenbedingungen festgelegt und

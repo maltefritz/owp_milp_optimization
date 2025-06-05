@@ -55,6 +55,9 @@ def show_footer_dialog(icon_base64s):
             <a href="https://github.com/jfreissmann" style="text-decoration: none;">
                 <img src="data:image/svg+xml;base64,{icon_base64s['github64']}" width="30" style="margin: 0 10px;">
             </a>
+            <a href="https://www.linkedin.com/in/jonas-frei%C3%9Fmann-8a6401368/" style="text-decoration: none;">
+                <img src="data:image/svg+xml;base64,{icon_base64s['linkedin64']}" width="35" style="margin: 0 10px;">
+            </a>
         </div>
         """, unsafe_allow_html=True)
     return footer_context
