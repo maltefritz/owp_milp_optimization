@@ -91,7 +91,7 @@ def footer(icon_base64s):
 
     if col_bot.button(
         '© Malte Fritz & Jonas Freißmann :material/open_in_new:',
-        type='tertiary', use_container_width=True, key='contact_button'
+        type='tertiary', width='stretch', key='contact_button'
     ):
         show_footer_dialog(icon_base64s)()
 
