@@ -103,12 +103,12 @@ with st.sidebar:
     logo_inno = os.path.join(
         os.path.dirname(__file__), '..', 'img', 'Logo_InnoNord_OWP.png'
         )
-    st.image(logo_inno, use_container_width=True)
+    st.image(logo_inno, width='stretch')
 
     logo = os.path.join(
         os.path.dirname(__file__), '..', 'img', 'Logo_ZNES_mitUnisV2.svg'
         )
-    st.image(logo, use_container_width=True)
+    st.image(logo, width='stretch')
 
     st.divider()
 
@@ -135,17 +135,17 @@ with st.sidebar:
     logo_bo = os.path.join(
         os.path.dirname(__file__), '..', 'img', 'Logo_Boben_Op.svg'
         )
-    st.image(logo_bo, use_container_width=True)
+    st.image(logo_bo, width='stretch')
 
     logo_gp = os.path.join(
         os.path.dirname(__file__), '..', 'img', 'Logo_GP_Joule.png'
         )
-    st.image(logo_gp, use_container_width=True)
+    st.image(logo_gp, width='stretch')
 
     logo_sw = os.path.join(
         os.path.dirname(__file__), '..', 'img', 'Logo_SW_Flensburg.svg'
         )
-    st.image(logo_sw, use_container_width=True)
+    st.image(logo_sw, width='stretch')
 
 
 tab_heat, tab_system, tab_units, tab_supply, tab_misc = st.tabs(
@@ -331,7 +331,7 @@ with tab_system:
     topopath = os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'img', 'es_topology_')
         )
-    col_vis_unit.image(f'{topopath}header.png', use_container_width=True)
+    col_vis_unit.image(f'{topopath}header.png', width='stretch')
     if 'nr_units' not in ss:
         ss.nr_units = {}
     if ss.units:
@@ -340,7 +340,7 @@ with tab_system:
                 [0.8, 0.2], vertical_alignment='center'
             )
             col_vis_unit.image(
-                f'{topopath+shortnames[unit]}.png', use_container_width=True
+                f'{topopath+shortnames[unit]}.png', width='stretch'
                 )
 
             if unit in ss.nr_units:
@@ -656,7 +656,7 @@ with tab_supply:
                 )
             col_elp.dataframe(
                 {k: v for k, v in ss.bound_inputs[str(el_prices_year)].items()},
-                use_container_width=True,
+                width='stretch',
                 key='el_elements'
                 )
 
@@ -903,7 +903,7 @@ with tab_misc:
     with st.container(border=True):
         st.page_link(
             'pages/01_Optimierung.py', label='**Zur Optimierung**',
-            icon='📝', use_container_width=True
+            icon='📝', width='stretch'
             )
 
 # %% MARK: Footer
