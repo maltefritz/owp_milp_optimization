@@ -861,7 +861,7 @@ with tab_misc:
     col_opt.subheader('Optimierung')
 
     ss.param_opt['Solver'] = col_opt.selectbox(
-        'Solver', options=['Gurobi', 'SCIP', 'HiGHS'], help=ss.tt['solver'],
+        'Solver', options=['HiGHS'], help=ss.tt['solver'],
         key='solver'
         )
 
