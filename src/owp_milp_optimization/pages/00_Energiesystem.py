@@ -830,7 +830,7 @@ if not own_es:
 
 # %% MARK: Sonstiges
 with tab_misc:
-    st.header('Sonstige Paramter')
+    st.header('Sonstige Parameter')
 
     col_econ, col_opt = st.columns([1, 1], gap='large')
 
