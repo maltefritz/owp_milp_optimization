@@ -45,12 +45,12 @@ with st.sidebar:
     logo_inno = os.path.join(
         os.path.dirname(__file__), 'img', 'Logo_InnoNord_OWP.png'
         )
-    st.image(logo_inno, use_container_width=True)
+    st.image(logo_inno, width='stretch')
 
     logo = os.path.join(
         os.path.dirname(__file__), 'img', 'Logo_ZNES_mitUnisV2.svg'
         )
-    st.image(logo, use_container_width=True)
+    st.image(logo, width='stretch')
 
     st.divider()
 
@@ -75,10 +75,10 @@ with st.sidebar:
 # %% Main Window
 col_inno, _, col_foerder = st.columns([0.3, 0.4, 0.3])
 logo = os.path.join(os.path.dirname(__file__), 'img',  'Logo_InnoNord_OWP.png')
-col_inno.image(logo, use_container_width=True)
+col_inno.image(logo, width='stretch')
 
 logo_foederer = os.path.join(os.path.dirname(__file__), 'img',  'Logos_Förderer_ohnePTJ_BMFTR.png')
-col_foerder.image(logo_foederer, use_container_width=True)
+col_foerder.image(logo_foederer, width='stretch')
 
 st.write(
     """
@@ -106,7 +106,7 @@ st.write(
 with st.container(border=True):
     st.page_link(
         'pages/00_Energiesystem.py', label='**Energiesystem konfigurieren**',
-        icon='📝', use_container_width=True,
+        icon='📝', width='stretch',
         )
 
 st.write(
@@ -117,7 +117,7 @@ st.write(
 
 _, col_partner, _ = st.columns([0.1 ,0.8, 0.1])
 logo_partner = os.path.join(os.path.dirname(__file__), 'img',  'Logos_Partner.svg')
-col_partner.image(logo_partner, use_container_width=True)
+col_partner.image(logo_partner, width='stretch')
 
 st.markdown('''---''')
 

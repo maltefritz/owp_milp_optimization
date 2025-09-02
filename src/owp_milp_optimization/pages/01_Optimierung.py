@@ -67,12 +67,12 @@ with st.sidebar:
     logo_inno = os.path.join(
         os.path.dirname(__file__), '..', 'img', 'Logo_InnoNord_OWP.png'
         )
-    st.image(logo_inno, use_container_width=True)
+    st.image(logo_inno, width='stretch')
 
     logo = os.path.join(
         os.path.dirname(__file__), '..', 'img', 'Logo_ZNES_mitUnisV2.svg'
         )
-    st.image(logo, use_container_width=True)
+    st.image(logo, width='stretch')
 
     st.divider()
 
@@ -100,17 +100,17 @@ with st.sidebar:
     logo_bo = os.path.join(
         os.path.dirname(__file__), '..', 'img', 'Logo_Boben_Op.svg'
         )
-    st.image(logo_bo, use_container_width=True)
+    st.image(logo_bo, width='stretch')
 
     logo_gp = os.path.join(
         os.path.dirname(__file__), '..', 'img', 'Logo_GP_Joule.png'
         )
-    st.image(logo_gp, use_container_width=True)
+    st.image(logo_gp, width='stretch')
 
     logo_sw = os.path.join(
         os.path.dirname(__file__), '..', 'img', 'Logo_SW_Flensburg.svg'
         )
-    st.image(logo_sw, use_container_width=True)
+    st.image(logo_sw, width='stretch')
 
 
 # %% Overview
@@ -124,11 +124,11 @@ topopath = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..', 'img', 'es_topology_')
     )
 
-col_es.image(f'{topopath}header.png', use_container_width=True)
+col_es.image(f'{topopath}header.png', width='stretch')
 for unit in ss.param_units.keys():
     unit = unit.rstrip('0123456789')
     col_es.image(
-        f'{topopath+unit}.png', use_container_width=True
+        f'{topopath+unit}.png', width='stretch'
         )
 
 col_over.subheader('Zeitreihen im Wärmeversorgungssystem')
@@ -156,7 +156,7 @@ if 'Solarthermie' in ss.units:
         }, inplace=True
     )
 
-col_over.dataframe(data_overview.T, use_container_width=True)
+col_over.dataframe(data_overview.T, width='stretch')
 
 col_over.subheader('Parameter im Wärmeversorgungssystem')
 
@@ -179,7 +179,7 @@ param_overview.rename(
         'lifetime': 'Lebensdauer (a)'
         }, inplace=True
     )
-col_over.dataframe(param_overview, use_container_width=True)
+col_over.dataframe(param_overview, width='stretch')
 
 # %% MARK: Save Data
 # _, col_save, col_reset, _ = st.columns([1.05, 1, 1, 2], gap='large')
@@ -195,7 +195,7 @@ if not os.path.exists(savepath):
 download = False
 download = col_save.button(
     label='💾 Input Daten speichern',
-    key='download_button', use_container_width=True
+    key='download_button', width='stretch'
     )
 
 if download:
@@ -213,7 +213,7 @@ if download:
 download_es_btn = col_dl_es.button(
     label='📝 Energiesystem speichern',
     key='download_es_button_overview',
-    use_container_width=True
+    width='stretch'
     )
 if download_es_btn:
     download_energy_system()
@@ -221,7 +221,7 @@ if download_es_btn:
 reset_es = col_reset.button(
     label='📝 Neues Energiesystem konfigurieren',
     key='reset_button_overview',
-    use_container_width=True
+    width='stretch'
     )
 
 if reset_es:
@@ -242,7 +242,7 @@ if reset_es:
 
 with st.container(border=True):
     solver_status = None
-    opt = st.button(label='🖥️**Optimierung starten**', use_container_width=True)
+    opt = st.button(label='🖥️**Optimierung starten**', width='stretch')
     if opt:
         with st.spinner('Optimierung wird durchgeführt...'):
             ss.energy_system = EnergySystem(
@@ -293,7 +293,7 @@ if opt:
             st.page_link(
                 'pages/02_Simulationsergebnisse.py',
                 label='**Zu den Ergebnissen**',
-                icon='📊', use_container_width=True
+                icon='📊', width='stretch'
                 )
 
 # %% MARK: Footer
