@@ -10,7 +10,7 @@ import altair as alt
 import pandas as pd
 import pyomo.environ as pyo
 import streamlit as st
-from helpers import footer, load_icon_base64s
+from helpers import footer, format_sep, load_icon_base64s
 from pyomo.contrib.appsi.solvers import Highs
 from pyomo.opt import check_available_solvers
 from streamlit import session_state as ss
@@ -148,8 +148,8 @@ with st.sidebar:
     st.image(logo_sw, width='stretch')
 
 
-tab_heat, tab_system, tab_units, tab_supply, tab_misc = st.tabs(
-    ['Wärme', 'System', 'Anlagen', 'Versorgung', 'Sonstiges']
+tab_heat, tab_net, tab_system, tab_units, tab_supply, tab_misc = st.tabs(
+    ['Wärme', 'Netz', 'System', 'Anlagen', 'Versorgung', 'Sonstiges']
 )
 
 # %% MARK: Heat Load
@@ -299,6 +299,97 @@ with tab_heat:
         solar_heat_flow = solar_heat_flow.loc[dates[0]:dates[1], :]
     solar_heat_flow.reset_index(inplace=True)
     solar_heat_flow['solar_heat_flow'] *= 1e6
+
+# %% MARK: Network
+with tab_net:
+    st.header('Wärmenetz')
+
+    # col_system, col_unit = st.columns([1, 2], gap='large')
+    col_spec_mw, col_spec_km, col_abs = st.columns([1, 1, 1], gap='large')
+
+    ss.param_opt['net_dist'] = col_spec_mw.number_input(
+        'Netzlänge in km', value=ss.param_opt['net_dist'],
+        help=ss.tt['net_dist'], key='net_dist'
+    )
+
+
+    # Invest cost
+    col_spec_mw, col_spec_km, col_abs = st.columns([1, 1, 1], gap='large')
+    ss.param_opt['net_inv_spez'] = col_spec_mw.number_input(
+        'Spez. Investitionskosten in €/MW/m',
+        value=ss.param_opt['net_inv_spez'],
+        help=ss.tt['net_inv_spez_mw'], key='net_inv_spez_mw'
+    )
+
+    net_inv_spec_km = (
+        ss.param_opt['net_inv_spez'] * heat_load['heat_demand'].max()
+    )
+    net_inv_spec_km = format_sep(net_inv_spec_km, dec=0)
+    col_spec_km.metric(
+        'Spez. Investitionskosten in €/m', value=net_inv_spec_km
+    )
+
+    net_inv_abs = (
+        ss.param_opt['net_inv_spez']
+        * heat_load['heat_demand'].max()
+        * ss.param_opt['net_dist'] * 1000
+    )
+    net_inv_abs = format_sep(net_inv_abs, dec=0)
+    col_abs.metric(
+        'Gesamte Investitionskosten in €', value=net_inv_abs
+    )
+
+    # Fixed operation cost
+    col_spec_mw, col_spec_km, col_abs = st.columns([1, 1, 1], gap='large')
+    ss.param_opt['net_op_cost_fix'] = col_spec_mw.number_input(
+        'Spez. Fixkosten in €/MW/km',
+        value=ss.param_opt['net_op_cost_fix'],
+        help=ss.tt['net_op_cost_fix_mw'], key='net_op_cost_fix_mw'
+    )
+
+    net_fix_spec_km = (
+        ss.param_opt['net_op_cost_fix'] * heat_load['heat_demand'].max()
+    )
+    net_fix_spec_km = format_sep(net_fix_spec_km, dec=0)
+    col_spec_km.metric(
+        'Spez. Fixkosten in €/km', value=net_fix_spec_km
+    )
+
+    net_fix_abs = (
+        ss.param_opt['net_op_cost_fix']
+        * heat_load['heat_demand'].max()
+        * ss.param_opt['net_dist']
+    )
+    net_fix_abs = format_sep(net_fix_abs, dec=0)
+    col_abs.metric(
+        'Gesamte Fixkosten in €/a', value=net_fix_abs
+    )
+
+    # Variable operation cost
+    col_spec_mw, col_spec_km, col_abs = st.columns([1, 1, 1], gap='large')
+    ss.param_opt['net_op_cost_var'] = col_spec_mw.number_input(
+        'Spez. variable Kosten in €/MWh/km',
+        value=ss.param_opt['net_op_cost_var'],
+        help=ss.tt['net_op_cost_var_mw'], key='net_op_cost_var_mw'
+    )
+
+    net_var_spec_km = (
+        ss.param_opt['net_op_cost_var'] * heat_load['heat_demand'].sum()
+    )
+    net_var_spec_km = format_sep(net_var_spec_km, dec=0)
+    col_spec_km.metric(
+        'Spez. variable Kosten in €/km', value=net_var_spec_km
+    )
+
+    net_var_abs = (
+        ss.param_opt['net_op_cost_var']
+        * heat_load['heat_demand'].sum()
+        * ss.param_opt['net_dist']
+    )
+    net_var_abs = format_sep(net_var_abs, dec=0)
+    col_abs.metric(
+        'Gesamte variable Kosten in €', value=net_var_abs
+    )
 
 # %% MARK: Energy System
 with tab_system:
