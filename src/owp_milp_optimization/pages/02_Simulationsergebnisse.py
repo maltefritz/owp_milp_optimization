@@ -289,12 +289,13 @@ with tab_ov:
         st.subheader('Wirtschaftliche Kennzahlen')
         col1, col2, col3= st.columns(3)
         col1.metric(
-            'LCOH in €/MWh', f'{ss.energy_system.key_params["LCOH"]:,.2f}',
+            'LCOH in €/MWh',
+            format_sep(ss.energy_system.key_params['LCOH']),
             border=True, help=ss.tt['lcoh']
             )
         col2.metric(
             'Wärmeerlöse in €',
-            format_sep(ss.energy_system.key_params["revenues_heat"]),
+            format_sep(ss.energy_system.key_params['revenues_heat']),
             border=True, help=ss.tt['rev_heat']
             )
         col3.metric(
