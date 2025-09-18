@@ -590,6 +590,25 @@ class EnergySystem():
             + self.key_params['cost_el']
             )
 
+        # %% Total network cost
+        self.key_params['invest_net_total'] = (
+            self.param_opt['net_inv_spez']
+            * self.data_all['Q_demand'].max()
+            * self.param_opt['net_dist'] * 1000
+        )
+
+        self.key_params['cost_net_fix_total'] = (
+            self.param_opt['net_op_cost_fix']
+            * self.data_all['Q_demand'].max()
+            * self.param_opt['net_dist']
+        )
+
+        self.key_params['cost_net_var_total'] = (
+            self.param_opt['net_op_cost_var']
+            * self.data_all['Q_demand'].sum()
+            * self.param_opt['net_dist']
+        )
+
         # %% Revenue calculation
         if 'P_internal' in self.data_all.columns:
             self.key_params['revenues_spotmarket'] = (
@@ -625,6 +644,24 @@ class EnergySystem():
         # %% Main economic results
         self.key_params['LCOH'] = LCOH(
             self.key_params['invest_total'], self.key_params['cost_total'],
+            self.data_all['Q_demand'].sum(),
+            revenue=(
+                self.key_params['revenues_total']
+                - self.key_params['revenues_heat']
+                ),
+            i=self.param_opt['capital_interest'], n=self.param_opt['lifetime']
+            )
+
+        self.key_params['LCOH_incl_net'] = LCOH(
+            (
+                self.key_params['invest_total']
+                + self.key_params['invest_net_total']
+            ),
+            (
+                self.key_params['cost_total']
+                + self.key_params['cost_net_fix_total']
+                + self.key_params['cost_net_var_total']
+            ),
             self.data_all['Q_demand'].sum(),
             revenue=(
                 self.key_params['revenues_total']
