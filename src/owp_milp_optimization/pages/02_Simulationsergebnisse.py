@@ -287,39 +287,68 @@ with tab_ov:
 
     with st.expander('Wirtschaftliche Kennzahlen'):
         st.subheader('Wirtschaftliche Kennzahlen')
-        col1, col2, col3= st.columns(3)
+
+        col1, col2, col3, col4 = st.columns(4)
         col1.metric(
-            'LCOH in €/MWh',
+            'LCOH (Erzeugung) in €/MWh',
             format_sep(ss.energy_system.key_params['LCOH']),
-            border=True, help=ss.tt['lcoh']
+            border=True, help=ss.tt['lcoh_heat']
+            )
+        col1.metric(
+            'LCOH (inkl. Wärmenetz) in €/MWh',
+            format_sep(ss.energy_system.key_params['LCOH_incl_net']),
+            border=True, help=ss.tt['lcoh_incl_net']
             )
         col2.metric(
             'Wärmeerlöse in €',
             format_sep(ss.energy_system.key_params['revenues_heat']),
             border=True, help=ss.tt['rev_heat']
             )
-        col3.metric(
+        col2.metric(
             'Stromerlöse in €',
             format_sep(ss.energy_system.key_params['revenues_spotmarket']),
             border=True, help=ss.tt['rev_el']
             )
-        col1.metric(
+        col3.metric(
             'Stromkosten in €',
             format_sep(ss.energy_system.key_params['cost_el']),
             border=True, help=ss.tt['cost_el']
             )
-        col2.metric(
+        col3.metric(
             'Gaskosten in €',
             format_sep(ss.energy_system.key_params['cost_gas']),
             border=True, help=ss.tt['cost_gas']
             )
-        col3.metric(
+        col4.metric(
             'Anlagenkosten (gesamt)',
             format_sep(ss.energy_system.cost_df.sum().sum()),
             border=True, help=ss.tt['cost_units']
             )
+        col4.metric(
+            'Wärmenetzkosten (gesamt)',
+            format_sep(
+                ss.energy_system.key_params['invest_net_total']
+                + ss.energy_system.key_params['cost_net_fix_total']
+                + ss.energy_system.key_params['cost_net_var_total']
+            ),
+            border=True, help=ss.tt['cost_units']
+            )
 
         unit_cost = ss.energy_system.cost_df.copy()
+        unit_cost.loc['invest', 'Wärmenetz'] = (
+            ss.energy_system.key_params['invest_net_total']
+        )
+        unit_cost.loc['op_cost_fix', 'Wärmenetz'] = (
+            ss.energy_system.key_params['cost_net_fix_total']
+        )
+        unit_cost.loc['op_cost_var', 'Wärmenetz'] = (
+            ss.energy_system.key_params['cost_net_var_total']
+        )
+        unit_cost.loc['op_cost', 'Wärmenetz'] = (
+            ss.energy_system.key_params['cost_net_fix_total']
+            + ss.energy_system.key_params['cost_net_var_total']
+        )
+
         renamedict = {}
         for unit in ss.param_units.keys():
             ucat = unit.rstrip('0123456789')
