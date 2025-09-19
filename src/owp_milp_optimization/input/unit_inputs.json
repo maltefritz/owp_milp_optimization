@@ -149,6 +149,13 @@
             "type": "float",
             "unit": "€/MW"
         },
+        "inv_bonus_rel": {
+            "name": "Rel. Investitionskostenförderung",
+            "min": 0.0,
+            "max": 100.0,
+            "type": "float",
+            "unit": "%"
+        },
         "op_cost_var": {
             "name": "Variable Betriebskosten",
             "min": -100.0,
@@ -162,6 +169,13 @@
             "max": 100000.0,
             "type": "float",
             "unit": "€/MW"
+        },
+        "op_cost_bonus_rel": {
+            "name": "Rel. Betriebskostenförderung",
+            "min": 0.0,
+            "max": 100.0,
+            "type": "float",
+            "unit": "%"
         }
     }
 }
