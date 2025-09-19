@@ -588,6 +588,8 @@ with tab_units:
                     if unit_cat == 'sol' and uinput == 'op_cost_var':
                         tooltip = ss.tt.get(f'input_{uinput}_{unit_cat}', None)
 
+                    if uinfo['unit'] == '%':
+                        unit_params[uinput] *= 100
                     unit_params[uinput] = (
                         col_econ.number_input(
                             label,
@@ -601,6 +603,8 @@ with tab_units:
                             help=tooltip
                             )
                         )
+                    if uinfo['unit'] == '%':
+                        unit_params[uinput] /= 100
 
     Q_tot_max = 0
     residual_heat_demand = heat_load.copy()
