@@ -111,7 +111,11 @@ class EnergySystem():
             if unit_cat == 'sol':
                 if unit_params['invest_mode']:
                     nominal_capacity = solph.Investment(
-                        ep_costs=unit_params['inv_spez'] / self.bwsf,
+                        ep_costs=(
+                            unit_params['inv_spez']
+                            * (1 - unit_params['inv_bonus_rel'])
+                            / self.bwsf
+                            ),
                         maximum=unit_params['A_max'],
                         minimum=unit_params['A_min']
                         )
@@ -122,7 +126,10 @@ class EnergySystem():
                     label=unit,
                     outputs={
                         self.buses['hnw']: solph.flows.Flow(
-                            variable_costs=unit_params['op_cost_var'],
+                            variable_costs=(
+                                unit_params['op_cost_var']
+                                * (1 - unit_params['op_cost_bonus_rel'])
+                            ),
                             nominal_capacity=nominal_capacity,
                             fix=self.data['solar_heat_flow']
                             )
@@ -139,7 +146,11 @@ class EnergySystem():
 
                 if unit_params['invest_mode']:
                     nominal_capacity = solph.Investment(
-                        ep_costs=unit_params['inv_spez'] / self.bwsf,
+                        ep_costs=(
+                            unit_params['inv_spez']
+                            * (1 - unit_params['inv_bonus_rel'])
+                            / self.bwsf
+                        ),
                         maximum=unit_params['cap_max'],
                         minimum=unit_params['cap_min']
                         )
@@ -150,7 +161,10 @@ class EnergySystem():
                     label=unit,
                     outputs={
                         self.buses['hnw']: solph.flows.Flow(
-                            variable_costs=unit_params['op_cost_var'],
+                            variable_costs=(
+                                unit_params['op_cost_var']
+                                * (1 - unit_params['op_cost_bonus_rel'])
+                            ),
                             nominal_capacity=nominal_capacity,
                             fix=fix
                             )
@@ -195,7 +209,11 @@ class EnergySystem():
 
                 if unit_params['invest_mode']:
                     nominal_capacity = solph.Investment(
-                        ep_costs=unit_params['inv_spez'] / self.bwsf,
+                        ep_costs=(
+                            unit_params['inv_spez']
+                            * (1 - unit_params['inv_bonus_rel'])
+                            / self.bwsf
+                        ),
                         maximum=unit_params['cap_max'],
                         minimum=unit_params['cap_min']
                         )
@@ -207,7 +225,10 @@ class EnergySystem():
                     inputs={self.buses['gnw']: solph.flows.Flow()},
                     outputs={
                         self.buses['chp_node']: solph.flows.Flow(
-                            variable_costs=unit_params['op_cost_var']
+                            variable_costs=(
+                                unit_params['op_cost_var']
+                                * (1 - unit_params['op_cost_bonus_rel'])
+                                )
                             ),
                         self.buses['hnw']: solph.flows.Flow(
                             nominal_capacity=nominal_capacity,
@@ -231,6 +252,7 @@ class EnergySystem():
                     input_nw = 'enw'
                     var_cost = (
                         unit_params['op_cost_var']
+                        * (1 - unit_params['op_cost_bonus_rel'])
                         + self.param_opt['elec_consumer_charges_self']
                         )
                 elif unit_cat == 'plb':
@@ -238,6 +260,7 @@ class EnergySystem():
                     input_nw = 'gnw'
                     var_cost = (
                         unit_params['op_cost_var']
+                        * (1 - unit_params['op_cost_bonus_rel'])
                         + self.param_opt['energy_tax']
                         )
                 elif unit_cat == 'eb':
@@ -245,12 +268,17 @@ class EnergySystem():
                     input_nw = 'enw'
                     var_cost = (
                         unit_params['op_cost_var']
+                        * (1 - unit_params['op_cost_bonus_rel'])
                         + self.param_opt['elec_consumer_charges_self']
                         )
 
                 if unit_params['invest_mode']:
                     nominal_capacity = solph.Investment(
-                        ep_costs=unit_params['inv_spez'] / self.bwsf,
+                        ep_costs=(
+                            unit_params['inv_spez']
+                            * (1 - unit_params['inv_bonus_rel'])
+                            / self.bwsf
+                            ),
                         maximum=unit_params['cap_max'],
                         minimum=unit_params['cap_min']
                         )
@@ -279,7 +307,11 @@ class EnergySystem():
             if unit_cat == 'tes':
                 if unit_params['invest_mode']:
                     nominal_storage_capacity = solph.Investment(
-                        ep_costs=unit_params['inv_spez'] / self.bwsf,
+                        ep_costs=(
+                            unit_params['inv_spez']
+                            * (1 - unit_params['inv_bonus_rel'])
+                            / self.bwsf
+                            ),
                         maximum=unit_params['Q_max'],
                         minimum=unit_params['Q_min']
                         )
@@ -291,12 +323,18 @@ class EnergySystem():
                     nominal_storage_capacity=nominal_storage_capacity,
                     inputs={
                         self.buses['hnw']: solph.flows.Flow(
-                            variable_costs=unit_params['op_cost_var']
+                            variable_costs=(
+                                unit_params['op_cost_var']
+                                * (1 - unit_params['op_cost_bonus_rel'])
+                                )
                             )
                         },
                     outputs={
                         self.buses['hnw']: solph.flows.Flow(
-                            variable_costs=unit_params['op_cost_var']
+                            variable_costs=(
+                                unit_params['op_cost_var']
+                                * (1 - unit_params['op_cost_bonus_rel'])
+                                )
                             )
                         },
                     invest_relation_input_capacity=(
@@ -776,10 +814,16 @@ def calc_cost(label, E_N, param, uc, cost_df, add_var_cost=None):
     cost_df : pandas.DataFrame
         DataFrame in which the calculated cost should be inserted.
     """
-    cost_df.loc['invest', label] =  param[label]['inv_spez'] * E_N
-    cost_df.loc['op_cost_fix', label] = param[label]['op_cost_fix'] * E_N
+    cost_df.loc['invest', label] =  (
+        param[label]['inv_spez'] * E_N * (1 - param[label]['inv_bonus_rel'])
+        )
+    cost_df.loc['op_cost_fix', label] = (
+        param[label]['op_cost_fix'] * E_N
+        * (1 - param[label]['op_cost_bonus_rel'])
+        )
     cost_df.loc['op_cost_var', label] = (
         param[label]['op_cost_var'] * uc.sum()
+        * (1 - param[label]['op_cost_bonus_rel'])
         )
     if add_var_cost:
         cost_df.loc['op_cost_var', label] += add_var_cost * uc.sum()
