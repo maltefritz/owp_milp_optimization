@@ -758,6 +758,7 @@ with tab_supply:
             st.session_state["edited_elp"] = col_elp.data_editor(
                 st.session_state["edited_elp"],
                 width="stretch",
+                disabled=["index", 0],
                 key="el_elements"
             )
 
