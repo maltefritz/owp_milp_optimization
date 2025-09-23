@@ -52,7 +52,7 @@
     "scale_factor_gas": "Multipliziert die Gaspreise mit dem angegebenden Wert.",
     "scale_amp_gas": "Staucht die Gaspreise um den Median.",
     "scale_off_gas": "Verschiebt den Median der Gaspreise.",
-    "ef_gas": "Der Emissionsfaktor beschreibt die Menge an CO₂-Emissionen, die bei der Nutzung von 1 MWh Erdgas freigesetzt wird freigesetzt wird.",
+    "ef_gas": "Der Emissionsfaktor beschreibt die Menge an CO₂-Emissionen, die bei der Nutzung von 1 MWh Erdgas freigesetzt wird freigesetzt wird.\n\nTypische Emissionsfaktoren nach BAFA:\n\nErdgas: 0,2012 t $CO_2$ / MWh \n\nFlüssiggas: 0,239 t $CO_2$ / MWh \n\nBiogas: 0,152 t $CO_2$ / MWh \n\n Biodeisel: 0,070 t $CO_2$ / MWh \n\n Bioethanol: 0,043 t $CO_2$ / MWh",
     "capital_interest": "Der Kapitalzins ist ein prozentualer Zinssatz, der angibt, wie stark Investitionen mit der Zeit bewertet oder abgezinst werden. Er spiegelt die Kosten des eingesetzten Kapitals wider – also den „Preis des Geldes“ über die Laufzeit einer Investition.",
     "lifetime": "Die Betrachtungsdauer ist der Zeitraum, über den Kosten, Erträge und Wirkungen eines Systems oder Projekts erfasst und bilanziert werden.",
     "energy_tax": "Beim Einsatz von Kraft- und Brennstoffen fällt die sogenannte Energiesteuer an, was für die Nutzung von gasbefeuerten KWK-Anlangen und Spitzenlastkesseln relevant ist.",

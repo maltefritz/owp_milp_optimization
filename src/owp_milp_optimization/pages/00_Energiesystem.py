@@ -897,11 +897,10 @@ with tab_supply:
 
             col_gas.subheader('Emissionsfaktor Gas')
             ss.param_opt['ef_gas'] = col_gas.number_input(
-                'Emissionsfatkor in kg CO₂/MWh',
-                value=ss.param_opt['ef_gas']*1e3, help=ss.tt['ef_gas'],
-                key='ef_gas'
+                'Emissionsfatkor in t CO₂/MWh',
+                value=ss.param_opt['ef_gas'], help=ss.tt['ef_gas'],
+                format='%.4f', key='ef_gas'
                 )
-            ss.param_opt['ef_gas'] *= 1e-3
 
             col_vis_gas.subheader('CO₂-Preise')
             co2_prices['co2_price'] *= ss.param_opt['ef_gas']
