@@ -749,20 +749,26 @@ with tab_supply:
             col_elp.subheader(
                 'Strompreisbestandteile in ct/kWh', help=ss.tt['el_elements']
                 )
-            col_elp.dataframe(
-                {k: v for k, v in ss.bound_inputs[str(el_prices_year)].items()},
-                width='stretch',
-                key='el_elements'
-                )
 
-            cons_charger = ss.bound_inputs[str(el_prices_year)]
-            ss.param_opt['elec_consumer_charges_grid'] = round(sum(
-                val*10 for val in cons_charger['Netzbezug'].values()
-                ), 2)
-            ss.param_opt['elec_consumer_charges_self'] = round(sum(
-                val*10 for val in cons_charger['Eigennutzung'].values()
-                ), 2)
+            if "edited_elp" not in st.session_state:
+                st.session_state["edited_elp"] = {
+                    k: v for k, v in ss.bound_inputs[str(el_prices_year)].items()
+                }
 
+            st.session_state["edited_elp"] = col_elp.data_editor(
+                st.session_state["edited_elp"],
+                width="stretch",
+                key="el_elements"
+            )
+
+            edited_elp = st.session_state["edited_elp"]
+
+            ss.param_opt['elec_consumer_charges_grid'] = round(
+                sum(val * 10 for val in edited_elp["Netzbezug"].values()), 2
+            )
+            ss.param_opt['elec_consumer_charges_self'] = round(
+                sum(val * 10 for val in edited_elp["Eigennutzung"].values()), 2
+            )
 
             col_vis_el.subheader('Spotmarkt Strompreise')
             el_prices.reset_index(inplace=True)
