@@ -176,12 +176,17 @@ with tab_heat:
             col_sel.info(
                 'Bitte fügen Sie eine Datei ein.'
                 )
+            heat_load = pd.DataFrame({
+                    'Date': [pd.Timestamp('2025-01-01')],
+                    'heat_demand': [0.0],
+                })
         else:
-            if user_file.lower().endswith('csv'):
+            filename = user_file.name.lower()
+            if filename.endswith("csv"):
                 heat_load = pd.read_csv(
-                    user_file, sep=';', index_col=0, parse_dates=True
-                    )
-            elif user_file.lower().endswith('xlsx'):
+                    user_file, sep=";", index_col=0, parse_dates=True
+                )
+            elif filename.endswith("xlsx"):
                 heat_load = pd.read_excel(user_file, index_col=0)
 
     else:
@@ -199,73 +204,73 @@ with tab_heat:
             yearmask, dataset_name
             ].copy().to_frame()
 
-    dates = None
-    if dataset_name != 'Eigene Daten':
-        precise_dates = col_sel.toggle(
-            'Exakten Zeitraum wählen', key='prec_dates_heat_load'
-        )
-        if precise_dates:
-            dates = col_sel.date_input(
-                'Zeitraum auswählen:',
-                value=(
-                    dt.date(int(heat_load_year), 3, 28),
-                    dt.date(int(heat_load_year), 7, 2)
-                    ),
-                min_value=dt.date(int(heat_load_year), 1, 1),
-                max_value=dt.date(int(heat_load_year), 12, 31),
-                format='DD.MM.YYYY', help=ss.tt['date_picker_heat_load'],
-                key='date_picker_heat_load'
-                )
-            dates = [
-                dt.datetime(year=d.year, month=d.month, day=d.day) for d in dates
-                ]
-            heat_load = heat_load.loc[dates[0]:dates[1], :]
+        dates = None
+        if dataset_name != 'Eigene Daten':
+            precise_dates = col_sel.toggle(
+                'Exakten Zeitraum wählen', key='prec_dates_heat_load'
+            )
+            if precise_dates:
+                dates = col_sel.date_input(
+                    'Zeitraum auswählen:',
+                    value=(
+                        dt.date(int(heat_load_year), 3, 28),
+                        dt.date(int(heat_load_year), 7, 2)
+                        ),
+                    min_value=dt.date(int(heat_load_year), 1, 1),
+                    max_value=dt.date(int(heat_load_year), 12, 31),
+                    format='DD.MM.YYYY', help=ss.tt['date_picker_heat_load'],
+                    key='date_picker_heat_load'
+                    )
+                dates = [
+                    dt.datetime(year=d.year, month=d.month, day=d.day) for d in dates
+                    ]
+                heat_load = heat_load.loc[dates[0]:dates[1], :]
 
-        scale_hl = col_sel.toggle('Daten skalieren', key='scale_hl')
-        if scale_hl:
-            scale_method_hl = col_sel.selectbox(
-                'Methode', ['Haushalte', 'Faktor', 'Erweitert'],
-                help=ss.tt['scale_method_hl'], key='scale_method_hl'
-                )
-            if scale_method_hl == 'Haushalte':
-                if dataset_name == 'Flensburg':
-                    base_households = 50000
-                    tt_households = ss.tt['scale_households_hl_fl']
-                elif dataset_name == 'Sonderburg':
-                    base_households = 13000
-                    tt_households = ss.tt['scale_households_hl_so']
-                scale_households_hl = col_sel.number_input(
-                    'Anzahl Haushalte', value=base_households,
-                    min_value=1, step=100, help=tt_households,
-                    key='scale_households_hl'
+            scale_hl = col_sel.toggle('Daten skalieren', key='scale_hl')
+            if scale_hl:
+                scale_method_hl = col_sel.selectbox(
+                    'Methode', ['Haushalte', 'Faktor', 'Erweitert'],
+                    help=ss.tt['scale_method_hl'], key='scale_method_hl'
                     )
-                heat_load[dataset_name] *= scale_households_hl / base_households
-            elif scale_method_hl == 'Faktor':
-                scale_factor_hl = col_sel.number_input(
-                    'Skalierungsfaktor', value=1.0, step=0.1, min_value=0.0,
-                     help=ss.tt['scale_factor_hl'], key='scale_factor_hl'
-                    )
-                heat_load[dataset_name] *= scale_factor_hl
-            elif scale_method_hl == 'Erweitert':
-                scale_amp_hl = col_sel.number_input(
-                    'Stauchungsfaktor', value=1.0, step=0.1, min_value=0.0,
-                    help=ss.tt['scale_amp_hl'], key='scale_amp_hl'
-                    )
-                scale_off_hl = col_sel.number_input(
-                    'Offset', value=1.0, step=0.1, help=ss.tt['scale_off_hl'],
-                    key='scale_off_hl'
-                    )
-                heat_load_median = heat_load[dataset_name].median()
-                heat_load[dataset_name] = (
-                    (heat_load[dataset_name] - heat_load_median) * scale_amp_hl
-                    + heat_load_median + scale_off_hl
-                    )
-                # negative_mask = heat_load[dataset_name] < 0
-                if (heat_load[dataset_name] < 0).values.any():
-                    st.error(
-                        'Durch die Skalierung resultiert eine negative '
-                        + 'Wärmelast. Bitte den Offset anpassen.'
+                if scale_method_hl == 'Haushalte':
+                    if dataset_name == 'Flensburg':
+                        base_households = 50000
+                        tt_households = ss.tt['scale_households_hl_fl']
+                    elif dataset_name == 'Sonderburg':
+                        base_households = 13000
+                        tt_households = ss.tt['scale_households_hl_so']
+                    scale_households_hl = col_sel.number_input(
+                        'Anzahl Haushalte', value=base_households,
+                        min_value=1, step=100, help=tt_households,
+                        key='scale_households_hl'
                         )
+                    heat_load[dataset_name] *= scale_households_hl / base_households
+                elif scale_method_hl == 'Faktor':
+                    scale_factor_hl = col_sel.number_input(
+                        'Skalierungsfaktor', value=1.0, step=0.1, min_value=0.0,
+                        help=ss.tt['scale_factor_hl'], key='scale_factor_hl'
+                        )
+                    heat_load[dataset_name] *= scale_factor_hl
+                elif scale_method_hl == 'Erweitert':
+                    scale_amp_hl = col_sel.number_input(
+                        'Stauchungsfaktor', value=1.0, step=0.1, min_value=0.0,
+                        help=ss.tt['scale_amp_hl'], key='scale_amp_hl'
+                        )
+                    scale_off_hl = col_sel.number_input(
+                        'Offset', value=1.0, step=0.1, help=ss.tt['scale_off_hl'],
+                        key='scale_off_hl'
+                        )
+                    heat_load_median = heat_load[dataset_name].median()
+                    heat_load[dataset_name] = (
+                        (heat_load[dataset_name] - heat_load_median) * scale_amp_hl
+                        + heat_load_median + scale_off_hl
+                        )
+                    # negative_mask = heat_load[dataset_name] < 0
+                    if (heat_load[dataset_name] < 0).values.any():
+                        st.error(
+                            'Durch die Skalierung resultiert eine negative '
+                            + 'Wärmelast. Bitte den Offset anpassen.'
+                            )
 
     col_vis.subheader('Wärmelastdaten')
 
@@ -295,7 +300,10 @@ with tab_heat:
     solar_heat_flow = ss.all_solar_heat_flow[
         ss.all_solar_heat_flow.index.year == heat_load_year
         ].copy()
-    if precise_dates:
+    if "precise_dates" not in st.session_state:
+        st.session_state["precise_dates"] = False
+
+    if st.session_state["precise_dates"]:
         solar_heat_flow = solar_heat_flow.loc[dates[0]:dates[1], :]
     solar_heat_flow.reset_index(inplace=True)
     solar_heat_flow['solar_heat_flow'] *= 1e6
@@ -670,12 +678,12 @@ with tab_supply:
             col_elp, col_vis_el = st.columns([1, 2], gap='large')
 
             select_el = col_elp.selectbox(
-                'Preisart', 
-                ['flexibel', 'konstant'],
+                'Preisvariante', 
+                ['Variabel', 'Konstant', 'Eigene Daten'],
                 key='select_el'
             )
 
-            if select_el == 'flexibel':
+            if select_el == 'Variabel':
                 el_prices_years = list(ss.all_el_prices.index.year.unique())
                 if heat_load_year:
                     el_year_idx = el_prices_years.index(heat_load_year)
@@ -755,7 +763,7 @@ with tab_supply:
                             + 'Bitte die Daten angleichen.'
                             )
 
-            elif select_el == 'konstant':
+            elif select_el == 'Konstant':
                 el_prices = ss.all_el_prices.loc[heat_load['Date']]
                 el_em = ss.all_el_emissions.loc[heat_load['Date']]
 
@@ -771,6 +779,38 @@ with tab_supply:
                 )
                 el_em['ef_om'] = constant_el_em_value
 
+            elif select_el == 'Eigene Daten':
+                user_file_el = col_elp.file_uploader(
+                    'Datensatz einlesen', type=['csv', 'xlsx'],
+                    help=ss.tt['own_data_el'], key='own_data_el'
+                    )
+                if user_file_el is None:
+                    col_elp.info(
+                        'Bitte fügen Sie eine Datei ein.'
+                        )        
+                    el_prices = pd.DataFrame({
+                            'Date': [pd.Timestamp('2025-01-01')],
+                            'el_spot_price': [0.0],
+                        })
+                    el_em = pd.DataFrame({
+                            'Date': [pd.Timestamp('2025-01-01')],
+                            'ef_om': [0.0],
+                        })
+                else:
+                    el_prices = pd.DataFrame()
+                    el_em = pd.DataFrame()
+                    filename = user_file_el.name.lower()
+                    if filename.endswith("csv"):
+                        user_file_el = pd.read_csv(
+                            user_file_el, sep=';', index_col=0,
+                            parse_dates=True
+                            )
+                        el_prices['el_spot_price'] = user_file_el.iloc[:,0]
+                        el_em['ef_om'] = user_file_el.iloc[:,1]
+                    elif filename.endswith("xlsx"):
+                        user_file_el = pd.read_excel(user_file_el, index_col=0)
+                        el_prices['el_spot_price'] = user_file_el.iloc[:,0]
+                        el_em['ef_om'] = user_file_el.iloc[:,1]
 
             col_elp.subheader(
                 'Strompreisbestandteile in ct/kWh', help=ss.tt['el_elements']
@@ -835,12 +875,12 @@ with tab_supply:
             col_gas, col_vis_gas = st.columns([1, 2], gap='large')
 
             select_gas = col_gas.selectbox(
-                'Preisart', 
-                ['flexibel', 'konstant'],
+                'Preisvariante', 
+                ['Variabel', 'Konstant', 'Eigene Daten'],
                 key='select_gas'
             )
 
-            if select_gas == 'flexibel':
+            if select_gas == 'Variabel':
                 gas_prices_years = list(ss.all_el_prices.index.year.unique())
                 if heat_load_year:
                     gas_year_idx = gas_prices_years.index(heat_load_year)
@@ -869,7 +909,8 @@ with tab_supply:
                             ),
                         min_value=dt.date(int(heat_load_year), 1, 1),
                         max_value=dt.date(int(heat_load_year), 12, 31),
-                        format='DD.MM.YYYY', help=ss.tt['date_picker_gas_prices'],
+                        format='DD.MM.YYYY',
+                        help=ss.tt['date_picker_gas_prices'],
                         key='date_picker_gas_prices'
                         )
                     gas_dates = [
@@ -920,7 +961,7 @@ with tab_supply:
                             + 'Bitte die Daten angleichen.'
                             )
 
-            elif select_gas == 'konstant':
+            elif select_gas == 'Konstant':
                 gas_prices = ss.all_gas_prices.loc[heat_load['Date']]
                 co2_prices = ss.all_co2_prices.loc[heat_load['Date']]
 
@@ -935,6 +976,39 @@ with tab_supply:
                     key='constant_co2_value'
                 )
                 co2_prices['co2_price'] = constant_co2_value
+
+            elif select_gas == 'Eigene Daten':
+                user_file_gas = col_gas.file_uploader(
+                    'Datensatz einlesen', type=['csv', 'xlsx'],
+                    help=ss.tt['own_data_gas'], key='own_data_gas'
+                    )
+                if user_file_gas is None:
+                    col_gas.info(
+                        'Bitte fügen Sie eine Datei ein.'
+                        )
+                    gas_prices = pd.DataFrame({
+                            'Date': [pd.Timestamp('2025-01-01')],
+                            'gas_price': [0.0],
+                        })
+                    co2_prices = pd.DataFrame({
+                            'Date': [pd.Timestamp('2025-01-01')],
+                            'co2_price': [0.0],
+                        })
+                else:
+                    gas_prices = pd.DataFrame()
+                    co2_prices = pd.DataFrame()
+                    filename = user_file_gas.name.lower()
+                    if filename.endswith("csv"):
+                        user_data_gas = pd.read_csv(
+                            user_file_gas, sep=';', index_col=0,
+                            parse_dates=True
+                            )
+                        gas_prices['gas_price'] = user_data_gas.iloc[:,0]
+                        co2_prices['co2_price'] = user_data_gas.iloc[:,1]
+                    elif filename.endswith("xlsx"):
+                        user_data_gas = pd.read_excel(user_file_gas, index_col=0)
+                        gas_prices['gas_price'] = user_data_gas.iloc[:,0]
+                        co2_prices['co2_price'] = user_data_gas.iloc[:,1]
 
             col_vis_gas.subheader('Gaspreis')
             gas_prices.reset_index(inplace=True)
