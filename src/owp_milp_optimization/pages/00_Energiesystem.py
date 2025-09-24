@@ -182,11 +182,11 @@ with tab_heat:
                 })
         else:
             filename = user_file.name.lower()
-            if filename.endswith("csv"):
+            if filename.endswith('csv'):
                 heat_load = pd.read_csv(
                     user_file, sep=";", index_col=0, parse_dates=True
                 )
-            elif filename.endswith("xlsx"):
+            elif filename.endswith('xlsx'):
                 heat_load = pd.read_excel(user_file, index_col=0)
 
     else:
@@ -797,20 +797,18 @@ with tab_supply:
                             'ef_om': [0.0],
                         })
                 else:
-                    el_prices = pd.DataFrame()
-                    el_em = pd.DataFrame()
                     filename = user_file_el.name.lower()
-                    if filename.endswith("csv"):
+                    if filename.endswith('csv'):
                         user_file_el = pd.read_csv(
                             user_file_el, sep=';', index_col=0,
                             parse_dates=True
                             )
-                        el_prices['el_spot_price'] = user_file_el.iloc[:,0]
-                        el_em['ef_om'] = user_file_el.iloc[:,1]
-                    elif filename.endswith("xlsx"):
+                        el_prices = user_file_el[['el_spot_price']].copy()
+                        el_em = user_file_el[['ef_om']].copy()
+                    elif filename.endswith('xlsx'):
                         user_file_el = pd.read_excel(user_file_el, index_col=0)
-                        el_prices['el_spot_price'] = user_file_el.iloc[:,0]
-                        el_em['ef_om'] = user_file_el.iloc[:,1]
+                        el_prices = user_file_el[['el_spot_price']].copy()
+                        el_em = user_file_el[['ef_om']].copy()
 
             col_elp.subheader(
                 'Strompreisbestandteile in ct/kWh', help=ss.tt['el_elements']
@@ -995,20 +993,18 @@ with tab_supply:
                             'co2_price': [0.0],
                         })
                 else:
-                    gas_prices = pd.DataFrame()
-                    co2_prices = pd.DataFrame()
                     filename = user_file_gas.name.lower()
-                    if filename.endswith("csv"):
+                    if filename.endswith('csv'):
                         user_data_gas = pd.read_csv(
                             user_file_gas, sep=';', index_col=0,
                             parse_dates=True
                             )
-                        gas_prices['gas_price'] = user_data_gas.iloc[:,0]
-                        co2_prices['co2_price'] = user_data_gas.iloc[:,1]
-                    elif filename.endswith("xlsx"):
+                        gas_prices = user_data_gas[['gas_price']].copy()
+                        co2_prices = user_data_gas[['co2_price']].copy()
+                    elif filename.endswith('xlsx'):
                         user_data_gas = pd.read_excel(user_file_gas, index_col=0)
-                        gas_prices['gas_price'] = user_data_gas.iloc[:,0]
-                        co2_prices['co2_price'] = user_data_gas.iloc[:,1]
+                        gas_prices = user_data_gas[['gas_price']].copy()
+                        co2_prices = user_data_gas[['co2_price']].copy()
 
             col_vis_gas.subheader('Gaspreis')
             gas_prices.reset_index(inplace=True)
