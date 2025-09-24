@@ -669,82 +669,108 @@ with tab_supply:
             st.subheader('Elektrizitätsversorgungsdaten')
             col_elp, col_vis_el = st.columns([1, 2], gap='large')
 
-            el_prices_years = list(ss.all_el_prices.index.year.unique())
-            if heat_load_year:
-                el_year_idx = el_prices_years.index(heat_load_year)
-            else:
-                el_year_idx = len(el_prices_years) - 1
-            el_prices_year = col_elp.selectbox(
-                'Wähle das Jahr der Strompreisdaten aus',
-                el_prices_years, index=el_year_idx,
-                placeholder='Betrachtungsjahr'
+            select_el = col_elp.selectbox(
+                'Preisart', 
+                ['flexibel', 'konstant'],
+                key='select_el'
             )
-            el_prices = ss.all_el_prices[
-                ss.all_el_prices.index.year == el_prices_year
-                ].copy()
-            el_em = ss.all_el_emissions[
-                ss.all_el_emissions.index.year == el_prices_year
-                ].copy()
 
-            precise_dates = col_elp.toggle(
-                'Exakten Zeitraum wählen', key='prec_dates_el_prices'
+            if select_el == 'flexibel':
+                el_prices_years = list(ss.all_el_prices.index.year.unique())
+                if heat_load_year:
+                    el_year_idx = el_prices_years.index(heat_load_year)
+                else:
+                    el_year_idx = len(el_prices_years) - 1
+                el_prices_year = col_elp.selectbox(
+                    'Wähle das Jahr der Strompreisdaten aus',
+                    el_prices_years, index=el_year_idx,
+                    placeholder='Betrachtungsjahr'
                 )
-            if precise_dates:
-                el_dates = col_elp.date_input(
-                    'Zeitraum auswählen:',
-                    value=dates if dates is not None else (
-                        dt.date(int(heat_load_year), 3, 28),
-                        dt.date(int(heat_load_year), 7, 2)
-                        ),
-                    min_value=dt.date(int(heat_load_year), 1, 1),
-                    max_value=dt.date(int(heat_load_year), 12, 31),
-                    format='DD.MM.YYYY', help=ss.tt['date_picker_el_prices'],
-                    key='date_picker_el_prices'
-                    )
-                el_dates = [
-                    dt.datetime(year=d.year, month=d.month, day=d.day) for d in el_dates
-                    ]
-                el_prices = el_prices.loc[el_dates[0]:el_dates[1], :]
-                el_em = el_em.loc[el_dates[0]:el_dates[1], :]
+                el_prices = ss.all_el_prices[
+                    ss.all_el_prices.index.year == el_prices_year
+                    ].copy()
+                el_em = ss.all_el_emissions[
+                    ss.all_el_emissions.index.year == el_prices_year
+                    ].copy()
 
-            scale_el = col_elp.toggle('Daten skalieren', key='scale_el')
-            if scale_el:
-                scale_method_el = col_elp.selectbox(
-                    'Methode', ['Faktor', 'Erweitert'],
-                    help=ss.tt['scale_method_el'], key='scale_method_el'
+                precise_dates = col_elp.toggle(
+                    'Exakten Zeitraum wählen', key='prec_dates_el_prices'
                     )
-                if scale_method_el == 'Faktor':
-                    scale_factor_el = col_elp.number_input(
-                        'Skalierungsfaktor', value=1.0, step=0.1,
-                        min_value=0.0, help=ss.tt['scale_factor_el'],
-                        key='scale_factor_el'
+                if precise_dates:
+                    el_dates = col_elp.date_input(
+                        'Zeitraum auswählen:',
+                        value=dates if dates is not None else (
+                            dt.date(int(heat_load_year), 3, 28),
+                            dt.date(int(heat_load_year), 7, 2)
+                            ),
+                        min_value=dt.date(int(heat_load_year), 1, 1),
+                        max_value=dt.date(int(heat_load_year), 12, 31),
+                        format='DD.MM.YYYY',
+                        help=ss.tt['date_picker_el_prices'],
+                        key='date_picker_el_prices'
                         )
-                    el_prices['el_spot_price'] *= scale_factor_el
-                elif scale_method_el == 'Erweitert':
-                    scale_amp_el = col_elp.number_input(
-                        'Stauchungsfaktor', value=1.0, step=0.1, min_value=0.0,
-                        help=ss.tt['scale_amp_el'], key='scale_amp_el'
-                        )
-                    scale_off_el = col_elp.number_input(
-                        'Offset', value=1.0, step=0.1,
-                        help=ss.tt['scale_off_el'], key='scale_off_el'
-                        )
-                    el_prices_median = el_prices['el_spot_price'].median()
-                    el_prices['el_spot_price'] = (
-                        (el_prices['el_spot_price'] - el_prices_median)
-                        * scale_amp_el + el_prices_median + scale_off_el
-                        )
+                    el_dates = [
+                        dt.datetime(year=d.year, month=d.month, day=d.day) for d in el_dates
+                        ]
+                    el_prices = el_prices.loc[el_dates[0]:el_dates[1], :]
+                    el_em = el_em.loc[el_dates[0]:el_dates[1], :]
 
-            if any(heat_load):
-                nr_steps_hl = len(heat_load.index)
-                nr_steps_el = len(el_prices.index)
-                if nr_steps_hl != nr_steps_el:
-                    st.error(
-                        'Die Anzahl der Zeitschritte der Wärmelastdaten '
-                        + f'({nr_steps_hl}) stimmt nicht mit denen der '
-                        + f' Strompreiszeitreihe ({nr_steps_el}) überein. '
-                        + 'Bitte die Daten angleichen.'
+                scale_el = col_elp.toggle('Daten skalieren', key='scale_el')
+                if scale_el:
+                    scale_method_el = col_elp.selectbox(
+                        'Methode', ['Faktor', 'Erweitert'],
+                        help=ss.tt['scale_method_el'], key='scale_method_el'
                         )
+                    if scale_method_el == 'Faktor':
+                        scale_factor_el = col_elp.number_input(
+                            'Skalierungsfaktor', value=1.0, step=0.1,
+                            min_value=0.0, help=ss.tt['scale_factor_el'],
+                            key='scale_factor_el'
+                            )
+                        el_prices['el_spot_price'] *= scale_factor_el
+                    elif scale_method_el == 'Erweitert':
+                        scale_amp_el = col_elp.number_input(
+                            'Stauchungsfaktor', value=1.0, step=0.1,
+                            min_value=0.0, help=ss.tt['scale_amp_el'],
+                            key='scale_amp_el'
+                            )
+                        scale_off_el = col_elp.number_input(
+                            'Offset', value=1.0, step=0.1,
+                            help=ss.tt['scale_off_el'], key='scale_off_el'
+                            )
+                        el_prices_median = el_prices['el_spot_price'].median()
+                        el_prices['el_spot_price'] = (
+                            (el_prices['el_spot_price'] - el_prices_median)
+                            * scale_amp_el + el_prices_median + scale_off_el
+                            )
+
+                if any(heat_load):
+                    nr_steps_hl = len(heat_load.index)
+                    nr_steps_el = len(el_prices.index)
+                    if nr_steps_hl != nr_steps_el:
+                        st.error(
+                            'Die Anzahl der Zeitschritte der Wärmelastdaten '
+                            + f'({nr_steps_hl}) stimmt nicht mit denen der '
+                            + f' Strompreiszeitreihe ({nr_steps_el}) überein. '
+                            + 'Bitte die Daten angleichen.'
+                            )
+
+            elif select_el == 'konstant':
+                el_prices = ss.all_el_prices.loc[heat_load['Date']]
+                el_em = ss.all_el_emissions.loc[heat_load['Date']]
+
+                constant_el_value = col_elp.number_input(
+                    'Spotmarktpreis in €/MWh', value=80.00, step=1.00,
+                    key='constant_el_value'
+                )
+                el_prices['el_spot_price'] = constant_el_value
+
+                constant_el_em_value = col_elp.number_input(
+                    'Emissionsfaktor Strommix in kg CO₂/MWh', value=55.00,
+                    step=1.00, key='constant_el_em_value'
+                )
+                el_em['ef_om'] = constant_el_em_value
+
 
             col_elp.subheader(
                 'Strompreisbestandteile in ct/kWh', help=ss.tt['el_elements']
@@ -752,7 +778,9 @@ with tab_supply:
 
             if "edited_elp" not in st.session_state:
                 st.session_state["edited_elp"] = {
-                    k: v for k, v in ss.bound_inputs[str(el_prices_year)].items()
+                    k: v for k, v in ss.bound_inputs[
+                            str(el_prices_year)
+                        ].items()
                 }
 
             st.session_state["edited_elp"] = col_elp.data_editor(
@@ -845,8 +873,10 @@ with tab_supply:
                         key='date_picker_gas_prices'
                         )
                     gas_dates = [
-                        dt.datetime(year=d.year, month=d.month, day=d.day) for d in gas_dates
-                        ]
+                        dt.datetime(
+                            year=d.year, month=d.month, day=d.day
+                        ) for d in gas_dates
+                    ]
                     gas_prices = gas_prices.loc[gas_dates[0]:gas_dates[1], :]
                     co2_prices = co2_prices.loc[gas_dates[0]:gas_dates[1], :]
 
@@ -865,8 +895,9 @@ with tab_supply:
                         gas_prices['gas_price'] *= scale_factor_gas
                     elif scale_method_gas == 'Erweitert':
                         scale_amp_gas = col_gas.number_input(
-                            'Stauchungsfaktor', value=1.0, step=0.1, min_value=0.0,
-                            help=ss.tt['scale_amp_gas'], key='scale_amp_gas'
+                            'Stauchungsfaktor', value=1.0, step=0.1,
+                            min_value=0.0, help=ss.tt['scale_amp_gas'],
+                            key='scale_amp_gas'
                             )
                         scale_off_gas = col_gas.number_input(
                             'Offset', value=1.0, step=0.1,
@@ -890,8 +921,8 @@ with tab_supply:
                             )
 
             elif select_gas == 'konstant':
-                gas_prices = ss.all_gas_prices.copy()
-                co2_prices = ss.all_co2_prices.copy()
+                gas_prices = ss.all_gas_prices.loc[heat_load['Date']]
+                co2_prices = ss.all_co2_prices.loc[heat_load['Date']]
 
                 constant_gas_value = col_gas.number_input(
                     'Gaspreis in €/MWh', value=75.00, step=1.00,
@@ -900,7 +931,7 @@ with tab_supply:
                 gas_prices['gas_price'] = constant_gas_value
 
                 constant_co2_value = col_gas.number_input(
-                    'CO₂-Preis in €/t CO₂', value=30.00, step=1.00,
+                    'CO₂-Zertifikatpreis in €/t CO₂', value=30.00, step=1.00,
                     key='constant_co2_value'
                 )
                 co2_prices['co2_price'] = constant_co2_value
