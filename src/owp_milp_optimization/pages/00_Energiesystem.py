@@ -803,12 +803,10 @@ with tab_supply:
                             user_file_el, sep=';', index_col=0,
                             parse_dates=True
                             )
-                        el_prices = user_file_el[['el_spot_price']].copy()
-                        el_em = user_file_el[['ef_om']].copy()
                     elif filename.endswith('xlsx'):
                         user_file_el = pd.read_excel(user_file_el, index_col=0)
-                        el_prices = user_file_el[['el_spot_price']].copy()
-                        el_em = user_file_el[['ef_om']].copy()
+                    el_prices = user_file_el[['el_spot_price']].copy()
+                    el_em = user_file_el[['ef_om']].copy()
 
             col_elp.subheader(
                 'Strompreisbestandteile in ct/kWh', help=ss.tt['el_elements']
@@ -999,12 +997,10 @@ with tab_supply:
                             user_file_gas, sep=';', index_col=0,
                             parse_dates=True
                             )
-                        gas_prices = user_data_gas[['gas_price']].copy()
-                        co2_prices = user_data_gas[['co2_price']].copy()
                     elif filename.endswith('xlsx'):
                         user_data_gas = pd.read_excel(user_file_gas, index_col=0)
-                        gas_prices = user_data_gas[['gas_price']].copy()
-                        co2_prices = user_data_gas[['co2_price']].copy()
+                    gas_prices = user_data_gas[['gas_price']].copy()
+                    co2_prices = user_data_gas[['co2_price']].copy()
 
             col_vis_gas.subheader('Gaspreis')
             gas_prices.reset_index(inplace=True)
