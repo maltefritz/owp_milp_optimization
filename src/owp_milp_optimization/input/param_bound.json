@@ -218,5 +218,27 @@
             "Konzessionsabgabe": 0.0,
             "Stromsteuer": 2.05
         }
+    },
+    "2024": {
+        "Netzbezug": {
+            "EEG-Umlage": 0.0,
+            "Netzentgelte": 4.12,
+            "KWKG-Umlage": 0.28,
+            "Offshore Haftungsumlage": 0.66,
+            "AbLaV-Umlage": 0.0,
+            "StromNEV-Umlage": 0.08,
+            "Konzessionsabgabe": 0.19,
+            "Stromsteuer": 2.05
+        },
+        "Eigennutzung": {
+            "EEG-Umlage": 0.0,
+            "Netzentgelte": 0.0,
+            "KWKG-Umlage": 0.0,
+            "Offshore Haftungsumlage": 0.0,
+            "AbLaV-Umlage": 0.0,
+            "StromNEV-Umlage": 0.0,
+            "Konzessionsabgabe": 0.0,
+            "Stromsteuer": 2.05
+        }
     }
 }
