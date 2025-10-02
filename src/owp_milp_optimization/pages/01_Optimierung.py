@@ -176,7 +176,9 @@ param_overview.rename(
         'energy_tax': 'Energiesteuer (€/MWh)',
         'vNNE': 'Vermiedene Netznutzungsentgelte (€/MWh)',
         'capital_interest': 'Kapitalzins (%)',
-        'lifetime': 'Lebensdauer (a)'
+        'lifetime': 'Lebensdauer (a)',
+        'net_dist': 'Wärmenetzlänge (km)',
+        'net_inv_spez': 'Spez. Investitionskosten Wärmenetz (€/MW/m)'
         }, inplace=True
     )
 col_over.dataframe(param_overview, width='stretch')

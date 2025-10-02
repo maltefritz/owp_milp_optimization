@@ -10,5 +10,9 @@
     "TEHG_bonus": 3.0,
     "vNNE": 7.0,
     "capital_interest": 0.05,
-    "lifetime": 20
+    "lifetime": 20,
+    "net_dist": 10,
+    "net_inv_spez": 12,
+    "net_op_cost_fix": 100,
+    "net_op_cost_var": 0.1
 }

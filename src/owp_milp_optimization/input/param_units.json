@@ -7,6 +7,8 @@
         "op_cost_var": 1.20,
         "op_cost_fix": 4000.00,
         "inv_spez": 510000.00,
+        "op_cost_bonus_rel": 0.0,
+        "inv_bonus_rel": 0.0,
         "invest_mode": false,
         "cap_max": 353,
         "cap_min": 0
@@ -20,6 +22,8 @@
         "op_cost_var": 4.40,
         "op_cost_fix": 29300.00,
         "inv_spez": 880000.00,
+        "op_cost_bonus_rel": 0.0,
+        "inv_bonus_rel": 0.0,
         "invest_mode": false,
         "cap_max": 353,
         "cap_min": 0
@@ -32,6 +36,8 @@
         "op_cost_var": 1.10,
         "op_cost_fix": 1950.00,
         "inv_spez": 60000.00,
+        "op_cost_bonus_rel": 0.0,
+        "inv_bonus_rel": 0.0,
         "invest_mode": false,
         "cap_max": 353,
         "cap_min": 0
@@ -45,6 +51,8 @@
         "op_cost_var": 7.50,
         "op_cost_fix": 9750.00,
         "inv_spez": 950000.00,
+        "op_cost_bonus_rel": 0.0,
+        "inv_bonus_rel": 0.0,
         "invest_mode": false,
         "cap_max": 353,
         "cap_min": 0
@@ -55,21 +63,25 @@
         "op_cost_var": 0.22,
         "op_cost_fix": 0.04,
         "inv_spez": 199,
+        "op_cost_bonus_rel": 0.0,
+        "inv_bonus_rel": 0.0,
         "invest_mode": false,
         "A_max": 150000,
         "A_min": 0
     },
     "tes": {
         "Q_N": 5000,
+        "op_cost_var": 0.01,
+        "op_cost_fix": 3.0,
         "inv_spez": 580,
+        "op_cost_bonus_rel": 0.0,
+        "inv_bonus_rel": 0.0,
         "invest_mode": false,
         "Q_max": 8472,
         "Q_min": 0,
         "Q_in_to_cap": 0.041666667,
         "Q_out_to_cap": 0.041666667,
         "Q_rel_loss": 5e-05,
-        "op_cost_var": 0.01,
-        "op_cost_fix": 3.0,
         "balanced": true,
         "init_storage": 0
     },
@@ -81,6 +93,8 @@
         "op_cost_var": 0.90,
         "op_cost_fix": 1070.00,
         "inv_spez": 150000.00,
+        "op_cost_bonus_rel": 0.0,
+        "inv_bonus_rel": 0.0,
         "invest_mode": false,
         "cap_max": 353,
         "cap_min": 0
@@ -93,6 +107,8 @@
         "inv_spez": 0.00,
         "op_cost_var": 50.0,
         "op_cost_fix": 0.00,
+        "op_cost_bonus_rel": 0.0,
+        "inv_bonus_rel": 0.0,
         "fix": false
     }
 }
