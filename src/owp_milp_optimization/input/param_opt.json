@@ -2,6 +2,10 @@
     "Solver": "Gurobi",
     "MIPGap": 0.02,
     "TimeLimit": 600,
+    "net_dist": 10,
+    "net_inv_spez": 12,
+    "net_op_cost_fix": 100,
+    "net_op_cost_var": 0.1,
     "ef_gas": 0.2012,
     "elec_consumer_charges_grid": 52.52,
     "elec_consumer_charges_self": 20.50,
@@ -10,9 +14,5 @@
     "TEHG_bonus": 3.0,
     "vNNE": 7.0,
     "capital_interest": 0.05,
-    "lifetime": 20,
-    "net_dist": 10,
-    "net_inv_spez": 12,
-    "net_op_cost_fix": 100,
-    "net_op_cost_var": 0.1
+    "lifetime": 20
 }

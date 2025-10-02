@@ -164,12 +164,16 @@ param_overview = pd.DataFrame.from_dict(
     ss.param_opt, orient='index', columns=['Wert']
     )
 param_overview.drop(
-    index=['MIPGap', 'TimeLimit', 'heat_price', 'TEHG_bonus'], inplace=True
+    index=[
+        'MIPGap', 'TimeLimit', 'heat_price', 'TEHG_bonus',
+        'net_op_cost_fix', 'net_op_cost_var'
+        ], inplace=True
     )
 param_overview.loc['ef_gas'] *= 1000
 param_overview.loc['capital_interest'] *= 100
 param_overview.rename(
     index={
+        'net_inv_spez': 'Spez. Investitionskosten Wärmenetz (€/MW/m)',
         'ef_gas': 'Emissionsfaktor Gas (kg/MWh)',
         'elec_consumer_charges_grid': 'Strompreisbestandteile (Netz) (€/MWh)',
         'elec_consumer_charges_self': 'Strompreisbestandteile (Eigenbedarf) (€/MWh)',
@@ -177,8 +181,7 @@ param_overview.rename(
         'vNNE': 'Vermiedene Netznutzungsentgelte (€/MWh)',
         'capital_interest': 'Kapitalzins (%)',
         'lifetime': 'Lebensdauer (a)',
-        'net_dist': 'Wärmenetzlänge (km)',
-        'net_inv_spez': 'Spez. Investitionskosten Wärmenetz (€/MW/m)'
+        'net_dist': 'Wärmenetzlänge (km)'
         }, inplace=True
     )
 col_over.dataframe(param_overview, width='stretch')
