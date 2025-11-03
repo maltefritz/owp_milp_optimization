@@ -253,25 +253,25 @@ with st.container(border=True):
             ss.energy_system = EnergySystem(
                 ss.data, ss.param_units, ss.param_opt
                 )
-            st.toast('Energiesystem ist initialisiert')
+            st.toast('Energiesystem ist initialisiert', duration=8)
 
             ss.energy_system.generate_buses()
             ss.energy_system.generate_sources()
             ss.energy_system.generate_sinks()
             ss.energy_system.generate_components()
-            st.toast('Modell ist erzeugt')
+            st.toast('Modell ist erzeugt', duration=8)
 
-            st.toast('Optimierung ist gestartet')
+            st.toast('Optimierung ist gestartet', duration=8)
             solver_status = ss.energy_system.solve_model()
 
             if solver_status == 'ok':
-                st.toast('Optimierungsproblem ist gelöst')
+                st.toast('Optimierungsproblem ist gelöst', duration=8)
                 ss.energy_system.get_results()
-                st.toast('Ergebnisse sind ausgelesen')
+                st.toast('Ergebnisse sind ausgelesen', duration=8)
 
                 ss.energy_system.calc_econ_params()
                 ss.energy_system.calc_ecol_params()
-                st.toast('Postprocessing ist durchgeführt')
+                st.toast('Postprocessing ist durchgeführt', duration=8)
 
 if solver_status is not None:
     if solver_status == 'infeasable':
