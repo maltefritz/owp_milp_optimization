@@ -622,9 +622,8 @@ if chp_used:
         elprod['P_internal'] = ss.energy_system.data_all.loc[
             dates[0]:dates[1], 'P_internal'
             ]
-        elprod['el_spot_price'] = ss.all_el_prices.loc[
-            dates[0]:dates[1], 'el_spot_price'
-            ]
+        elprod['el_spot_price'] = ss.data['el_spot_price']
+
         elprod.index.names = ['Date']
         elprod.reset_index(inplace=True)
 
