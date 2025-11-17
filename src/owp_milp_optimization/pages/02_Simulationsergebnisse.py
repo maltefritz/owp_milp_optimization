@@ -571,10 +571,17 @@ with tab_unit:
             use_container_width=True
             )
     else:
+        time_units = {
+            'h': 'yearmonthdatehours(Date):O',
+            'd': 'yearmonthdate(Date):O',
+            'W': 'yearweek(Date):O',
+            'ME': 'yearmonth(Date):O',
+            'QE': 'yearquarter(Date):O'
+        }
         col_unit.altair_chart(
             alt.Chart(hprod_melt).mark_bar().encode(
                 y=alt.Y('value', title=f'{ylabel} Wärmeproduktion in MWh'),
-                x=alt.X('Date', title='Datum'),
+                x=alt.X(time_units[agg_period], title='Datum'),
                 color=alt.Color('Versorgungsanlage').scale(
                     domain=selection,
                     range=[colors[re.sub(r'\s\d', '', s)] for s in selection]
