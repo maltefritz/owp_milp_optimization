@@ -587,7 +587,7 @@ with tab_units:
                             label = f"{uinfo['name']} in €/MWh"
                         else:
                             label = f"{uinfo['name']} in {uinfo['unit']}"
-                    elif unit_cat == 'tes':
+                    elif (unit_cat == 'tes') and (uinfo['unit'] != '%'):
                         label = f"{uinfo['name']} in €/MWh"
                     else:
                         label = f"{uinfo['name']} in {uinfo['unit']}"
