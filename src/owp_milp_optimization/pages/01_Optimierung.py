@@ -116,6 +116,21 @@ with st.sidebar:
 # %% Overview
 st.header('Zusammenfassung')
 
+if 'param_units' not in ss:
+    st.error('**Error:** Es sind noch keine Parameter vorhanden. Sie müssen zuerst das Energiesystem auf der dafür vorgesehenen Seite konfigurieren.')
+
+    with st.container(border=True):
+        st.page_link(
+            'pages/00_Energiesystem.py', label='**Energiesystem konfigurieren**',
+            icon='📝', width='stretch'
+            )
+
+    icon_path = os.path.join(os.path.dirname(__file__), '..', 'img', 'icons')
+    icon_base64s = load_icon_base64s(icon_path)
+
+    footer(icon_base64s)
+    st.stop()
+
 col_es, col_over = st.columns([1, 4], gap='large')
 
 col_es.subheader('Energiesystem')
