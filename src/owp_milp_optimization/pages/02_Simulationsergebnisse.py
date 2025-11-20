@@ -298,7 +298,7 @@ with tab_ov:
                 y=alt.Y('unit', title=None),
                 x=alt.X('qsum', title='Gesamtwärmebereitstellung in MWh')
                 ),
-            use_container_width=True
+            width='stretch'
             )
 
     with st.expander('Wirtschaftliche Kennzahlen'):
@@ -553,7 +553,7 @@ with tab_unit:
                 range=[colors[re.sub(r'\s\d', '', s)] for s in selection]
                 )
             ),
-        use_container_width=True
+        width='stretch'
         )
 
     col_unit.subheader('Tatsächlicher Anlageneinsatz', help=ss.tt['adl'])
@@ -584,7 +584,7 @@ with tab_unit:
                     range=[colors[re.sub(r'\s\d', '', s)] for s in selection]
                     )
                 ),
-            use_container_width=True
+            width='stretch'
             )
     else:
         time_units = {
@@ -603,7 +603,7 @@ with tab_unit:
                     range=[colors[re.sub(r'\s\d', '', s)] for s in selection]
                     )
                 ),
-            use_container_width=True
+            width='stretch'
             )
 
 # %% MARK: Electricity Production
@@ -722,7 +722,7 @@ if chp_used:
                     ),
                 x=alt.X('Date', title='Datum')
             ),
-            use_container_width=True
+            width='stretch'
             )
 
         col_el.subheader('Stromproduktion - interne Nutzung')
@@ -734,7 +734,7 @@ if chp_used:
                     ),
                 x=alt.X('Date', title='Datum')
             ),
-            use_container_width=True
+            width='stretch'
             )
 
         col_el.subheader('Spotmarktpreise')
@@ -743,7 +743,7 @@ if chp_used:
                 y=alt.Y('el_spot_price', title='Spotmarkt Strompreis in €/MWh'),
                 x=alt.X('Date', title='Datum')
             ),
-            use_container_width=True
+            width='stretch'
             )
 
 # %% MARK: TES Content
@@ -806,7 +806,7 @@ if tes_used:
                             ),
                         x=alt.X('Date', title='Datum'),
                         ),
-                    use_container_width=True
+                    width='stretch'
                     )
 
                 domain = [
@@ -821,7 +821,7 @@ if tes_used:
                             range=[colors[re.sub(r'\s\d', '', d)] for d in domain]
                             ).legend(None)
                         ),
-                    use_container_width=True
+                    width='stretch'
                     )
 
                 col_sel.write(f'Speicher {unr}')
