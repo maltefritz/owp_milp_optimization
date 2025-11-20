@@ -170,6 +170,22 @@ with st.sidebar:
     st.image(logo_sw, width='stretch')
 
 # %% MARK: Main Window
+if 'energy_system' not in ss:
+    st.header('Simulationsergebnisse')
+    st.error('**Error:** Es sind noch keine Ergebnisse vorhanden. Sie müssen zuerst eine Optimierung auf der dafür vorgesehenen Seite durchführen.')
+
+    with st.container(border=True):
+        st.page_link(
+            'pages/01_Optimierung.py', label='**Zur Optimierung**',
+            icon='📝', width='stretch'
+            )
+
+    icon_path = os.path.join(os.path.dirname(__file__), '..', 'img', 'icons')
+    icon_base64s = load_icon_base64s(icon_path)
+
+    footer(icon_base64s)
+    st.stop()
+
 tes_used = any(
     [u.rstrip('0123456789') == 'tes' for u in ss.param_units.keys()]
     )

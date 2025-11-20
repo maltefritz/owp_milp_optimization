@@ -29,11 +29,13 @@ conda create -n my_new_env python=3.11
 conda activate my_new_env
 ```
 
-To use the optimization dashboard, the necessary dependencies have to be installed from the `requirements.txt` file. In a clean environment from the root directory the installation from this file could look like this:
+To use the optimization dashboard, the necessary dependencies have to be installed. In a clean environment from the root directory the installation from this file could look like this:
 
 ```
-python -m pip install -r requirements.txt
+python -m pip install "c:\path\to\the\package"
 ```
+
+If you have already navigated your terminal (e.g. cmd) to the package directory, the path string in the command above simplifies to a single period character ("."), which means the current working directory.
 
 ## Run the dashboard
 
