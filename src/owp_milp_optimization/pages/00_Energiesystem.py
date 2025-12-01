@@ -184,7 +184,7 @@ with tab_heat:
             filename = user_file.name.lower()
             if filename.endswith('csv'):
                 heat_load = pd.read_csv(
-                    user_file, sep=";", index_col=0, parse_dates=True
+                    user_file, sep=';', index_col=0, parse_dates=True
                 )
             elif filename.endswith('xlsx'):
                 heat_load = pd.read_excel(user_file, index_col=0)
@@ -300,10 +300,10 @@ with tab_heat:
     solar_heat_flow = ss.all_solar_heat_flow[
         ss.all_solar_heat_flow.index.year == heat_load_year
         ].copy()
-    if "precise_dates" not in st.session_state:
-        st.session_state["precise_dates"] = False
+    if 'precise_dates' not in st.session_state:
+        st.session_state['precise_dates'] = False
 
-    if st.session_state["precise_dates"]:
+    if st.session_state['precise_dates']:
         solar_heat_flow = solar_heat_flow.loc[dates[0]:dates[1], :]
     solar_heat_flow.reset_index(inplace=True)
     solar_heat_flow['solar_heat_flow'] *= 1e6
@@ -812,27 +812,31 @@ with tab_supply:
                 'Strompreisbestandteile in ct/kWh', help=ss.tt['el_elements']
                 )
 
-            if "edited_elp" not in st.session_state:
-                st.session_state["edited_elp"] = {
+            if 'edited_elp' not in st.session_state:
+                st.session_state['edited_elp'] = {
                     k: v for k, v in ss.bound_inputs[
                             str(el_prices_year)
                         ].items()
                 }
 
-            st.session_state["edited_elp"] = col_elp.data_editor(
-                st.session_state["edited_elp"],
-                width="stretch",
-                disabled=["index", 0],
-                key="el_elements"
+            for key, values in st.session_state['edited_elp'].items():
+                total = sum(values.values())
+                st.session_state['edited_elp'][key]['Summe'] = total
+
+            st.session_state['edited_elp'] = col_elp.data_editor(
+                st.session_state['edited_elp'],
+                width='stretch',
+                disabled=['index', 0],
+                key='el_elements'
             )
 
-            edited_elp = st.session_state["edited_elp"]
+            edited_elp = st.session_state['edited_elp']
 
             ss.param_opt['elec_consumer_charges_grid'] = round(
-                sum(val * 10 for val in edited_elp["Netzbezug"].values()), 2
+                sum(val * 10 for val in edited_elp['Netzbezug'].values()), 2
             )
             ss.param_opt['elec_consumer_charges_self'] = round(
-                sum(val * 10 for val in edited_elp["Eigennutzung"].values()), 2
+                sum(val * 10 for val in edited_elp['Eigennutzung'].values()), 2
             )
 
             col_vis_el.subheader('Spotmarkt Strompreise')
