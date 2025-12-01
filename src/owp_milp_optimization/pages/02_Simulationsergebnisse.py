@@ -170,6 +170,22 @@ with st.sidebar:
     st.image(logo_sw, width='stretch')
 
 # %% MARK: Main Window
+if 'energy_system' not in ss:
+    st.header('Simulationsergebnisse')
+    st.error('**Error:** Es sind noch keine Ergebnisse vorhanden. Sie müssen zuerst eine Optimierung auf der dafür vorgesehenen Seite durchführen.')
+
+    with st.container(border=True):
+        st.page_link(
+            'pages/01_Optimierung.py', label='**Zur Optimierung**',
+            icon='📝', width='stretch'
+            )
+
+    icon_path = os.path.join(os.path.dirname(__file__), '..', 'img', 'icons')
+    icon_base64s = load_icon_base64s(icon_path)
+
+    footer(icon_base64s)
+    st.stop()
+
 tes_used = any(
     [u.rstrip('0123456789') == 'tes' for u in ss.param_units.keys()]
     )
@@ -282,7 +298,7 @@ with tab_ov:
                 y=alt.Y('unit', title=None),
                 x=alt.X('qsum', title='Gesamtwärmebereitstellung in MWh')
                 ),
-            use_container_width=True
+            width='stretch'
             )
 
     with st.expander('Wirtschaftliche Kennzahlen'):
@@ -537,7 +553,7 @@ with tab_unit:
                 range=[colors[re.sub(r'\s\d', '', s)] for s in selection]
                 )
             ),
-        use_container_width=True
+        width='stretch'
         )
 
     col_unit.subheader('Tatsächlicher Anlageneinsatz', help=ss.tt['adl'])
@@ -568,7 +584,7 @@ with tab_unit:
                     range=[colors[re.sub(r'\s\d', '', s)] for s in selection]
                     )
                 ),
-            use_container_width=True
+            width='stretch'
             )
     else:
         time_units = {
@@ -587,7 +603,7 @@ with tab_unit:
                     range=[colors[re.sub(r'\s\d', '', s)] for s in selection]
                     )
                 ),
-            use_container_width=True
+            width='stretch'
             )
 
 # %% MARK: Electricity Production
@@ -706,7 +722,7 @@ if chp_used:
                     ),
                 x=alt.X('Date', title='Datum')
             ),
-            use_container_width=True
+            width='stretch'
             )
 
         col_el.subheader('Stromproduktion - interne Nutzung')
@@ -718,7 +734,7 @@ if chp_used:
                     ),
                 x=alt.X('Date', title='Datum')
             ),
-            use_container_width=True
+            width='stretch'
             )
 
         col_el.subheader('Spotmarktpreise')
@@ -727,7 +743,7 @@ if chp_used:
                 y=alt.Y('el_spot_price', title='Spotmarkt Strompreis in €/MWh'),
                 x=alt.X('Date', title='Datum')
             ),
-            use_container_width=True
+            width='stretch'
             )
 
 # %% MARK: TES Content
@@ -790,7 +806,7 @@ if tes_used:
                             ),
                         x=alt.X('Date', title='Datum'),
                         ),
-                    use_container_width=True
+                    width='stretch'
                     )
 
                 domain = [
@@ -805,7 +821,7 @@ if tes_used:
                             range=[colors[re.sub(r'\s\d', '', d)] for d in domain]
                             ).legend(None)
                         ),
-                    use_container_width=True
+                    width='stretch'
                     )
 
                 col_sel.write(f'Speicher {unr}')

@@ -286,7 +286,7 @@ with tab_heat:
                 y=alt.Y('heat_demand', title='Stündliche Wärmelast in MWh'),
                 x=alt.X('Date', title='Datum')
             ),
-            use_container_width=True
+            width='stretch'
         )
 
     col_sel.subheader('Wärmeerlöse')
@@ -663,7 +663,7 @@ with tab_supply:
                             title='Spezifische Einstrahlung in Wh/m²'),
                     x=alt.X('Date', title='Datum')
                 ),
-                use_container_width=True
+                width='stretch'
             )
             solar_heat_flow['solar_heat_flow'] *= 1e-6
 
@@ -851,7 +851,7 @@ with tab_supply:
                         ),
                     x=alt.X('Date', title='Datum')
                     ),
-                use_container_width=True
+                width='stretch'
                 )
 
             col_vis_el.subheader('Emissionsfaktoren des Strommixes')
@@ -864,7 +864,7 @@ with tab_supply:
                         ),
                     x=alt.X('Date', title='Datum')
                     ),
-                use_container_width=True
+                width='stretch'
                 )
 
 # %% MARK: Gas & CO₂
@@ -1017,7 +1017,7 @@ with tab_supply:
                         ),
                     x=alt.X('Date', title='Datum')
                     ),
-                use_container_width=True
+                width='stretch'
                 )
 
             col_gas.subheader('Emissionsfaktor Gas')
@@ -1038,7 +1038,7 @@ with tab_supply:
                         ),
                     x=alt.X('Date', title='Datum')
                     ),
-                use_container_width=True
+                width='stretch'
                 )
 
 # %% MARK: Aggregate Data
