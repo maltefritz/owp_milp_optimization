@@ -812,22 +812,24 @@ with tab_supply:
                 'Strompreisbestandteile in ct/kWh', help=ss.tt['el_elements']
                 )
 
-            if 'edited_elp' not in st.session_state:
-                st.session_state['edited_elp'] = {
-                    k: v for k, v in ss.bound_inputs[
-                            str(el_prices_year)
-                        ].items()
-                }
-
-            for key, values in st.session_state['edited_elp'].items():
-                total = sum(values.values())
-                st.session_state['edited_elp'][key]['Summe'] = total
+            # if 'edited_elp' not in st.session_state:
+            st.session_state['edited_elp'] = {
+                k: v for k, v in ss.bound_inputs[
+                        str(el_prices_year)
+                    ].items()
+            }
 
             st.session_state['edited_elp'] = col_elp.data_editor(
                 st.session_state['edited_elp'],
                 width='stretch',
                 disabled=['index', 0],
                 key='el_elements'
+            )
+
+            elp_sum = col_elp.dataframe(
+                pd.DataFrame(st.session_state['edited_elp']).sum().to_frame(name='Summe').T,
+                width='stretch',
+                key='elp_sum'
             )
 
             edited_elp = st.session_state['edited_elp']
