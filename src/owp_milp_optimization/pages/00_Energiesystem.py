@@ -1022,7 +1022,7 @@ with tab_supply:
 
             col_gas.subheader('Emissionsfaktor Gas')
             ss.param_opt['ef_gas'] = col_gas.number_input(
-                'Emissionsfatkor in t CO₂/MWh',
+                'Emissionsfaktor in t CO₂/MWh',
                 value=ss.param_opt['ef_gas'], help=ss.tt['ef_gas'],
                 format='%.4f', key='ef_gas'
                 )
