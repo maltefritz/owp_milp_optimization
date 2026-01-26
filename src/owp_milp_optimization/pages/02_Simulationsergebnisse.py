@@ -510,13 +510,14 @@ with tab_unit:
             'Quartalsweise': 'QE'
         }
         agg_period_name = col_sel.selectbox(
-            'Aggregationszeitraum wählen:', options=list(agg_periods.keys())
+            'Aggregationszeitraum wählen:', options=list(agg_periods.keys()),
+                key='select_agg_time_span_dispatch'
         )
         agg_period = agg_periods[agg_period_name]
 
         agg_method = col_sel.selectbox(
             'Aggregationsmethode wählen:', options=['Mittelwert', 'Summe'],
-            help=ss.tt['agg_method'], key='agg_method'
+            help=ss.tt['agg_method'], key='agg_method_dispatch'
         )
     else:
         agg_period_name = 'Stündlich'
@@ -657,7 +658,8 @@ if chp_used:
             }
             agg_period_name = col_sel.selectbox(
                 'Aggregationszeitraum wählen:',
-                options=list(agg_periods.keys())
+                options=list(agg_periods.keys()),
+                key='select_agg_time_span_el'
             )
             agg_period = agg_periods[agg_period_name]
 
