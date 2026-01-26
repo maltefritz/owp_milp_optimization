@@ -316,7 +316,7 @@ with tab_net:
     col_spec_mw, col_spec_km, col_abs = st.columns([1, 1, 1], gap='large')
 
     ss.param_opt['net_dist'] = col_spec_mw.number_input(
-        'Netzlänge in km', value=ss.param_opt['net_dist'],
+        'Trassenlänge in km', value=ss.param_opt['net_dist'],
         help=ss.tt['net_dist'], key='net_dist'
     )
 
