@@ -24,7 +24,16 @@ extensions = [
     'sphinx_copybutton',
     'sphinx_design',
     'sphinxcontrib.bibtex',
+    'sphinx.ext.mathjax',
 ]
+
+mathjax3_config = {
+    'tex': {
+        'tags': 'all',
+        'tagSide': 'right',
+        'tagIndent': '0em',
+    }
+}
 
 # landing page
 # master_doc = 'contents'
@@ -66,6 +75,10 @@ extlinks = {
     "commit": (f"{github_repo_url}/commit/%s", "%s"),  # noqa: WPS323
 }
 
+# Automatic numbering of figures, tables, etc.
+numfig = True
+numfig_secnum_depth = 1
+
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.
@@ -92,9 +105,9 @@ html_split_index = False
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
-# html_css_files = [
-#     'css/custom.css',
-# ]
+html_css_files = [
+    'css/custom.css',
+]
 # html_additional_pages = {
 #     "index": "index.html"
 # }
