@@ -138,9 +138,21 @@ with st.sidebar:
     st.image(logo_bo, width='stretch')
 
     logo_gp = os.path.join(
-        os.path.dirname(__file__), '..', 'img', 'Logo_GP_Joule.png'
+        os.path.dirname(__file__), '..', 'img', 'Logo_GP_Joule.svg'
         )
     st.image(logo_gp, width='stretch')
+
+    logo_sw = os.path.join(
+        os.path.dirname(__file__), '..', 'img',
+        'Logo_Kreis_Schleswig-Flensburg.svg'
+        )
+    st.image(logo_sw, width='stretch')
+
+    logo_sw = os.path.join(
+        os.path.dirname(__file__), '..', 'img',
+        'Logo_Klimaschutzmanagement.svg'
+        )
+    st.image(logo_sw, width='stretch')
 
     logo_sw = os.path.join(
         os.path.dirname(__file__), '..', 'img', 'Logo_SW_Flensburg.svg'
