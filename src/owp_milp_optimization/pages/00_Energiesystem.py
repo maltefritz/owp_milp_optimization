@@ -1070,7 +1070,7 @@ with tab_misc:
 
     ss.param_opt['lifetime'] = col_econ.number_input(
         'Betrachtungsdauer in Jahre', value=ss.param_opt['lifetime'],
-        help=ss.tt['capital_interest'], key='lifetime'
+        help=ss.tt['lifetime'], key='lifetime'
         )
 
     ss.param_opt['energy_tax'] = col_econ.number_input(
