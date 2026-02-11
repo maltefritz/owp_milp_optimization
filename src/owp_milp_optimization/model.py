@@ -112,13 +112,13 @@ class EnergySystem():
                 if unit_params['invest_mode']:
                     nominal_capacity = solph.Investment(
                         ep_costs=(
-                            unit_params['inv_spez']
+                            unit_params['inv_spez'] / self.bwsf
                             * (1 - unit_params['inv_bonus_rel'])
-                            / self.bwsf
-                            ),
+                            + unit_params['op_cost_fix']
+                        ),
                         maximum=unit_params['A_max'],
                         minimum=unit_params['A_min']
-                        )
+                    )
                 else:
                     nominal_capacity = unit_params['A_N']
 
@@ -147,13 +147,13 @@ class EnergySystem():
                 if unit_params['invest_mode']:
                     nominal_capacity = solph.Investment(
                         ep_costs=(
-                            unit_params['inv_spez']
+                            unit_params['inv_spez'] / self.bwsf
                             * (1 - unit_params['inv_bonus_rel'])
-                            / self.bwsf
+                            + unit_params['op_cost_fix']
                         ),
                         maximum=unit_params['cap_max'],
                         minimum=unit_params['cap_min']
-                        )
+                    )
                 else:
                     nominal_capacity = unit_params['cap_N']
 
@@ -210,13 +210,13 @@ class EnergySystem():
                 if unit_params['invest_mode']:
                     nominal_capacity = solph.Investment(
                         ep_costs=(
-                            unit_params['inv_spez']
+                            unit_params['inv_spez'] / self.bwsf
                             * (1 - unit_params['inv_bonus_rel'])
-                            / self.bwsf
+                            + unit_params['op_cost_fix']
                         ),
                         maximum=unit_params['cap_max'],
                         minimum=unit_params['cap_min']
-                        )
+                    )
                 else:
                     nominal_capacity = unit_params['cap_N']
 
@@ -275,13 +275,13 @@ class EnergySystem():
                 if unit_params['invest_mode']:
                     nominal_capacity = solph.Investment(
                         ep_costs=(
-                            unit_params['inv_spez']
+                            unit_params['inv_spez'] / self.bwsf
                             * (1 - unit_params['inv_bonus_rel'])
-                            / self.bwsf
-                            ),
+                            + unit_params['op_cost_fix']
+                        ),
                         maximum=unit_params['cap_max'],
                         minimum=unit_params['cap_min']
-                        )
+                    )
                 else:
                     nominal_capacity = unit_params['cap_N']
 
@@ -308,13 +308,13 @@ class EnergySystem():
                 if unit_params['invest_mode']:
                     nominal_storage_capacity = solph.Investment(
                         ep_costs=(
-                            unit_params['inv_spez']
+                            unit_params['inv_spez'] / self.bwsf
                             * (1 - unit_params['inv_bonus_rel'])
-                            / self.bwsf
-                            ),
+                            + unit_params['op_cost_fix']
+                        ),
                         maximum=unit_params['Q_max'],
                         minimum=unit_params['Q_min']
-                        )
+                    )
                 else:
                     nominal_storage_capacity = unit_params['Q_N']
 

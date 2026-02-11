@@ -328,7 +328,7 @@ with tab_net:
     col_spec_mw, col_spec_km, col_abs = st.columns([1, 1, 1], gap='large')
 
     ss.param_opt['net_dist'] = col_spec_mw.number_input(
-        'Netzlänge in km', value=ss.param_opt['net_dist'],
+        'Trassenlänge in km', value=ss.param_opt['net_dist'],
         help=ss.tt['net_dist'], key='net_dist'
     )
 
@@ -1082,7 +1082,7 @@ with tab_misc:
 
     ss.param_opt['lifetime'] = col_econ.number_input(
         'Betrachtungsdauer in Jahre', value=ss.param_opt['lifetime'],
-        help=ss.tt['capital_interest'], key='lifetime'
+        help=ss.tt['lifetime'], key='lifetime'
         )
 
     ss.param_opt['energy_tax'] = col_econ.number_input(

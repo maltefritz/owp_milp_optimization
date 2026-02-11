@@ -42,7 +42,7 @@ If you have already navigated your terminal (e.g. cmd) to the package directory,
 Running the optimization dashboard is as easy as running the following command from the root directory in your virtual environment with dependencies installed:
 
 ```
-streamlit run src\Home.py
+streamlit run src\owp_milp_optimization\Home.py
 ```
 
 ## License
