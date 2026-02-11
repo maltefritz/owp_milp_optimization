@@ -183,7 +183,7 @@ if 'Solarthermie' in ss.units:
         }, inplace=True
     )
 
-col_over.dataframe(data_overview.T, width='stretch')
+col_over.dataframe(data_overview.T.style.format('{:.2f}'), width='stretch')
 
 col_over.subheader('Parameter im Wärmeversorgungssystem')
 
