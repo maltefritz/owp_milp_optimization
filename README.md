@@ -4,7 +4,8 @@
 
 Energy system optimization dashboard using mixed integer linear programming.
 Developed as part of the project "Offene Wärmespeicherplanung (OWP)" as part of
-*Inno!Nord* of the *T!Raum* initiative funded by the German Federal Ministry of Education and Research.
+*Inno!Nord* of the *T!Raum* initiative funded by the German Federal Ministry of
+Research, Technology and Space.
 
 ## Key Features
 
@@ -15,7 +16,7 @@ Developed as part of the project "Offene Wärmespeicherplanung (OWP)" as part of
 
 ## Funding
 
-[<img src="src\owp_milp_optimization\img\Logos_Förderer_ohnePTJ.png">](https://www.innovation-strukturwandel.de/strukturwandel/de/innovation-strukturwandel/t_raum/t_raum_node.html)
+[<img src="src\owp_milp_optimization\img\Logos_Förderer_ohnePTJ_BMFTR.png">](https://www.innovation-strukturwandel.de/strukturwandel/de/innovation-strukturwandel/t_raum/t_raum_node.html)
 
 ## Installation
 
