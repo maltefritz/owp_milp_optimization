@@ -349,7 +349,9 @@ with tab_ov:
             )
         col4.metric(
             'Anlagenkosten (gesamt)',
-            format_sep(ss.energy_system.cost_df.sum().sum()),
+            format_sep(ss.energy_system.cost_df.loc[[
+                'invest', 'op_cost_fix', 'op_cost_var'
+            ]].sum().sum()),
             border=True, help=ss.tt['cost_units']
             )
         col4.metric(
