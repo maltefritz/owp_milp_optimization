@@ -157,6 +157,25 @@ with st.expander('Verwendete Software'):
         """
         )
 
+with st.expander('Publikationen'):
+    st.success(
+        """
+        [1] Malte Fritz, Jonas Freißmann & Ilja Tuschy. Open Source Web 
+        Dashboard zur Unterstützung der Konzeption von 
+        Wärmeversorgungssystemen. 
+        Tagungsband zur 3. Konferenz der Norddeutschen Wärmeforschung, 
+        S. 31-36. Hochschule Bremen, 2026. 
+        [doi:10.26092/elib/5016](https://doi.org/10.26092/elib/5016).
+
+        [2] Jonas Freißmann, Malte Fritz & Ilja Tuschy. 
+        Hochtemperaturwärmepumpen in der Nah- und Fernwärmeversorgung - 
+        Technologieperspektive für den kurz- und mittelfristigen Einsatz 
+        in multivalenten Systemen. Abschlussbericht, Zentrum für 
+        nachhaltige Energiesysteme, 2024. 
+        [doi:10.5281/zenodo.13311533](https://doi.org/10.5281/zenodo.13311533).
+        """
+        )
+
 with st.expander('Disclaimer'):
     st.warning(
         """
