@@ -298,7 +298,7 @@ class EnergySystem():
                             )
                         },
                     conversion_factors={
-                        self.buses[input_nw]: unit_params[eff]
+                        self.buses[input_nw]: 1 / unit_params[eff]
                         }
                     )
 
