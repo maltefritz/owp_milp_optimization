@@ -1040,13 +1040,13 @@ with tab_supply:
                 )
 
             col_vis_gas.subheader('CO₂-Preise')
-            co2_prices['co2_price'] *= ss.param_opt['ef_gas']
+
             co2_prices.reset_index(inplace=True)
             col_vis_gas.altair_chart(
                 alt.Chart(co2_prices).mark_line(color='#74ADC0').encode(
                     y=alt.Y(
                         'co2_price',
-                        title='CO₂-Preise in €/MWh'
+                        title='CO₂-Preise in €/kg'
                         ),
                     x=alt.X('Date', title='Datum')
                     ),
