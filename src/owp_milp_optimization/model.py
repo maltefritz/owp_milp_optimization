@@ -131,10 +131,13 @@ class EnergySystem():
                                 * (1 - unit_params['op_cost_bonus_rel'])
                             ),
                             nominal_capacity=nominal_capacity,
-                            fix=self.data['solar_heat_flow']
+                            fix=(
+                                self.data['solar_heat_flow']
+                                * unit_params['eta_col']
                             )
-                        }
-                    )
+                        )
+                    }
+                )
 
                 self.es.add(self.comps[unit])
 
