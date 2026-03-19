@@ -451,59 +451,50 @@ class EnergySystem():
 
     def get_results(self):
         self.results = solph.processing.results(self.model)
-        # breakpoint()
+
         # self.meta_results = solph.processing.meta_results(self.model)
 
-        concat_data = []
+        time_series_data = []
+        capacity_data = []
+
+        # heat network
+        results_hnw = views.node(self.results, 'heat network')
+        time_series_data += [results_hnw['sequences']]
+        if 'scalars' in results_hnw.keys():
+            capacity_data += [results_hnw['scalars']]
+
+        # gas network
         if self.gas_used:
-            data_gnw = views.node(self.results, 'gas network')['sequences']
-            concat_data += [data_gnw]
+            results_gnw = views.node(self.results, 'gas network')
+            time_series_data += [results_gnw['sequences']]
+            if 'scalars' in results_gnw.keys():
+                capacity_data += [results_gnw['scalars']]
+
+        # electricity network
         if self.el_used:
-            data_enw = views.node(
-                self.results, 'electricity network'
-                )['sequences']
-            concat_data += [data_enw]
-        data_hnw = views.node(self.results, 'heat network')['sequences']
-        concat_data += [data_hnw]
+            results_enw = views.node(self.results, 'electricity network')
+            time_series_data += [results_enw['sequences']]
+            if 'scalars' in results_enw.keys():
+                capacity_data += [results_enw['scalars']]
 
+        # chp node
         if self.chp_used:
-            data_chpnode = views.node(self.results, 'chp node')['sequences']
-            concat_data += [data_chpnode]
+            results_chpnode = views.node(self.results, 'chp node')
+            time_series_data += [results_chpnode['sequences']]
+            if 'scalars' in results_chpnode.keys():
+                capacity_data += [results_chpnode['scalars']]
 
-        try:
-            self.data_caps = (
-                views.node(self.results, 'heat network')['scalars']
-                )
-        except KeyError:
-            self.data_caps = pd.Series()
-
+        # storages
         if self.tes_used:
-            data_tes = None
             for unit, unit_params in self.param_units.items():
                 if unit.rstrip('0123456789') == 'tes':
-                    next_data_tes = views.node(self.results, unit)['sequences']
-                    if unit_params['invest_mode']:
-                        next_cap_tes = (
-                            views.node(
-                                self.results, unit
-                                )['scalars'][((unit, 'None'), 'invest')]
-                            )
-                    else:
-                        next_cap_tes = unit_params['Q_N']
-                    if data_tes is None:
-                        data_tes = next_data_tes
-                    else:
-                        data_tes = pd.concat([data_tes, next_data_tes], axis=1)
-                    self.data_caps = pd.concat([
-                        self.data_caps,
-                        pd.Series(
-                            next_cap_tes, index=[((unit, 'None'), 'invest')]
-                            )
-                        ])
-            concat_data += [data_tes]
+                    results_tes = views.node(self.results, unit)
+                    time_series_data += [results_tes['sequences']]
+                    if 'scalars' in results_tes.keys():
+                        capacity_data += [results_tes['scalars']]
 
         # Combine all data and relabel the column names
-        self.data_all = pd.concat(concat_data, axis=1)
+        self.data_all = pd.concat(time_series_data, axis=1)
         if self.data_all.iloc[-1, :].isna().values.all():
             self.data_all.drop(self.data_all.tail(1).index, inplace=True)
 
@@ -512,6 +503,10 @@ class EnergySystem():
             :, ~self.data_all.columns.duplicated()
             ].copy()
 
+        if capacity_data:
+            self.data_caps = pd.concat(capacity_data, axis=0)
+        else:
+            self.data_caps = pd.Series()
         result_labeling(self.data_caps)
 
         for unit, unit_params in self.param_units.items():
@@ -533,11 +528,16 @@ class EnergySystem():
 
         self.data_caps = self.data_caps.to_frame().transpose()
         self.data_caps.reset_index(inplace=True, drop=True)
+        self.data_caps = (
+            self.data_caps.loc[:,~self.data_caps.columns.duplicated()].copy()
+        )
         if None in self.data_caps.columns:
             self.data_caps.drop(columns=[None], inplace=True)
+        drop_cols = []
         for col in self.data_caps.columns:
             if ('total' in str(col)) or ('0' in str(col)):
-                self.data_caps.drop(columns=col, inplace=True)
+                drop_cols += [col]
+        self.data_caps.drop(columns=drop_cols, inplace=True)
 
         try:
             self.data_all = self.data_all.reindex(
@@ -876,6 +876,8 @@ def check_column(col, debug):
                 return f'state_{col[0][0]}'
             elif col[1] == 'status_nominal':
                 return f'state_nom_{col[0][0]}'
+            elif col[1] == 'total':
+                return f'total_{col[0][0]}'
         elif col[0][0].rstrip('0123456789') == 'tes':
             if col[1] == 'flow':
                 return f'Q_out_{col[0][0]}'
@@ -896,6 +898,8 @@ def check_column(col, debug):
                 return f'state_{col[0][0]}'
             elif col[1] == 'status_nominal':
                 return f'state_nom_{col[0][0]}'
+            elif col[1] == 'total':
+                return f'total_{col[0][0]}'
 
     elif col[0][0] == 'heat network':
         if col[0][1].rstrip('0123456789') == 'tes':
@@ -949,6 +953,8 @@ def check_column(col, debug):
             return f'storage_content_{col[0][0]}'
         elif col[1] == 'invest':
             return f'cap_{col[0][0]}'
+        elif col[1] == 'total':
+            return f'total_{col[0][0]}'
 
     else:
         if debug:
