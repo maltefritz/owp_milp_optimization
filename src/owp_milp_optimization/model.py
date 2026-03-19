@@ -309,7 +309,7 @@ class EnergySystem():
 
             if unit_cat == 'tes':
                 if unit_params['invest_mode']:
-                    nominal_storage_capacity = solph.Investment(
+                    nominal_capacity = solph.Investment(
                         ep_costs=(
                             unit_params['inv_spez'] / self.bwsf
                             * (1 - unit_params['inv_bonus_rel'])
@@ -319,11 +319,11 @@ class EnergySystem():
                         minimum=unit_params['Q_min']
                     )
                 else:
-                    nominal_storage_capacity = unit_params['Q_N']
+                    nominal_capacity = unit_params['Q_N']
 
                 self.comps[unit] = solph.components.GenericStorage(
                     label=unit,
-                    nominal_storage_capacity=nominal_storage_capacity,
+                    nominal_capacity=nominal_capacity,
                     inputs={
                         self.buses['hnw']: solph.flows.Flow(
                             variable_costs=(
