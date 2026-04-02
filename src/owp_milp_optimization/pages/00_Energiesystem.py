@@ -348,7 +348,21 @@ with tab_net:
             'Trassenlänge in km',
             value=ss.param_opt['net_dist'],
             help=ss.tt['net_dist'],
-            key='net_dist'
+            key=f'net_dist'
+        )
+
+        Q_max = col_spec_km.number_input(
+            'Spitzenlast in MW',
+            value=heat_load['heat_demand'].max(),
+            disabled=True,
+            key=f'Q_max_{heat_load}',
+        )
+
+        Q_dot_total = col_abs.number_input(
+            'Jährliche Wärmemenge in MWh',
+            value=heat_load['heat_demand'].sum(),
+            disabled=True,
+            key=f'Q_dot_total_{heat_load}'
         )
 
         if base_val_net == 'Trassenlänge':
