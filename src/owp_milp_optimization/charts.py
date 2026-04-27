@@ -74,7 +74,7 @@ def create_heat_production_chart(
     return alt.Chart(qsum).mark_bar(color='#B54036').encode(
         y=alt.Y('unit', title=None),
         x=alt.X('qsum', title='Gesamtwärmebereitstellung in MWh')
-    )
+    ).properties(width=800)
 
 
 def create_ordered_duration_line_chart(
@@ -137,7 +137,7 @@ def create_ordered_duration_line_chart(
             domain=units,
             range=[COLORS.get(re.sub(r'\s\d', '', s), '#999999') for s in units]
         )
-    )
+    ).properties(width=600)
 
 
 def create_dispatch_timeseries_chart(
@@ -216,4 +216,4 @@ def create_dispatch_timeseries_chart(
             domain=units,
             range=[COLORS.get(re.sub(r'\s\d', '', s), '#999999') for s in units]
         )
-    )
+    ).properties(width=600)
