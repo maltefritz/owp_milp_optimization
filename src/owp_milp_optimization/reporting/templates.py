@@ -34,15 +34,13 @@ def get_report_template():
     <!-- System Configuration -->
     <div class="section">
         <div class="section-title">Systemkonfiguration</div>
-        
-        <div class="subsection-title">Auslegung</div>
+
+        <div class="subsection-title">Optimierte Anlagenkapazitäten</div>
         <div class="grid-2">
             <div class="image-container">
                 {{ topology_image }}
-                <div class="image-caption">Energiesystem-Topologie</div>
             </div>
             <div>
-                <div class="subsection-title">Optimierte Anlagenkapazitäten</div>
                 {{ capacities_table }}
             </div>
         </div>

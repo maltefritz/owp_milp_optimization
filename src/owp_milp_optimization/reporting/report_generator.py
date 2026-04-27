@@ -48,10 +48,10 @@ def encode_image_to_base64(image_path: str) -> str:
     """Encode image file to base64 data URI."""
     if not os.path.exists(image_path):
         return ""
-    
+
     with open(image_path, 'rb') as f:
         data = f.read()
-    
+
     # Determine MIME type
     ext = Path(image_path).suffix.lower()
     mime_types = {
@@ -61,7 +61,7 @@ def encode_image_to_base64(image_path: str) -> str:
         '.svg': 'image/svg+xml',
     }
     mime_type = mime_types.get(ext, 'image/png')
-    
+
     img_base64 = base64.b64encode(data).decode('utf-8')
     return f'data:{mime_type};base64,{img_base64}'
 
@@ -70,7 +70,7 @@ def format_number(value: float, decimals: int = 1) -> str:
     """Format number with thousand separators."""
     if pd.isna(value):
         return '-'
-    
+
     formatted = f'{value:,.{decimals}f}'.replace(',', 'X').replace('.', ',').replace('X', '.')
     return formatted
 
@@ -78,7 +78,7 @@ def format_number(value: float, decimals: int = 1) -> str:
 def create_kpi_cards(key_params: Dict[str, Any]) -> str:
     """Create HTML for KPI cards."""
     kpi_template = Template(get_kpi_card_template())
-    
+
     kpi_labels = {
         'LCOH': 'Wärmegestehungskosten (€/MWh)',
         'LCOH_incl_net': 'LCOH inkl. Netz (€/MWh)',
@@ -89,12 +89,12 @@ def create_kpi_cards(key_params: Dict[str, Any]) -> str:
         'total_heat_demand': 'Gesamtwärmebedarf (MWh)',
         'Total Emissions OM': 'Gesamtemissionen (t)',
     }
-    
+
     cards_html = []
     for key, label in kpi_labels.items():
         if key in key_params:
             value = key_params[key]
-            
+
             # Format based on unit
             if 'emission' in label.lower():
                 value = format_number(value / 1e3, 0)
@@ -102,10 +102,10 @@ def create_kpi_cards(key_params: Dict[str, Any]) -> str:
                 value = format_number(value, 2)
             else:
                 value = format_number(value, 0)
-            
+
             card_html = kpi_template.render(label=label, value=value)
             cards_html.append(card_html)
-    
+
     return '\n'.join(cards_html)
 
 
@@ -113,13 +113,13 @@ def create_capacities_table(overview_caps: pd.DataFrame) -> str:
     """Create HTML table for capacities."""
     df = overview_caps.T.copy()
     df = df.map(lambda x: format_number(x, 1) if isinstance(x, (int, float)) else x)
-    
+
     html = '<table>'
     html += '<tr><th>Anlage</th><th>Kapazität</th></tr>'
-    
+
     for idx, row in df.iterrows():
         html += f'<tr><td>{idx}</td><td class="text-right">{row.iloc[0]}</td></tr>'
-    
+
     html += '</table>'
     return html
 
@@ -127,7 +127,7 @@ def create_capacities_table(overview_caps: pd.DataFrame) -> str:
 def create_costs_table(cost_df: pd.DataFrame, key_params: Dict[str, Any]) -> str:
     """Create HTML table for cost breakdown."""
     unit_cost = cost_df.copy()
-    
+
     # Add network costs
     unit_cost.loc['invest', 'Wärmenetz'] = key_params.get('invest_net_total', 0)
     unit_cost.loc['op_cost_fix', 'Wärmenetz'] = key_params.get('cost_net_fix_total', 0)
@@ -135,7 +135,7 @@ def create_costs_table(cost_df: pd.DataFrame, key_params: Dict[str, Any]) -> str
     unit_cost.loc['op_cost', 'Wärmenetz'] = (
         key_params.get('cost_net_fix_total', 0) + key_params.get('cost_net_var_total', 0)
     )
-    
+
     # Rename index
     unit_cost.rename(
         index={
@@ -146,16 +146,16 @@ def create_costs_table(cost_df: pd.DataFrame, key_params: Dict[str, Any]) -> str
         },
         inplace=True
     )
-    
+
     unit_cost.drop('Gesamtbetriebskosten (€)', axis=0, inplace=True)
-    
+
     # Format values
     unit_cost = unit_cost.map(
         lambda x: format_number(int(x), 0)
         if isinstance(x, (int, float))
         else x
     )
-    
+
     html = '<table>'
     html += '<tr><th></th>'
     for unit in unit_cost.columns:
@@ -165,13 +165,13 @@ def create_costs_table(cost_df: pd.DataFrame, key_params: Dict[str, Any]) -> str
             unit = f'{longnames[ucat]} {unr}'
         html += f'<th class="text-right">{unit}</th>'
     html += '</tr>'
-    
+
     for idx, row in unit_cost.iterrows():
         html += f'<tr><td>{idx}</td>'
         for val in row:
             html += f'<td class="text-right">{val}</td>'
         html += '</tr>'
-    
+
     html += '</table>'
     return html
 
@@ -179,21 +179,21 @@ def create_costs_table(cost_df: pd.DataFrame, key_params: Dict[str, Any]) -> str
 def create_emission_cards(key_params: Dict[str, Any]) -> str:
     """Create HTML for emission KPI cards."""
     kpi_template = Template(get_kpi_card_template())
-    
+
     emission_labels = {
         'Total Emissions OM': 'Gesamtemissionen (t)',
         'Emissions OM (Gas)': 'Durch Gasbezug (t)',
         'Emissions OM (Electricity)': 'Durch Strombezug (t)',
         'Emissions OM (Spotmarket)': 'Gutschriften (t)',
     }
-    
+
     cards_html = []
     for key, label in emission_labels.items():
         if key in key_params:
             value = format_number(key_params[key] / 1e3, 0)
             card_html = kpi_template.render(label=label, value=value)
             cards_html.append(card_html)
-    
+
     return '\n'.join(cards_html)
 
 
@@ -205,17 +205,20 @@ def create_parameters_table(param_opt: Dict[str, Any]) -> str:
         'lifetime': 'Anlagenlebensdauer (Jahre)',
         'ef_gas': 'Emissionsfaktor Gas (kg CO2/MWh)',
     }
-    
+
     html = '<table>'
     html += '<tr><th>Parameter</th><th class="text-right">Wert</th></tr>'
-    
+
     for key, label in param_labels.items():
         if key in param_opt:
             value = param_opt[key]
-            if isinstance(value, float):
-                value = format_number(value, 2)
+            if key == 'capital_interest':
+                value *= 100
+                value = format_number(value, 0)
+            elif key == 'ef_gas':
+                value = format_number(value, 3)
             html += f'<tr><td>{label}</td><td class="text-right">{value}</td></tr>'
-    
+
     html += '</table>'
     return html
 
@@ -232,7 +235,7 @@ def altair_to_vega_spec(chart: alt.Chart) -> Dict[str, Any]:
 def create_chart_rendering_script(charts: Dict[str, Dict[str, Any]]) -> str:
     """Create JavaScript to render Vega-Lite charts."""
     script = ""
-    
+
     for chart_id, spec in charts.items():
         if spec:
             spec_json = json.dumps(spec)
@@ -241,7 +244,7 @@ vegaEmbed('#{chart_id}', {spec_json}, {{"actions": false}})
     .then(result => {{}})
     .catch(console.error);
 """
-    
+
     return script
 
 
@@ -253,7 +256,7 @@ def create_topology_section(
 ) -> str:
     """
     Create topology images section showing installed units.
-    
+
     Parameters
     ----------
     overview_caps : pd.DataFrame
@@ -264,18 +267,18 @@ def create_topology_section(
         Unit parameters
     img_path : str
         Path to image directory
-        
+
     Returns
     -------
     str
         HTML containing topology images
     """
     html = '<div class="image-container">'
-    
+
     # Header image
     header_path = os.path.join(img_path, 'es_topology_header.png')
     html += f'<img src="{encode_image_to_base64(header_path)}" style="max-width: 100%;">'
-    
+
     # Unit topology images (only for units with capacity > 0)
     for unit in param_units.keys():
         cap_col = f'cap_{unit}'
@@ -285,7 +288,7 @@ def create_topology_section(
                 unit_img_path = os.path.join(img_path, f'es_topology_{ucat}.png')
                 if os.path.exists(unit_img_path):
                     html += f'<br><img src="{encode_image_to_base64(unit_img_path)}" style="max-width: 100%; margin-top: 15px;">'
-    
+
     html += '</div>'
     return html
 
@@ -299,7 +302,7 @@ def generate_html_report(
 ) -> str:
     """
     Generate complete HTML report.
-    
+
     Parameters
     ----------
     energy_system : EnergySystem
@@ -312,7 +315,7 @@ def generate_html_report(
         Optimization parameters
     img_path : str
         Path to image directory
-        
+
     Returns
     -------
     str
@@ -340,12 +343,12 @@ def generate_html_report(
     topology_path = os.path.join(img_path, 'es_topology_header.png')
     # Encode topology images with installed units
     topology_html = create_topology_section(overview_caps, energy_system, param_units, img_path)
-    
+
     # Create charts using reusable functions
     heat_prod_chart = create_heat_production_chart(energy_system, param_units)
     duration_chart = create_ordered_duration_line_chart(energy_system, param_units)
     dispatch_chart = create_dispatch_timeseries_chart(energy_system, param_units)
-    
+
     chart_specs = {
         'heat-production-chart': altair_to_vega_spec(heat_prod_chart),
         'duration-line-chart': altair_to_vega_spec(duration_chart),
@@ -360,17 +363,17 @@ def generate_html_report(
 
     # Get solver status
     solver_status = 'Optimal' if hasattr(energy_system, 'status') else 'Completed'
-    
+
     # Prepare chart sections HTML
     chart_sections_html = """
     <div class="section">
         <div class="section-title">Ergebnischarakteristik</div>
-        
+
         <div class="subsection-title">Geordnete Jahresdauerlinien des Anlageneinsatzes</div>
         <div class="chart-container">
             <div id="duration-line-chart"></div>
         </div>
-        
+
         <div class="subsection-title">Zeitreihe des Anlageneinsatzes</div>
         <div class="chart-container">
             <div id="dispatch-timeseries-chart"></div>
