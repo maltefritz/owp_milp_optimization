@@ -41,6 +41,9 @@ longnames = {
     'tes': 'Wärmespeicher'
 }
 
+# Configure Altair to handle large datasets (up to 8760+ for yearly hourly data)
+alt.data_transformers.enable('default', max_rows=None)
+
 def encode_image_to_base64(image_path: str) -> str:
     """Encode image file to base64 data URI."""
     if not os.path.exists(image_path):
