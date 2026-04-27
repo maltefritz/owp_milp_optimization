@@ -38,14 +38,14 @@ def create_heat_production_chart(
 ) -> alt.Chart:
     """
     Create bar chart of total heat production by unit.
-    
+
     Parameters
     ----------
     energy_system : EnergySystem
         Energy system with optimization results
     param_units : Dict
         Unit parameters
-        
+
     Returns
     -------
     alt.Chart
@@ -53,11 +53,11 @@ def create_heat_production_chart(
     """
     qsum = pd.DataFrame(columns=['unit', 'qsum'])
     idx = 0
-    
+
     for unit in param_units.keys():
         ucat = unit.rstrip('0123456789')
         unr = unit[len(ucat):]
-        
+
         if ucat == 'tes':
             tl = {'in': 'Ein', 'out': 'Aus'}
             for var in ['in', 'out']:
@@ -70,7 +70,7 @@ def create_heat_production_chart(
             qsum.loc[idx, 'unit'] = f'{LONGNAMES[ucat]} {unr}'
             qsum.loc[idx, 'qsum'] = energy_system.data_all[unit_col].sum()
             idx += 1
-    
+
     return alt.Chart(qsum).mark_bar(color='#B54036').encode(
         y=alt.Y('unit', title=None),
         x=alt.X('qsum', title='Gesamtwärmebereitstellung in MWh')
@@ -83,14 +83,14 @@ def create_ordered_duration_line_chart(
 ) -> alt.Chart:
     """
     Create ordered annual duration line chart.
-    
+
     Parameters
     ----------
     energy_system : EnergySystem
         Energy system with optimization results
     param_units : Dict
         Unit parameters
-        
+
     Returns
     -------
     alt.Chart
@@ -105,7 +105,7 @@ def create_ordered_duration_line_chart(
                     this_unit = unit
                     this_unit_cat = this_unit.rstrip('0123456789')
                     this_unit_nr = this_unit[len(this_unit_cat):]
-            
+
             if this_unit is None:
                 collabel = 'Wärmebedarf'
             elif this_unit.rstrip('0123456789') == 'tes':
@@ -117,18 +117,18 @@ def create_ordered_duration_line_chart(
                     collabel = f'{LONGNAMES[this_unit_cat]} {this_unit_nr}'
             else:
                 collabel = f'{LONGNAMES[this_unit_cat]} {this_unit_nr}'
-            
+
             heatprod[collabel] = energy_system.data_all[col].copy()
-    
+
     heatprod_sorted = pd.DataFrame(
         np.sort(heatprod.values, axis=0)[::-1], columns=heatprod.columns
     )
     heatprod_sorted.index.names = ['Stunde']
     heatprod_sorted.reset_index(inplace=True)
-    
+
     hprod_sorted_melt = heatprod_sorted.melt('Stunde')
     hprod_sorted_melt.rename(columns={'variable': 'Versorgungsanlage'}, inplace=True)
-    
+
     units = list(hprod_sorted_melt['Versorgungsanlage'].unique())
     return alt.Chart(hprod_sorted_melt).mark_line().encode(
         y=alt.Y('value', title='Stündliche Wärmeproduktion in MWh'),
@@ -148,7 +148,7 @@ def create_dispatch_timeseries_chart(
 ) -> alt.Chart:
     """
     Create time series dispatch chart (line plot of actual unit dispatch).
-    
+
     Parameters
     ----------
     energy_system : EnergySystem
@@ -159,7 +159,7 @@ def create_dispatch_timeseries_chart(
         Start date for time series (defaults to first time step)
     end_date : datetime, optional
         End date for time series (defaults to last time step)
-        
+
     Returns
     -------
     alt.Chart
@@ -174,7 +174,7 @@ def create_dispatch_timeseries_chart(
                     this_unit = unit
                     this_unit_cat = this_unit.rstrip('0123456789')
                     this_unit_nr = this_unit[len(this_unit_cat):]
-            
+
             if this_unit is None:
                 collabel = 'Wärmebedarf'
             elif this_unit.rstrip('0123456789') == 'tes':
@@ -186,32 +186,36 @@ def create_dispatch_timeseries_chart(
                     collabel = f'{LONGNAMES[this_unit_cat]} {this_unit_nr}'
             else:
                 collabel = f'{LONGNAMES[this_unit_cat]} {this_unit_nr}'
-            
+
             heatprod[collabel] = energy_system.data_all[col].copy()
-    
+
     if start_date is None:
         start_date = heatprod.index[0]
     if end_date is None:
         end_date = heatprod.index[-1]
-    
+
     heatprod = heatprod.loc[start_date:end_date, :]
-    
+
     tes_used = any([u.rstrip('0123456789') == 'tes' for u in param_units.keys()])
     if tes_used:
         for col in heatprod.columns:
             if 'Wärmespeicher' in col and 'Ein' in col:
                 heatprod[col] *= -1
-    
+
+    heatprod = heatprod.drop(columns=['Wärmebedarf'])
+
+    heatprod = heatprod.resample('ME').sum()
+
     heatprod.index.names = ['Date']
     heatprod.reset_index(inplace=True)
-    
+
     hprod_melt = heatprod.melt('Date')
     hprod_melt.rename(columns={'variable': 'Versorgungsanlage'}, inplace=True)
-    
+
     units = list(hprod_melt['Versorgungsanlage'].unique())
-    return alt.Chart(hprod_melt).mark_line().encode(
+    return alt.Chart(hprod_melt).mark_bar().encode(
         y=alt.Y('value', title='Wärmeproduktion in MWh'),
-        x=alt.X('Date', title='Datum'),
+        x=alt.X('yearmonth(Date):O', title='Datum'),
         color=alt.Color('Versorgungsanlage').scale(
             domain=units,
             range=[COLORS.get(re.sub(r'\s\d', '', s), '#999999') for s in units]

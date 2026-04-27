@@ -51,7 +51,7 @@ def get_report_template():
 
     <!-- Economic Analysis -->
     <div class="section">
-        <div class="section-title">Wirtschaftliche Analyse</div>
+        <div class="section-title">Wirtschaftliche Kennzahlen</div>
         
         <div class="subsection-title">Kostenaufschlüsselung</div>
         {{ costs_table }}
@@ -64,8 +64,8 @@ def get_report_template():
 
     <!-- Ecological Analysis -->
     <div class="section">
-        <div class="section-title">Ökologische Analyse</div>
-        
+        <div class="section-title">Ökologische Kennzahlen</div>
+
         <div class="kpi-grid">
             {{ emission_cards }}
         </div>

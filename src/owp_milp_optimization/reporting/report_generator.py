@@ -367,14 +367,14 @@ def generate_html_report(
     # Prepare chart sections HTML
     chart_sections_html = """
     <div class="section">
-        <div class="section-title">Ergebnischarakteristik</div>
+        <div class="section-title">Anlageneinsatz</div>
 
-        <div class="subsection-title">Geordnete Jahresdauerlinien des Anlageneinsatzes</div>
+        <div class="subsection-title">Geordnete Jahresdauerlinien</div>
         <div class="chart-container">
             <div id="duration-line-chart"></div>
         </div>
 
-        <div class="subsection-title">Zeitreihe des Anlageneinsatzes</div>
+        <div class="subsection-title">Zeitreihe</div>
         <div class="chart-container">
             <div id="dispatch-timeseries-chart"></div>
         </div>
