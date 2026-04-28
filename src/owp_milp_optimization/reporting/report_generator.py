@@ -226,6 +226,41 @@ def create_parameters_table(param_opt: Dict[str, Any]) -> str:
     return html
 
 
+def create_overview_table(energy_system):
+    """Create HTML table for input time series overview."""
+    data_overview = energy_system.data.describe()
+    data_overview.drop(index=['count', 'std', '25%', '75%'], inplace=True)
+    data_overview.rename(
+        index={
+            'mean': 'Mittelwert', 'min': 'Minimalwert',
+            '50%': 'Median', 'max': 'Maximalwert'
+            },
+        columns={
+            'heat_demand': 'Wärmelast (MWh)',
+            'el_spot_price': 'Spotmarkt Strompreis (€/MWh)',
+            'ef_om': 'Emissionsfaktor Strommix (kg/MWh)',
+            'gas_price': 'Gaspreis (€/MWh)',
+            'co2_price': 'CO₂-Preis (€/MWh)'
+            }, inplace=True
+        )
+
+    sol_used = any([
+        u.rstrip('0123456789') == 'sol'
+        for u in energy_system.param_units.keys()
+        ])
+    if sol_used:
+        data_overview['solar_heat_flow'] *= 1e6
+        data_overview.rename(columns={
+            'solar_heat_flow': 'Spez. solare Einstrahlung (Wh/m²)'
+            }, inplace=True
+        )
+
+    data_overview = data_overview.map(lambda x: f'{x:.2f}')
+    data_overview = data_overview.T.reset_index().rename(columns={'index': ''})
+
+    return data_overview.to_html(index=False, border=False)
+
+
 def altair_to_vega_spec(chart: alt.Chart) -> Dict[str, Any]:
     """Convert Altair chart to Vega-Lite specification."""
     try:
@@ -338,6 +373,9 @@ def generate_html_report(
 
     # Generate emissions cards
     emission_cards = create_emission_cards(key_params)
+
+    # Generate input time series overview table
+    overview_table = create_overview_table(energy_system)
 
     # Generate parameters table
     parameters_table = create_parameters_table(param_opt)
@@ -452,6 +490,7 @@ def generate_html_report(
         kpi_cards=kpi_cards,
         capacities_table=capacities_table,
         parameters_table=parameters_table,
+        overview_table=overview_table,
         costs_table=costs_table,
         topology_image=topology_html,
         emission_cards=emission_cards,

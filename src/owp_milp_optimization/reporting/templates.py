@@ -45,8 +45,6 @@ def get_report_template():
             </div>
         </div>
 
-        <div class="subsection-title">Eingabeparameter</div>
-        {{ parameters_table }}
     </div>
 
     <!-- Economic Analysis -->
@@ -69,9 +67,21 @@ def get_report_template():
         <div class="kpi-grid">
             {{ emission_cards }}
         </div>
+    </div>
 
     <!-- Results Charts -->
     {{ chart_sections }}
+
+    <!-- Input parameter -->
+    <div class="section">
+        <div class="section-title">Input</div>
+
+        <div class="subsection-title">Zeitreihen</div>
+        {{ overview_table }}
+
+        <div class="subsection-title">Parameter</div>
+        {{ parameters_table }}
+    </div>
 
     <!-- Footer -->
     <div class="footer">
