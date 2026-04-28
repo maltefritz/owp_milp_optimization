@@ -190,17 +190,28 @@ col_over.subheader('Parameter im Wärmeversorgungssystem')
 param_overview = pd.DataFrame.from_dict(
     ss.param_opt, orient='index', columns=['Wert']
     )
-param_overview.drop(
-    index=[
-        'MIPGap', 'TimeLimit', 'heat_price', 'TEHG_bonus',
-        'net_op_cost_fix', 'net_op_cost_var'
-        ], inplace=True
-    )
+if ss.param_opt['calc_network'] == 'specific':
+    param_overview.drop(
+        index=[
+            'MIPGap', 'TimeLimit', 'heat_price', 'TEHG_bonus',
+            'net_op_cost_fix', 'net_op_cost_var', 'net_inv_total',
+            'net_op_cost_fix_total', 'net_op_cost_var_total', 'calc_network'
+            ], inplace=True
+        )
+elif ss.param_opt['calc_network'] == 'total':
+    param_overview.drop(
+        index=[
+            'MIPGap', 'TimeLimit', 'heat_price', 'TEHG_bonus',
+            'net_op_cost_fix', 'net_op_cost_var', 'net_dist', 'net_inv_spez',
+            'calc_network', 'net_op_cost_fix_total', 'net_op_cost_var_total'
+            ], inplace=True
+        )
 param_overview.loc['ef_gas'] *= 1000
 param_overview.loc['capital_interest'] *= 100
 param_overview.rename(
     index={
         'net_inv_spez': 'Spez. Investitionskosten Wärmenetz (€/MW/m)',
+        'net_inv_total': 'Gesamte Investitionskosten Wärmenetz (€)',
         'ef_gas': 'Emissionsfaktor Gas (kg/MWh)',
         'elec_consumer_charges_grid': 'Strompreisbestandteile (Netz) (€/MWh)',
         'elec_consumer_charges_self': 'Strompreisbestandteile (Eigenbedarf) (€/MWh)',

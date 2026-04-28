@@ -21,6 +21,7 @@ dependencies = [
     "oemof.solph==0.6.0a4",
     "pandas>=2.2.2",
     "highspy==1.5.3",
+    "jinja2>=3.0.0",
 ]
 
 [project.optional-dependencies]

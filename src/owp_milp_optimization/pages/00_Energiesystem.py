@@ -35,6 +35,30 @@ def read_input_data():
     return all_heat_load, eco_data
 
 
+def init_ss_widget(widget_key, ss_variable, default_value):
+    """
+    Make widget stateful.
+
+    Parameters
+    ----------
+
+    widget_key : str
+        Key string set within the constructor of the widget.
+
+    ss_variable : str
+        Variable name the widget saves its value in the session state and
+        therefore between pages.
+
+    default_value : any
+        The default value of the widget. Do not set a default value in the
+        widget.
+    """
+    if widget_key not in ss:
+        if ss_variable not in ss:
+            ss[ss_variable] = default_value
+        ss[widget_key] = ss[ss_variable]
+
+
 # %% MARK: Parameters
 shortnames = {
     'Wärmepumpe': 'hp',
@@ -170,7 +194,13 @@ with tab_heat:
 
     col_sel, col_vis = st.columns([1, 2], gap='large')
 
-    dataset_name = col_sel.selectbox(
+    init_ss_widget(
+        widget_key='select_heat_load',
+        ss_variable='dataset_name',
+        default_value='Flensburg'
+    )
+
+    ss.dataset_name = col_sel.selectbox(
         'Wähle die Wärmelastdaten aus, die im System zu verwenden sind',
         [*ss.all_heat_load.columns, 'Eigene Daten'],
         placeholder='Wärmelastendaten', help=ss.tt['select_heat_load'],
@@ -178,7 +208,7 @@ with tab_heat:
     )
 
     heat_load = pd.DataFrame()
-    if dataset_name == 'Eigene Daten':
+    if ss.dataset_name == 'Eigene Daten':
         heat_load_year = None
         user_file = col_sel.file_uploader(
             'Datensatz einlesen', type=['csv', 'xlsx'],
@@ -204,7 +234,7 @@ with tab_heat:
     else:
         user_file = None
         heat_load_years = ss.all_heat_load.loc[
-            ~ss.all_heat_load[dataset_name].isna(), dataset_name
+            ~ss.all_heat_load[ss.dataset_name].isna(), ss.dataset_name
             ].index.year.unique()
         heat_load_year = col_sel.selectbox(
             'Wähle das Jahr der Wärmelastdaten aus',
@@ -213,15 +243,22 @@ with tab_heat:
         )
         yearmask = ss.all_heat_load.index.year == heat_load_year
         heat_load = ss.all_heat_load.loc[
-            yearmask, dataset_name
+            yearmask, ss.dataset_name
             ].copy().to_frame()
 
         dates = None
-        if dataset_name != 'Eigene Daten':
-            precise_dates = col_sel.toggle(
+        if ss.dataset_name != 'Eigene Daten':
+
+            init_ss_widget(
+                widget_key='prec_dates_heat_load',
+                ss_variable='precise_dates_hl',
+                default_value=False
+            )
+
+            ss.precise_dates_hl = col_sel.toggle(
                 'Exakten Zeitraum wählen', key='prec_dates_heat_load'
             )
-            if precise_dates:
+            if ss.precise_dates_hl:
                 dates = col_sel.date_input(
                     'Zeitraum auswählen:',
                     value=(
@@ -238,47 +275,81 @@ with tab_heat:
                     ]
                 heat_load = heat_load.loc[dates[0]:dates[1], :]
 
-            scale_hl = col_sel.toggle('Daten skalieren', key='scale_hl')
-            if scale_hl:
-                scale_method_hl = col_sel.selectbox(
+            init_ss_widget(
+                widget_key='toggle_scale_hl',
+                ss_variable='scale_hl',
+                default_value=False
+            )
+
+            ss.scale_hl = col_sel.toggle(
+                'Daten skalieren', key='toggle_scale_hl'
+            )
+            if ss.scale_hl:
+                init_ss_widget(
+                    widget_key='select_scale_method_hl',
+                    ss_variable='scale_method_hl',
+                    default_value='Haushalte'
+                )
+                ss.scale_method_hl = col_sel.selectbox(
                     'Methode', ['Haushalte', 'Faktor', 'Erweitert'],
-                    help=ss.tt['scale_method_hl'], key='scale_method_hl'
+                    help=ss.tt['scale_method_hl'], key='select_scale_method_hl'
                     )
-                if scale_method_hl == 'Haushalte':
-                    if dataset_name == 'Flensburg':
+                if ss.scale_method_hl == 'Haushalte':
+                    if ss.dataset_name == 'Flensburg':
                         base_households = 50000
                         tt_households = ss.tt['scale_households_hl_fl']
-                    elif dataset_name == 'Sonderburg':
+                    elif ss.dataset_name == 'Sonderburg':
                         base_households = 13000
                         tt_households = ss.tt['scale_households_hl_so']
-                    scale_households_hl = col_sel.number_input(
-                        'Anzahl Haushalte', value=base_households,
+                    init_ss_widget(
+                        widget_key='num_input_scale_households_hl',
+                        ss_variable='scale_households_hl',
+                        default_value=base_households
+                    )
+                    ss.scale_households_hl = col_sel.number_input(
+                        'Anzahl Haushalte',
                         min_value=1, step=100, help=tt_households,
-                        key='scale_households_hl'
+                        key='num_input_scale_households_hl'
                         )
-                    heat_load[dataset_name] *= scale_households_hl / base_households
-                elif scale_method_hl == 'Faktor':
-                    scale_factor_hl = col_sel.number_input(
-                        'Skalierungsfaktor', value=1.0, step=0.1, min_value=0.0,
-                        help=ss.tt['scale_factor_hl'], key='scale_factor_hl'
+                    heat_load[ss.dataset_name] *= ss.scale_households_hl / base_households
+                elif ss.scale_method_hl == 'Faktor':
+                    init_ss_widget(
+                        widget_key='num_input_scale_factor_hl',
+                        ss_variable='scale_factor_hl',
+                        default_value=1.0
+                    )
+                    ss.scale_factor_hl = col_sel.number_input(
+                        'Skalierungsfaktor', step=0.1, min_value=0.0,
+                        help=ss.tt['scale_factor_hl'],
+                        key='num_input_scale_factor_hl'
                         )
-                    heat_load[dataset_name] *= scale_factor_hl
-                elif scale_method_hl == 'Erweitert':
-                    scale_amp_hl = col_sel.number_input(
-                        'Stauchungsfaktor', value=1.0, step=0.1, min_value=0.0,
-                        help=ss.tt['scale_amp_hl'], key='scale_amp_hl'
+                    heat_load[ss.dataset_name] *= ss.scale_factor_hl
+                elif ss.scale_method_hl == 'Erweitert':
+                    init_ss_widget(
+                        widget_key='num_input_scale_amp_hl',
+                        ss_variable='scale_amp_hl',
+                        default_value=1.0
+                    )
+                    ss.scale_amp_hl = col_sel.number_input(
+                        'Stauchungsfaktor', step=0.1, min_value=0.0,
+                        help=ss.tt['scale_amp_hl'], key='num_input_scale_amp_hl'
                         )
-                    scale_off_hl = col_sel.number_input(
-                        'Offset', value=1.0, step=0.1, help=ss.tt['scale_off_hl'],
-                        key='scale_off_hl'
+                    init_ss_widget(
+                        widget_key='num_input_scale_off_hl',
+                        ss_variable='scale_off_hl',
+                        default_value=1.0
+                    )
+                    ss.scale_off_hl = col_sel.number_input(
+                        'Offset', step=0.1, help=ss.tt['scale_off_hl'],
+                        key='num_input_scale_off_hl'
                         )
-                    heat_load_median = heat_load[dataset_name].median()
-                    heat_load[dataset_name] = (
-                        (heat_load[dataset_name] - heat_load_median) * scale_amp_hl
-                        + heat_load_median + scale_off_hl
+                    heat_load_median = heat_load[ss.dataset_name].median()
+                    heat_load[ss.dataset_name] = (
+                        (heat_load[ss.dataset_name] - heat_load_median) * ss.scale_amp_hl
+                        + heat_load_median + ss.scale_off_hl
                         )
                     # negative_mask = heat_load[dataset_name] < 0
-                    if (heat_load[dataset_name] < 0).values.any():
+                    if (heat_load[ss.dataset_name] < 0).values.any():
                         st.error(
                             'Durch die Skalierung resultiert eine negative '
                             + 'Wärmelast. Bitte den Offset anpassen.'
@@ -286,7 +357,7 @@ with tab_heat:
 
     col_vis.subheader('Wärmelastdaten')
 
-    if user_file is not None or dataset_name != 'Eigene Daten':
+    if user_file is not None or ss.dataset_name != 'Eigene Daten':
         heat_load.rename(
             columns={heat_load.columns[0]: 'heat_demand'}, inplace=True
             )
@@ -303,10 +374,16 @@ with tab_heat:
 
     col_sel.subheader('Wärmeerlöse')
 
-    ss.param_opt['heat_price'] = col_sel.number_input(
-        'Wärmeerlös in €/MWh', value=ss.param_opt['heat_price'],
+    init_ss_widget(
+        widget_key='heat_revenue',
+        ss_variable='select_heat_price',
+        default_value=ss.param_opt['heat_price']
+    )
+    ss.select_heat_price = col_sel.number_input(
+        'Wärmeerlös in €/MWh',
         help=ss.tt['heat_revenue'], key='heat_revenue'
         )
+    ss.param_opt['heat_price'] = ss.select_heat_price
 
     # %% Solarthermie wird anhand der Wärmelastdaten ausgewählt
     solar_heat_flow = ss.all_solar_heat_flow[
@@ -324,92 +401,187 @@ with tab_heat:
 with tab_net:
     st.header('Wärmenetz')
 
-    # col_system, col_unit = st.columns([1, 2], gap='large')
-    col_spec_mw, col_spec_km, col_abs = st.columns([1, 1, 1], gap='large')
-
-    ss.param_opt['net_dist'] = col_spec_mw.number_input(
-        'Trassenlänge in km', value=ss.param_opt['net_dist'],
-        help=ss.tt['net_dist'], key='net_dist'
+    init_ss_widget(
+        widget_key='select_calc_network',
+        ss_variable='calc_network',
+        default_value='Spezfisische Kosten'
+    )
+    ss.calc_network = st.selectbox(
+        'Wähle die Kalkulationsmethode aus, die zu berücksichtigen ist',
+        ['Spezfisische Kosten', 'Gesamtkosten'],
+        placeholder='Kalkulationsmethode Wärmenetz',
+        # help=ss.tt['calc_network'],
+        key='select_calc_network'
     )
 
+    if ss.calc_network == 'Spezfisische Kosten':
+        ss.param_opt['calc_network'] = 'specific'
 
-    # Invest cost
-    col_spec_mw, col_spec_km, col_abs = st.columns([1, 1, 1], gap='large')
-    ss.param_opt['net_inv_spez'] = col_spec_mw.number_input(
-        'Spez. Investitionskosten in €/MW/m',
-        value=ss.param_opt['net_inv_spez'],
-        help=ss.tt['net_inv_spez_mw'], key='net_inv_spez_mw'
-    )
+        init_ss_widget(
+            widget_key='select_base_val_net',
+            ss_variable='base_val_net',
+            default_value='Trassenlänge'
+        )
+        ss.base_val_net = st.selectbox(
+            'Wähle die Bezugsgröße aus, die zu berücksichtigen ist',
+            ['Trassenlänge', 'Leistung', 'Nutzung'],
+            placeholder='Bezugsgröße der Kalkulationsmethode',
+            # help=ss.tt['base_val_net'],
+            key='select_base_val_net'
+        )
 
-    net_inv_spec_km = (
-        ss.param_opt['net_inv_spez'] * heat_load['heat_demand'].max()
-    )
-    net_inv_spec_km = format_sep(net_inv_spec_km, dec=0)
-    col_spec_km.metric(
-        'Spez. Investitionskosten in €/m', value=net_inv_spec_km
-    )
+        col_spec_mw, col_spec_km, col_abs = st.columns([1, 1, 1], gap='large')
 
-    net_inv_abs = (
-        ss.param_opt['net_inv_spez']
-        * heat_load['heat_demand'].max()
-        * ss.param_opt['net_dist'] * 1000
-    )
-    net_inv_abs = format_sep(net_inv_abs, dec=0)
-    col_abs.metric(
-        'Gesamte Investitionskosten in €', value=net_inv_abs
-    )
+        init_ss_widget(
+            widget_key='num_input_net_distance',
+            ss_variable='net_distance',
+            default_value=ss.param_opt['net_dist']
+        )
+        ss.net_distance = col_spec_mw.number_input(
+            'Trassenlänge in km',
+            help=ss.tt['net_dist'],
+            key='num_input_net_distance'
+        )
+        ss.param_opt['net_dist'] = ss.net_distance
 
-    # Fixed operation cost
-    col_spec_mw, col_spec_km, col_abs = st.columns([1, 1, 1], gap='large')
-    ss.param_opt['net_op_cost_fix'] = col_spec_mw.number_input(
-        'Spez. Fixkosten in €/MW/km',
-        value=ss.param_opt['net_op_cost_fix'],
-        help=ss.tt['net_op_cost_fix_mw'], key='net_op_cost_fix_mw'
-    )
+        Q_max = col_spec_km.number_input(
+            'Spitzenlast in MW',
+            value=heat_load['heat_demand'].max(),
+            disabled=True,
+            key=f'Q_max_{heat_load}',
+        )
 
-    net_fix_spec_km = (
-        ss.param_opt['net_op_cost_fix'] * heat_load['heat_demand'].max()
-    )
-    net_fix_spec_km = format_sep(net_fix_spec_km, dec=0)
-    col_spec_km.metric(
-        'Spez. Fixkosten in €/km', value=net_fix_spec_km
-    )
+        Q_dot_total = col_abs.number_input(
+            'Jährliche Wärmemenge in MWh',
+            value=heat_load['heat_demand'].sum(),
+            disabled=True,
+            key=f'Q_dot_total_{heat_load}'
+        )
 
-    net_fix_abs = (
-        ss.param_opt['net_op_cost_fix']
-        * heat_load['heat_demand'].max()
-        * ss.param_opt['net_dist']
-    )
-    net_fix_abs = format_sep(net_fix_abs, dec=0)
-    col_abs.metric(
-        'Gesamte Fixkosten in €/a', value=net_fix_abs
-    )
+        if ss.base_val_net == 'Trassenlänge':
+            net_unit = 'm'
+            calc_value = heat_load['heat_demand'].max()
+        elif ss.base_val_net == 'Leistung':
+            net_unit = 'MW'
+            calc_value = ss.param_opt['net_dist']
+        else:
+            net_unit = 'MWh'
+            calc_value = ss.param_opt['net_dist']
+        inv_value = ss.param_opt['net_inv_spez'] * calc_value
+        fix_value = ss.param_opt['net_op_cost_fix'] * calc_value
+        var_value = ss.param_opt['net_op_cost_var'] * calc_value
 
-    # Variable operation cost
-    col_spec_mw, col_spec_km, col_abs = st.columns([1, 1, 1], gap='large')
-    ss.param_opt['net_op_cost_var'] = col_spec_mw.number_input(
-        'Spez. variable Kosten in €/MWh/km',
-        value=ss.param_opt['net_op_cost_var'],
-        help=ss.tt['net_op_cost_var_mw'], key='net_op_cost_var_mw'
-    )
+        col_spec_mw, col_spec_km, col_abs = st.columns([1, 1, 1], gap='large')
+        # Invest cost
+        ss.param_opt['net_inv_spez'] = col_spec_mw.number_input(
+            f'Spez. Investitionskosten in €/{net_unit}',
+            value=inv_value,
+            help=ss.tt['net_inv_spez_mw'],
+            key=f'net_inv_spez_mw_{ss.base_val_net}'
+        )
+        ss.param_opt['net_inv_spez'] /= calc_value
 
-    net_var_spec_km = (
-        ss.param_opt['net_op_cost_var'] * heat_load['heat_demand'].sum()
-    )
-    net_var_spec_km = format_sep(net_var_spec_km, dec=0)
-    col_spec_km.metric(
-        'Spez. variable Kosten in €/km', value=net_var_spec_km
-    )
+        net_inv_spec_mw_m = (
+            ss.param_opt['net_inv_spez'] * calc_value
+        )
+        net_inv_spec_mw_m = format_sep(net_inv_spec_mw_m, dec=0)
+        col_spec_km.metric(
+            'Spez. Investitionskosten in €/MW/m',
+            help=ss.tt['net_inv_spez_mw'],
+            value=ss.param_opt['net_inv_spez']
+        )
 
-    net_var_abs = (
-        ss.param_opt['net_op_cost_var']
-        * heat_load['heat_demand'].sum()
-        * ss.param_opt['net_dist']
-    )
-    net_var_abs = format_sep(net_var_abs, dec=0)
-    col_abs.metric(
-        'Gesamte variable Kosten in €', value=net_var_abs
-    )
+        net_inv_abs = (
+            ss.param_opt['net_inv_spez']
+            * heat_load['heat_demand'].max()
+            * ss.param_opt['net_dist'] * 1000
+        )
+        net_inv_abs = format_sep(net_inv_abs, dec=0)
+        col_abs.metric(
+            'Gesamte Investitionskosten in €',
+            value=net_inv_abs
+        )
+
+        # Fixed operation cost
+        col_spec_mw, col_spec_km, col_abs = st.columns([1, 1, 1], gap='large')
+        ss.param_opt['net_op_cost_fix'] = col_spec_mw.number_input(
+            f'Spez. Fixkosten in €/{net_unit}',
+            value=fix_value,
+            help=ss.tt['net_op_cost_fix_mw'],
+            key=f'net_op_cost_fix_mw_{ss.base_val_net}'
+        )
+        ss.param_opt['net_op_cost_fix'] /= calc_value
+
+        net_fix_spec_mw_m = (
+            ss.param_opt['net_op_cost_fix'] * calc_value
+        )
+        net_fix_spec_mw_m = format_sep(net_fix_spec_mw_m, dec=0)
+        col_spec_km.metric(
+            'Spez. Fixkosten in €/MW/m', 
+            help=ss.tt['net_op_cost_fix_mw'],
+            value=ss.param_opt['net_op_cost_fix']
+        )
+
+        net_fix_abs = (
+            ss.param_opt['net_op_cost_fix']
+            * heat_load['heat_demand'].max()
+            * ss.param_opt['net_dist']
+        )
+        net_fix_abs = format_sep(net_fix_abs, dec=0)
+        col_abs.metric(
+            'Gesamte Fixkosten in €/a', value=net_fix_abs
+        )
+
+        # Variable operation cost
+        col_spec_mw, col_spec_km, col_abs = st.columns([1, 1, 1], gap='large')
+        ss.param_opt['net_op_cost_var'] = col_spec_mw.number_input(
+            f'Spez. variable Kosten in €/{net_unit}',
+            value=var_value,
+            help=ss.tt['net_op_cost_var_mw'],
+            key=f'net_op_cost_var_mw_{ss.base_val_net}'
+        )
+
+        ss.param_opt['net_op_cost_var'] /= calc_value
+
+        net_var_spec_mw_m = (
+            ss.param_opt['net_op_cost_var'] * calc_value
+        )
+        net_var_spec_mw_m = format_sep(net_var_spec_mw_m, dec=0)
+        col_spec_km.metric(
+            'Spez. variable Kosten in €/MWh/m', 
+            value=ss.param_opt['net_op_cost_var']
+        )
+
+        net_var_abs = (
+            ss.param_opt['net_op_cost_var']
+            * heat_load['heat_demand'].sum()
+            * ss.param_opt['net_dist']
+        )
+        net_var_abs = format_sep(net_var_abs, dec=0)
+        col_abs.metric(
+            'Gesamte variable Kosten in €/a', value=net_var_abs
+        )
+
+    else:
+        ss.param_opt['calc_network'] = 'total'
+        ss.param_opt['net_inv_total'] = st.number_input(
+            'Gesamte Investitionskosten in €',
+            value=ss.param_opt['net_inv_total'],
+            # help=ss.tt['invest_net_total'],
+            key='net_inv_total'
+        )
+        ss.param_opt['net_op_cost_fix_total'] = st.number_input(
+            'Fixe jährliche Betriebskosten in €',
+            value=ss.param_opt['net_op_cost_fix_total'],
+            # help=ss.tt['cost_net_fix_total'],
+            key='net_op_cost_fix_total'
+        )
+        ss.param_opt['net_op_cost_var_total'] = st.number_input(
+            'Variable jährliche Betriebskosten in €',
+            value=ss.param_opt['net_op_cost_var_total'],
+            # help=ss.tt['net_inv_spez_mw'],
+            key='net_op_cost_var_total'
+        )
 
 # %% MARK: Energy System
 with tab_system:
@@ -689,13 +861,18 @@ with tab_supply:
             st.subheader('Elektrizitätsversorgungsdaten')
             col_elp, col_vis_el = st.columns([1, 2], gap='large')
 
-            select_el = col_elp.selectbox(
+            init_ss_widget(
+                widget_key='select_electricity',
+                ss_variable='select_el',
+                default_value='Variabel'
+            )
+            ss.select_el = col_elp.selectbox(
                 'Preisvariante', 
                 ['Variabel', 'Konstant', 'Eigene Daten'],
-                key='select_el'
+                key='select_electricity'
             )
 
-            if select_el == 'Variabel':
+            if ss.select_el == 'Variabel':
                 el_prices_years = list(ss.all_el_prices.index.year.unique())
                 if heat_load_year:
                     el_year_idx = el_prices_years.index(heat_load_year)
@@ -775,23 +952,35 @@ with tab_supply:
                             + 'Bitte die Daten angleichen.'
                             )
 
-            elif select_el == 'Konstant':
+            elif ss.select_el == 'Konstant':
                 el_prices = ss.all_el_prices.loc[heat_load['Date']]
                 el_em = ss.all_el_emissions.loc[heat_load['Date']]
 
-                constant_el_value = col_elp.number_input(
-                    'Spotmarktpreis in €/MWh', value=80.00, step=1.00,
-                    key='constant_el_value'
+                init_ss_widget(
+                    widget_key='num_input_constant_el_value',
+                    ss_variable='constant_el_value',
+                    default_value=80.00
                 )
-                el_prices['el_spot_price'] = constant_el_value
-
-                constant_el_em_value = col_elp.number_input(
-                    'Emissionsfaktor Strommix in kg CO₂/MWh', value=55.00,
-                    step=1.00, key='constant_el_em_value'
+                ss.constant_el_value = col_elp.number_input(
+                    'Spotmarktpreis in €/MWh', step=1.00,
+                    key='num_input_constant_el_value'
                 )
-                el_em['ef_om'] = constant_el_em_value
+                el_prices['el_spot_price'] = ss.constant_el_value
 
-            elif select_el == 'Eigene Daten':
+
+                init_ss_widget(
+                    widget_key='num_input_constant_el_em_value',
+                    ss_variable='constant_el_em_value',
+                    default_value=55.00
+                )
+                ss.constant_el_em_value = col_elp.number_input(
+                    'Emissionsfaktor Strommix in kg CO₂/MWh',
+                    step=1.00,
+                    key='num_input_constant_el_em_value'
+                )
+                el_em['ef_om'] = ss.constant_el_em_value
+
+            elif ss.select_el == 'Eigene Daten':
                 user_file_el = col_elp.file_uploader(
                     'Datensatz einlesen', type=['csv', 'xlsx'],
                     help=ss.tt['own_data_el'], key='own_data_el'
@@ -824,10 +1013,16 @@ with tab_supply:
                 'Strompreisbestandteile in ct/kWh', help=ss.tt['el_elements']
                 )
 
+            el_price_year = str(el_prices.index[-1].year)
+            if not el_price_year in ss.bound_inputs.keys():
+                el_price_year = str(max(
+                    int(y) for y in ss.bound_inputs.keys()
+                ))
+
             # if 'edited_elp' not in st.session_state:
             st.session_state['edited_elp'] = {
                 k: v for k, v in ss.bound_inputs[
-                        str(el_prices_year)
+                        str(el_price_year)
                     ].items()
             }
 
@@ -888,13 +1083,18 @@ with tab_supply:
             st.subheader('Gasversorgungsdaten')
             col_gas, col_vis_gas = st.columns([1, 2], gap='large')
 
-            select_gas = col_gas.selectbox(
+            init_ss_widget(
+                widget_key='select_gas_supply',
+                ss_variable='select_gas',
+                default_value='Variabel'
+            )
+            ss.select_gas = col_gas.selectbox(
                 'Preisvariante', 
                 ['Variabel', 'Konstant', 'Eigene Daten'],
-                key='select_gas'
+                key='select_gas_supply'
             )
 
-            if select_gas == 'Variabel':
+            if ss.select_gas == 'Variabel':
                 gas_prices_years = list(ss.all_el_prices.index.year.unique())
                 if heat_load_year:
                     gas_year_idx = gas_prices_years.index(heat_load_year)
@@ -975,23 +1175,33 @@ with tab_supply:
                             + 'Bitte die Daten angleichen.'
                             )
 
-            elif select_gas == 'Konstant':
+            elif ss.select_gas == 'Konstant':
                 gas_prices = ss.all_gas_prices.loc[heat_load['Date']]
                 co2_prices = ss.all_co2_prices.loc[heat_load['Date']]
 
-                constant_gas_value = col_gas.number_input(
-                    'Gaspreis in €/MWh', value=75.00, step=1.00,
-                    key='constant_gas_value'
+                init_ss_widget(
+                    widget_key='num_input_constant_gas_value',
+                    ss_variable='constant_gas_value',
+                    default_value=65.00
                 )
-                gas_prices['gas_price'] = constant_gas_value
-
-                constant_co2_value = col_gas.number_input(
-                    'CO₂-Zertifikatpreis in €/t CO₂', value=30.00, step=1.00,
-                    key='constant_co2_value'
+                ss.constant_gas_value = col_gas.number_input(
+                    'Gaspreis in €/MWh', step=1.00,
+                    key='num_input_constant_gas_value'
                 )
-                co2_prices['co2_price'] = constant_co2_value
+                gas_prices['gas_price'] = ss.constant_gas_value
 
-            elif select_gas == 'Eigene Daten':
+                init_ss_widget(
+                    widget_key='num_input_constant_co2_value',
+                    ss_variable='constant_co2_value',
+                    default_value=30.00
+                )
+                ss.constant_co2_value = col_gas.number_input(
+                    'CO₂-Zertifikatpreis in €/t CO₂', step=1.00,
+                    key='num_input_constant_co2_value'
+                )
+                co2_prices['co2_price'] = ss.constant_co2_value
+
+            elif ss.select_gas == 'Eigene Daten':
                 user_file_gas = col_gas.file_uploader(
                     'Datensatz einlesen', type=['csv', 'xlsx'],
                     help=ss.tt['own_data_gas'], key='own_data_gas'
