@@ -15,7 +15,8 @@ from owp_milp_optimization.charts import (create_dispatch_timeseries_chart,
                                           create_el_prod_grid_chart,
                                           create_el_prod_internal_chart,
                                           create_heat_production_chart,
-                                          create_ordered_duration_line_chart)
+                                          create_ordered_duration_line_chart,
+                                          create_tes_content_chart)
 
 from .styling import REPORT_CSS
 from .templates import (get_chart_section_template, get_kpi_card_template,
@@ -362,9 +363,19 @@ def generate_html_report(
         el_prod_internal_chart = create_el_prod_internal_chart(energy_system)
 
         chart_specs.update({
-        'el-prod-grid-chart': altair_to_vega_spec(el_prod_grid_chart),
-        'el-prod-internal-chart': altair_to_vega_spec(el_prod_internal_chart)
-    })
+            'el-prod-grid-chart': altair_to_vega_spec(el_prod_grid_chart),
+            'el-prod-internal-chart': altair_to_vega_spec(el_prod_internal_chart)
+        })
+
+    if energy_system.tes_used:
+        for unit in param_units.keys():
+            if unit.rstrip('01234156789') != 'tes':
+                continue
+
+            tes_content_chart = create_tes_content_chart(energy_system, unit)
+            chart_specs.update({
+                f'{unit}-content-chart': altair_to_vega_spec(tes_content_chart)
+            })
 
     # Create chart rendering script
     chart_rendering_script = create_chart_rendering_script(chart_specs)
@@ -408,6 +419,27 @@ def generate_html_report(
                 </div>
             </div>
         """
+
+    if energy_system.tes_used:
+        chart_sections_html += """
+            <div class="section">
+                <div class="section-title">Speicherstand</div>
+
+        """
+
+        for unit in param_units.keys():
+            unit_cat = unit.rstrip('0123456789')
+            unit_nr = unit[len(unit_cat):]
+            if unit_cat != 'tes':
+                continue
+
+            chart_sections_html += f"""
+                    <div class="subsection-title">Wärmespeicher {unit_nr}</div>
+                    <div class="chart-container">
+                        <div id="{unit}-content-chart"></div>
+                    </div>
+            """
+        chart_sections_html += '</div>'
 
     # Render main template
     main_template = Template(get_report_template())

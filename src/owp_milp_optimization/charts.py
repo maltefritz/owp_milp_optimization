@@ -334,3 +334,50 @@ def create_el_prod_internal_chart(
             ),
         x=alt.X('yearweek(Date):O', title='Datum')
     ).properties(width=600)
+
+
+def create_tes_content_chart(
+    energy_system,
+    unit,
+    start_date=None,
+    end_date=None,
+) -> alt.Chart:
+    """
+    Create time series TES storage content chart.
+
+    Parameters
+    ----------
+    energy_system : EnergySystem
+        Energy system with optimization results
+    unit : str
+        Unit shortname including its number (e.g. 'tes1').
+    start_date : datetime, optional
+        Start date for time series (defaults to first time step)
+    end_date : datetime, optional
+        End date for time series (defaults to last time step)
+
+    Returns
+    -------
+    alt.Chart
+        Altair line chart
+    """
+    if start_date is None:
+        start_date = energy_system.data_all.index[0]
+    if end_date is None:
+        end_date = energy_system.data_all.index[-1]
+
+    tesdata = energy_system.data_all.loc[
+        start_date:end_date,
+        f'storage_content_{unit}'
+        ].copy().to_frame()
+
+    tesdata.index.names = ['Date']
+    tesdata.reset_index(inplace=True)
+
+    return alt.Chart(tesdata).mark_line(color='#EC6707').encode(
+        y=alt.Y(
+            f'storage_content_{unit}',
+            title='Speicherstand in MWh'
+        ),
+        x=alt.X('Date', title='Datum')
+    ).properties(width=600)
