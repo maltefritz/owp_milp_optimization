@@ -1083,13 +1083,18 @@ with tab_supply:
             st.subheader('Gasversorgungsdaten')
             col_gas, col_vis_gas = st.columns([1, 2], gap='large')
 
-            select_gas = col_gas.selectbox(
+            init_ss_widget(
+                widget_key='select_gas_supply',
+                ss_variable='select_gas',
+                default_value='Variabel'
+            )
+            ss.select_gas = col_gas.selectbox(
                 'Preisvariante', 
                 ['Variabel', 'Konstant', 'Eigene Daten'],
-                key='select_gas'
+                key='select_gas_supply'
             )
 
-            if select_gas == 'Variabel':
+            if ss.select_gas == 'Variabel':
                 gas_prices_years = list(ss.all_el_prices.index.year.unique())
                 if heat_load_year:
                     gas_year_idx = gas_prices_years.index(heat_load_year)
@@ -1170,23 +1175,33 @@ with tab_supply:
                             + 'Bitte die Daten angleichen.'
                             )
 
-            elif select_gas == 'Konstant':
+            elif ss.select_gas == 'Konstant':
                 gas_prices = ss.all_gas_prices.loc[heat_load['Date']]
                 co2_prices = ss.all_co2_prices.loc[heat_load['Date']]
 
-                constant_gas_value = col_gas.number_input(
-                    'Gaspreis in €/MWh', value=75.00, step=1.00,
-                    key='constant_gas_value'
+                init_ss_widget(
+                    widget_key='num_input_constant_gas_value',
+                    ss_variable='constant_gas_value',
+                    default_value=65.00
                 )
-                gas_prices['gas_price'] = constant_gas_value
-
-                constant_co2_value = col_gas.number_input(
-                    'CO₂-Zertifikatpreis in €/t CO₂', value=30.00, step=1.00,
-                    key='constant_co2_value'
+                ss.constant_gas_value = col_gas.number_input(
+                    'Gaspreis in €/MWh', step=1.00,
+                    key='num_input_constant_gas_value'
                 )
-                co2_prices['co2_price'] = constant_co2_value
+                gas_prices['gas_price'] = ss.constant_gas_value
 
-            elif select_gas == 'Eigene Daten':
+                init_ss_widget(
+                    widget_key='num_input_constant_co2_value',
+                    ss_variable='constant_co2_value',
+                    default_value=30.00
+                )
+                ss.constant_co2_value = col_gas.number_input(
+                    'CO₂-Zertifikatpreis in €/t CO₂', step=1.00,
+                    key='num_input_constant_co2_value'
+                )
+                co2_prices['co2_price'] = ss.constant_co2_value
+
+            elif ss.select_gas == 'Eigene Daten':
                 user_file_gas = col_gas.file_uploader(
                     'Datensatz einlesen', type=['csv', 'xlsx'],
                     help=ss.tt['own_data_gas'], key='own_data_gas'
