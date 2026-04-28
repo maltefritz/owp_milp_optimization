@@ -12,6 +12,8 @@ import pandas as pd
 from jinja2 import Template
 
 from owp_milp_optimization.charts import (create_dispatch_timeseries_chart,
+                                          create_el_prod_grid_chart,
+                                          create_el_prod_internal_chart,
                                           create_heat_production_chart,
                                           create_ordered_duration_line_chart)
 
@@ -115,7 +117,7 @@ def create_capacities_table(overview_caps: pd.DataFrame) -> str:
     df = df.map(lambda x: format_number(x, 1) if isinstance(x, (int, float)) else x)
 
     html = '<table>'
-    html += '<tr><th>Anlage</th><th>Kapazität</th></tr>'
+    html += '<tr><th>Anlage</th><th class="text-right">Kapazität</th></tr>'
 
     for idx, row in df.iterrows():
         html += f'<tr><td>{idx}</td><td class="text-right">{row.iloc[0]}</td></tr>'
@@ -348,12 +350,20 @@ def generate_html_report(
     heat_prod_chart = create_heat_production_chart(energy_system, param_units)
     duration_chart = create_ordered_duration_line_chart(energy_system, param_units)
     dispatch_chart = create_dispatch_timeseries_chart(energy_system, param_units)
+    el_prod_grid_chart = create_el_prod_grid_chart(energy_system)
+    el_prod_internal_chart = create_el_prod_internal_chart(energy_system)
 
     chart_specs = {
         'heat-production-chart': altair_to_vega_spec(heat_prod_chart),
         'duration-line-chart': altair_to_vega_spec(duration_chart),
-        'dispatch-timeseries-chart': altair_to_vega_spec(dispatch_chart),
+        'dispatch-timeseries-chart': altair_to_vega_spec(dispatch_chart)
     }
+
+    if energy_system.chp_used:
+        chart_specs.update({
+        'el-prod-grid-chart': altair_to_vega_spec(el_prod_grid_chart),
+        'el-prod-internal-chart': altair_to_vega_spec(el_prod_internal_chart)
+    })
 
     # Create chart rendering script
     chart_rendering_script = create_chart_rendering_script(chart_specs)
@@ -380,6 +390,23 @@ def generate_html_report(
         </div>
     </div>
     """
+
+    if energy_system.chp_used:
+        chart_sections_html += """
+            <div class="section">
+                <div class="section-title">Stromproduktion</div>
+
+                <div class="subsection-title">Netzeinspeisung</div>
+                <div class="chart-container">
+                    <div id="el-prod-grid-chart"></div>
+                </div>
+
+                <div class="subsection-title">Interne Nutzung</div>
+                <div class="chart-container">
+                    <div id="el-prod-internal-chart"></div>
+                </div>
+            </div>
+        """
 
     # Render main template
     main_template = Template(get_report_template())

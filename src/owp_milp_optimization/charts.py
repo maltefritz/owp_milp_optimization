@@ -214,10 +214,123 @@ def create_dispatch_timeseries_chart(
 
     units = list(hprod_melt['Versorgungsanlage'].unique())
     return alt.Chart(hprod_melt).mark_bar().encode(
-        y=alt.Y('value', title='Wärmeproduktion in MWh'),
+        y=alt.Y(
+            'value',
+            title='Monatliche Wärmeproduktion in MWh'
+        ),
         x=alt.X('yearmonth(Date):O', title='Datum'),
         color=alt.Color('Versorgungsanlage').scale(
             domain=units,
             range=[COLORS.get(re.sub(r'\s\d', '', s), '#999999') for s in units]
         )
+    ).properties(width=600)
+
+
+def create_el_prod_grid_chart(
+    energy_system,
+    start_date=None,
+    end_date=None,
+) -> alt.Chart:
+    """
+    Create time series el. grid production chart.
+
+    Parameters
+    ----------
+    energy_system : EnergySystem
+        Energy system with optimization results
+    start_date : datetime, optional
+        Start date for time series (defaults to first time step)
+    end_date : datetime, optional
+        End date for time series (defaults to last time step)
+
+    Returns
+    -------
+    alt.Chart
+        Altair line chart
+    """
+    if start_date is None:
+        start_date = energy_system.data_all.index[0]
+    if end_date is None:
+        end_date = energy_system.data_all.index[-1]
+
+    elprod = pd.DataFrame(
+        columns=['P_spotmarket']
+        )
+
+    elprod['P_spotmarket'] = energy_system.data_all.loc[
+        start_date:end_date, 'P_spotmarket'
+        ]
+
+    elprod = elprod.resample('W').sum()
+
+    ymax = energy_system.data_all.loc[
+        start_date:end_date, ['P_spotmarket', 'P_internal']
+        ].resample('W').sum().max().max()
+    ymax *= 1.05
+
+    elprod.index.names = ['Date']
+    elprod.reset_index(inplace=True)
+
+    return alt.Chart(elprod).mark_bar(color='#00395B').encode(
+        y=alt.Y(
+            'P_spotmarket',
+            title='Wöchentlich ins Netz eingespeiste Elektrizität in MWh',
+            scale=alt.Scale(domain=[0, ymax])
+            ),
+        x=alt.X('yearweek(Date):O', title='Datum')
+    ).properties(width=600)
+
+
+def create_el_prod_internal_chart(
+    energy_system,
+    start_date=None,
+    end_date=None,
+) -> alt.Chart:
+    """
+    Create time series el. internal usage chart.
+
+    Parameters
+    ----------
+    energy_system : EnergySystem
+        Energy system with optimization results
+    start_date : datetime, optional
+        Start date for time series (defaults to first time step)
+    end_date : datetime, optional
+        End date for time series (defaults to last time step)
+
+    Returns
+    -------
+    alt.Chart
+        Altair line chart
+    """
+    if start_date is None:
+        start_date = energy_system.data_all.index[0]
+    if end_date is None:
+        end_date = energy_system.data_all.index[-1]
+
+    elprod = pd.DataFrame(
+        columns=['P_internal']
+        )
+
+    elprod['P_internal'] = energy_system.data_all.loc[
+        start_date:end_date, 'P_internal'
+        ]
+
+    elprod = elprod.resample('W').sum()
+
+    ymax = energy_system.data_all.loc[
+        start_date:end_date, ['P_spotmarket', 'P_internal']
+        ].resample('W').sum().max().max()
+    ymax *= 1.05
+
+    elprod.index.names = ['Date']
+    elprod.reset_index(inplace=True)
+
+    return alt.Chart(elprod).mark_bar(color='#74ADC0').encode(
+        y=alt.Y(
+            'P_internal',
+            title='Wöchentlich intern genutze Elektrizität in MWh',
+            scale=alt.Scale(domain=[0, ymax])
+            ),
+        x=alt.X('yearweek(Date):O', title='Datum')
     ).properties(width=600)
