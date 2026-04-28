@@ -350,8 +350,6 @@ def generate_html_report(
     heat_prod_chart = create_heat_production_chart(energy_system, param_units)
     duration_chart = create_ordered_duration_line_chart(energy_system, param_units)
     dispatch_chart = create_dispatch_timeseries_chart(energy_system, param_units)
-    el_prod_grid_chart = create_el_prod_grid_chart(energy_system)
-    el_prod_internal_chart = create_el_prod_internal_chart(energy_system)
 
     chart_specs = {
         'heat-production-chart': altair_to_vega_spec(heat_prod_chart),
@@ -360,6 +358,9 @@ def generate_html_report(
     }
 
     if energy_system.chp_used:
+        el_prod_grid_chart = create_el_prod_grid_chart(energy_system)
+        el_prod_internal_chart = create_el_prod_internal_chart(energy_system)
+
         chart_specs.update({
         'el-prod-grid-chart': altair_to_vega_spec(el_prod_grid_chart),
         'el-prod-internal-chart': altair_to_vega_spec(el_prod_internal_chart)
