@@ -1,5 +1,6 @@
 import base64
 import datetime as dt
+import io
 import json
 import os
 import re
@@ -10,6 +11,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 from helpers import footer, format_sep, load_icon_base64s
+from reporting import generate_html_report
 from streamlit import session_state as ss
 
 
@@ -73,6 +75,42 @@ def save_results():
         )
 
     shutil.rmtree(tmppath)
+
+
+@st.dialog('Bericht herunterladen')
+def download_report():
+    """Generate and download HTML report."""
+    with st.spinner('Bericht wird generiert...'):
+        try:
+            # Get image path
+            img_path = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), '..', 'img')
+            )
+            
+            # Generate HTML report
+            html_content = generate_html_report(
+                energy_system=ss.energy_system,
+                overview_caps=ss.overview_caps,
+                param_units=ss.param_units,
+                param_opt=ss.param_opt,
+                img_path=img_path,
+            )
+            
+            # Create download button
+            timestamp = dt.datetime.now().strftime('%Y%m%d_%H%M%S')
+            st.download_button(
+                label='📥 Bericht herunterladen',
+                data=html_content.encode('utf-8'),
+                file_name=f'Bericht_OWP_{timestamp}.html',
+                mime='text/html',
+                key='report_download_btn'
+            )
+            
+            st.success('Bericht erfolgreich generiert!')
+            
+        except Exception as e:
+            st.error(f'Fehler bei der Berichtsgenerierung: {str(e)}')
+
 
 # %% MARK: Parameters
 shortnames = {
@@ -427,7 +465,7 @@ with tab_ov:
 
     with st.container(border=True):
 
-        col_left, col_right = st.columns([1, 1])
+        col_left, col_mid, col_right = st.columns([1, 1, 1])
         reset_es = col_left.button(
             label='📝 **Neues Energiesystem konfigurieren**',
             key='reset_button_results',
@@ -450,8 +488,16 @@ with tab_ov:
                     ss.pop(key)
             st.switch_page('pages/00_Energiesystem.py')
 
+        report_btn = col_mid.button(
+            label='📊 **Bericht herunterladen**',
+            key='report_download_button',
+            width='stretch'
+            )
+        if report_btn:
+            download_report()
+
         save_results_btn = col_right.button(
-            label='💾 **Ergebnisse downloaden**',
+            label='💾 **Daten exportieren**',
             width='stretch'
             )
         if save_results_btn:
