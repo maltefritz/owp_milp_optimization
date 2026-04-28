@@ -401,32 +401,48 @@ with tab_heat:
 with tab_net:
     st.header('Wärmenetz')
 
-    calc_net = st.selectbox(
+    init_ss_widget(
+        widget_key='select_calc_network',
+        ss_variable='calc_network',
+        default_value='Spezfisische Kosten'
+    )
+    ss.calc_network = st.selectbox(
         'Wähle die Kalkulationsmethode aus, die zu berücksichtigen ist',
         ['Spezfisische Kosten', 'Gesamtkosten'],
         placeholder='Kalkulationsmethode Wärmenetz',
         # help=ss.tt['calc_network'],
-        key='calc_network'
+        key='select_calc_network'
     )
 
-    if calc_net == 'Spezfisische Kosten':
+    if ss.calc_network == 'Spezfisische Kosten':
         ss.param_opt['calc_network'] = 'specific'
 
-        base_val_net = st.selectbox(
+        init_ss_widget(
+            widget_key='select_base_val_net',
+            ss_variable='base_val_net',
+            default_value='Trassenlänge'
+        )
+        ss.base_val_net = st.selectbox(
             'Wähle die Bezugsgröße aus, die zu berücksichtigen ist',
             ['Trassenlänge', 'Leistung', 'Nutzung'],
             placeholder='Bezugsgröße der Kalkulationsmethode',
             # help=ss.tt['base_val_net'],
-            key='base_val_net'
+            key='select_base_val_net'
         )
 
         col_spec_mw, col_spec_km, col_abs = st.columns([1, 1, 1], gap='large')
-        ss.param_opt['net_dist'] = col_spec_mw.number_input(
-            'Trassenlänge in km',
-            value=ss.param_opt['net_dist'],
-            help=ss.tt['net_dist'],
-            key=f'net_dist'
+
+        init_ss_widget(
+            widget_key='num_input_net_distance',
+            ss_variable='net_distance',
+            default_value=ss.param_opt['net_dist']
         )
+        ss.net_distance = col_spec_mw.number_input(
+            'Trassenlänge in km',
+            help=ss.tt['net_dist'],
+            key='num_input_net_distance'
+        )
+        ss.param_opt['net_dist'] = ss.net_distance
 
         Q_max = col_spec_km.number_input(
             'Spitzenlast in MW',
@@ -442,10 +458,10 @@ with tab_net:
             key=f'Q_dot_total_{heat_load}'
         )
 
-        if base_val_net == 'Trassenlänge':
+        if ss.base_val_net == 'Trassenlänge':
             net_unit = 'm'
             calc_value = heat_load['heat_demand'].max()
-        elif base_val_net == 'Leistung':
+        elif ss.base_val_net == 'Leistung':
             net_unit = 'MW'
             calc_value = ss.param_opt['net_dist']
         else:
@@ -461,7 +477,7 @@ with tab_net:
             f'Spez. Investitionskosten in €/{net_unit}',
             value=inv_value,
             help=ss.tt['net_inv_spez_mw'],
-            key=f'net_inv_spez_mw_{base_val_net}'
+            key=f'net_inv_spez_mw_{ss.base_val_net}'
         )
         ss.param_opt['net_inv_spez'] /= calc_value
 
@@ -492,7 +508,7 @@ with tab_net:
             f'Spez. Fixkosten in €/{net_unit}',
             value=fix_value,
             help=ss.tt['net_op_cost_fix_mw'],
-            key=f'net_op_cost_fix_mw_{base_val_net}'
+            key=f'net_op_cost_fix_mw_{ss.base_val_net}'
         )
         ss.param_opt['net_op_cost_fix'] /= calc_value
 
@@ -522,7 +538,7 @@ with tab_net:
             f'Spez. variable Kosten in €/{net_unit}',
             value=var_value,
             help=ss.tt['net_op_cost_var_mw'],
-            key=f'net_op_cost_var_mw_{base_val_net}'
+            key=f'net_op_cost_var_mw_{ss.base_val_net}'
         )
 
         ss.param_opt['net_op_cost_var'] /= calc_value
