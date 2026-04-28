@@ -903,10 +903,16 @@ with tab_supply:
                 'Strompreisbestandteile in ct/kWh', help=ss.tt['el_elements']
                 )
 
+            el_price_year = str(el_prices.index[-1].year)
+            if not el_price_year in ss.bound_inputs.keys():
+                el_price_year = str(max(
+                    int(y) for y in ss.bound_inputs.keys()
+                ))
+
             # if 'edited_elp' not in st.session_state:
             st.session_state['edited_elp'] = {
                 k: v for k, v in ss.bound_inputs[
-                        str(el_prices_year)
+                        str(el_price_year)
                     ].items()
             }
 
