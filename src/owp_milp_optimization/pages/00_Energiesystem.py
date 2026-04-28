@@ -35,6 +35,30 @@ def read_input_data():
     return all_heat_load, eco_data
 
 
+def init_ss_widget(widget_key, ss_variable, default_value):
+    """
+    Make widget stateful.
+
+    Parameters
+    ----------
+
+    widget_key : str
+        Key string set within the constructor of the widget.
+
+    ss_variable : str
+        Variable name the widget saves its value in the session state and
+        therefore between pages.
+
+    default_value : any
+        The default value of the widget. Do not set a default value in the
+        widget.
+    """
+    if widget_key not in ss:
+        if ss_variable not in ss:
+            ss[ss_variable] = default_value
+        ss[widget_key] = ss[ss_variable]
+
+
 # %% MARK: Parameters
 shortnames = {
     'Wärmepumpe': 'hp',
@@ -170,7 +194,13 @@ with tab_heat:
 
     col_sel, col_vis = st.columns([1, 2], gap='large')
 
-    dataset_name = col_sel.selectbox(
+    init_ss_widget(
+        widget_key='select_heat_load',
+        ss_variable='dataset_name',
+        default_value='Flensburg'
+    )
+
+    ss.dataset_name = col_sel.selectbox(
         'Wähle die Wärmelastdaten aus, die im System zu verwenden sind',
         [*ss.all_heat_load.columns, 'Eigene Daten'],
         placeholder='Wärmelastendaten', help=ss.tt['select_heat_load'],
@@ -178,7 +208,7 @@ with tab_heat:
     )
 
     heat_load = pd.DataFrame()
-    if dataset_name == 'Eigene Daten':
+    if ss.dataset_name == 'Eigene Daten':
         heat_load_year = None
         user_file = col_sel.file_uploader(
             'Datensatz einlesen', type=['csv', 'xlsx'],
@@ -204,7 +234,7 @@ with tab_heat:
     else:
         user_file = None
         heat_load_years = ss.all_heat_load.loc[
-            ~ss.all_heat_load[dataset_name].isna(), dataset_name
+            ~ss.all_heat_load[ss.dataset_name].isna(), ss.dataset_name
             ].index.year.unique()
         heat_load_year = col_sel.selectbox(
             'Wähle das Jahr der Wärmelastdaten aus',
@@ -213,15 +243,22 @@ with tab_heat:
         )
         yearmask = ss.all_heat_load.index.year == heat_load_year
         heat_load = ss.all_heat_load.loc[
-            yearmask, dataset_name
+            yearmask, ss.dataset_name
             ].copy().to_frame()
 
         dates = None
-        if dataset_name != 'Eigene Daten':
-            precise_dates = col_sel.toggle(
+        if ss.dataset_name != 'Eigene Daten':
+
+            init_ss_widget(
+                widget_key='prec_dates_heat_load',
+                ss_variable='precise_dates_hl',
+                default_value=False
+            )
+
+            ss.precise_dates_hl = col_sel.toggle(
                 'Exakten Zeitraum wählen', key='prec_dates_heat_load'
             )
-            if precise_dates:
+            if ss.precise_dates_hl:
                 dates = col_sel.date_input(
                     'Zeitraum auswählen:',
                     value=(
@@ -238,47 +275,81 @@ with tab_heat:
                     ]
                 heat_load = heat_load.loc[dates[0]:dates[1], :]
 
-            scale_hl = col_sel.toggle('Daten skalieren', key='scale_hl')
-            if scale_hl:
-                scale_method_hl = col_sel.selectbox(
+            init_ss_widget(
+                widget_key='toggle_scale_hl',
+                ss_variable='scale_hl',
+                default_value=False
+            )
+
+            ss.scale_hl = col_sel.toggle(
+                'Daten skalieren', key='toggle_scale_hl'
+            )
+            if ss.scale_hl:
+                init_ss_widget(
+                    widget_key='select_scale_method_hl',
+                    ss_variable='scale_method_hl',
+                    default_value='Haushalte'
+                )
+                ss.scale_method_hl = col_sel.selectbox(
                     'Methode', ['Haushalte', 'Faktor', 'Erweitert'],
-                    help=ss.tt['scale_method_hl'], key='scale_method_hl'
+                    help=ss.tt['scale_method_hl'], key='select_scale_method_hl'
                     )
-                if scale_method_hl == 'Haushalte':
-                    if dataset_name == 'Flensburg':
+                if ss.scale_method_hl == 'Haushalte':
+                    if ss.dataset_name == 'Flensburg':
                         base_households = 50000
                         tt_households = ss.tt['scale_households_hl_fl']
-                    elif dataset_name == 'Sonderburg':
+                    elif ss.dataset_name == 'Sonderburg':
                         base_households = 13000
                         tt_households = ss.tt['scale_households_hl_so']
-                    scale_households_hl = col_sel.number_input(
-                        'Anzahl Haushalte', value=base_households,
+                    init_ss_widget(
+                        widget_key='num_input_scale_households_hl',
+                        ss_variable='scale_households_hl',
+                        default_value=base_households
+                    )
+                    ss.scale_households_hl = col_sel.number_input(
+                        'Anzahl Haushalte',
                         min_value=1, step=100, help=tt_households,
-                        key='scale_households_hl'
+                        key='num_input_scale_households_hl'
                         )
-                    heat_load[dataset_name] *= scale_households_hl / base_households
-                elif scale_method_hl == 'Faktor':
-                    scale_factor_hl = col_sel.number_input(
-                        'Skalierungsfaktor', value=1.0, step=0.1, min_value=0.0,
-                        help=ss.tt['scale_factor_hl'], key='scale_factor_hl'
+                    heat_load[ss.dataset_name] *= ss.scale_households_hl / base_households
+                elif ss.scale_method_hl == 'Faktor':
+                    init_ss_widget(
+                        widget_key='num_input_scale_factor_hl',
+                        ss_variable='scale_factor_hl',
+                        default_value=1.0
+                    )
+                    ss.scale_factor_hl = col_sel.number_input(
+                        'Skalierungsfaktor', step=0.1, min_value=0.0,
+                        help=ss.tt['scale_factor_hl'],
+                        key='num_input_scale_factor_hl'
                         )
-                    heat_load[dataset_name] *= scale_factor_hl
-                elif scale_method_hl == 'Erweitert':
-                    scale_amp_hl = col_sel.number_input(
-                        'Stauchungsfaktor', value=1.0, step=0.1, min_value=0.0,
-                        help=ss.tt['scale_amp_hl'], key='scale_amp_hl'
+                    heat_load[ss.dataset_name] *= ss.scale_factor_hl
+                elif ss.scale_method_hl == 'Erweitert':
+                    init_ss_widget(
+                        widget_key='num_input_scale_amp_hl',
+                        ss_variable='scale_amp_hl',
+                        default_value=1.0
+                    )
+                    ss.scale_amp_hl = col_sel.number_input(
+                        'Stauchungsfaktor', step=0.1, min_value=0.0,
+                        help=ss.tt['scale_amp_hl'], key='num_input_scale_amp_hl'
                         )
-                    scale_off_hl = col_sel.number_input(
-                        'Offset', value=1.0, step=0.1, help=ss.tt['scale_off_hl'],
-                        key='scale_off_hl'
+                    init_ss_widget(
+                        widget_key='num_input_scale_off_hl',
+                        ss_variable='scale_off_hl',
+                        default_value=1.0
+                    )
+                    ss.scale_off_hl = col_sel.number_input(
+                        'Offset', step=0.1, help=ss.tt['scale_off_hl'],
+                        key='num_input_scale_off_hl'
                         )
-                    heat_load_median = heat_load[dataset_name].median()
-                    heat_load[dataset_name] = (
-                        (heat_load[dataset_name] - heat_load_median) * scale_amp_hl
-                        + heat_load_median + scale_off_hl
+                    heat_load_median = heat_load[ss.dataset_name].median()
+                    heat_load[ss.dataset_name] = (
+                        (heat_load[ss.dataset_name] - heat_load_median) * ss.scale_amp_hl
+                        + heat_load_median + ss.scale_off_hl
                         )
                     # negative_mask = heat_load[dataset_name] < 0
-                    if (heat_load[dataset_name] < 0).values.any():
+                    if (heat_load[ss.dataset_name] < 0).values.any():
                         st.error(
                             'Durch die Skalierung resultiert eine negative '
                             + 'Wärmelast. Bitte den Offset anpassen.'
@@ -286,7 +357,7 @@ with tab_heat:
 
     col_vis.subheader('Wärmelastdaten')
 
-    if user_file is not None or dataset_name != 'Eigene Daten':
+    if user_file is not None or ss.dataset_name != 'Eigene Daten':
         heat_load.rename(
             columns={heat_load.columns[0]: 'heat_demand'}, inplace=True
             )
@@ -303,10 +374,16 @@ with tab_heat:
 
     col_sel.subheader('Wärmeerlöse')
 
-    ss.param_opt['heat_price'] = col_sel.number_input(
-        'Wärmeerlös in €/MWh', value=ss.param_opt['heat_price'],
+    init_ss_widget(
+        widget_key='heat_revenue',
+        ss_variable='select_heat_price',
+        default_value=ss.param_opt['heat_price']
+    )
+    ss.select_heat_price = col_sel.number_input(
+        'Wärmeerlös in €/MWh',
         help=ss.tt['heat_revenue'], key='heat_revenue'
         )
+    ss.param_opt['heat_price'] = ss.select_heat_price
 
     # %% Solarthermie wird anhand der Wärmelastdaten ausgewählt
     solar_heat_flow = ss.all_solar_heat_flow[
