@@ -861,13 +861,18 @@ with tab_supply:
             st.subheader('Elektrizitätsversorgungsdaten')
             col_elp, col_vis_el = st.columns([1, 2], gap='large')
 
-            select_el = col_elp.selectbox(
+            init_ss_widget(
+                widget_key='select_electricity',
+                ss_variable='select_el',
+                default_value='Variabel'
+            )
+            ss.select_el = col_elp.selectbox(
                 'Preisvariante', 
                 ['Variabel', 'Konstant', 'Eigene Daten'],
-                key='select_el'
+                key='select_electricity'
             )
 
-            if select_el == 'Variabel':
+            if ss.select_el == 'Variabel':
                 el_prices_years = list(ss.all_el_prices.index.year.unique())
                 if heat_load_year:
                     el_year_idx = el_prices_years.index(heat_load_year)
@@ -947,23 +952,35 @@ with tab_supply:
                             + 'Bitte die Daten angleichen.'
                             )
 
-            elif select_el == 'Konstant':
+            elif ss.select_el == 'Konstant':
                 el_prices = ss.all_el_prices.loc[heat_load['Date']]
                 el_em = ss.all_el_emissions.loc[heat_load['Date']]
 
-                constant_el_value = col_elp.number_input(
-                    'Spotmarktpreis in €/MWh', value=80.00, step=1.00,
-                    key='constant_el_value'
+                init_ss_widget(
+                    widget_key='num_input_constant_el_value',
+                    ss_variable='constant_el_value',
+                    default_value=80.00
                 )
-                el_prices['el_spot_price'] = constant_el_value
-
-                constant_el_em_value = col_elp.number_input(
-                    'Emissionsfaktor Strommix in kg CO₂/MWh', value=55.00,
-                    step=1.00, key='constant_el_em_value'
+                ss.constant_el_value = col_elp.number_input(
+                    'Spotmarktpreis in €/MWh', step=1.00,
+                    key='num_input_constant_el_value'
                 )
-                el_em['ef_om'] = constant_el_em_value
+                el_prices['el_spot_price'] = ss.constant_el_value
 
-            elif select_el == 'Eigene Daten':
+
+                init_ss_widget(
+                    widget_key='num_input_constant_el_em_value',
+                    ss_variable='constant_el_em_value',
+                    default_value=55.00
+                )
+                ss.constant_el_em_value = col_elp.number_input(
+                    'Emissionsfaktor Strommix in kg CO₂/MWh',
+                    step=1.00,
+                    key='num_input_constant_el_em_value'
+                )
+                el_em['ef_om'] = ss.constant_el_em_value
+
+            elif ss.select_el == 'Eigene Daten':
                 user_file_el = col_elp.file_uploader(
                     'Datensatz einlesen', type=['csv', 'xlsx'],
                     help=ss.tt['own_data_el'], key='own_data_el'
