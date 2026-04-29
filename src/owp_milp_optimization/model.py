@@ -521,10 +521,10 @@ class EnergySystem():
                 self.data_caps[f'cap_{unit}'] = unit_params[param_var]
 
         if None in self.data_all.columns:
-            self.data_all.drop(columns=[None], inplace=True)
+            self.data_all.drop(columns=[None], inplace=True, errors='ignore')
         for col in self.data_all.columns:
             if ('status' in col[-1]) or ('state' in col):
-                self.data_all.drop(columns=col, inplace=True)
+                self.data_all.drop(columns=col, inplace=True, errors='ignore')
 
         self.data_caps = self.data_caps.to_frame().transpose()
         self.data_caps.reset_index(inplace=True, drop=True)
@@ -532,12 +532,12 @@ class EnergySystem():
             self.data_caps.loc[:,~self.data_caps.columns.duplicated()].copy()
         )
         if None in self.data_caps.columns:
-            self.data_caps.drop(columns=[None], inplace=True)
+            self.data_caps.drop(columns=[None], inplace=True, errors='ignore')
         drop_cols = []
         for col in self.data_caps.columns:
             if ('total' in str(col)) or ('0' in str(col)):
                 drop_cols += [col]
-        self.data_caps.drop(columns=drop_cols, inplace=True)
+        self.data_caps.drop(columns=drop_cols, inplace=True, errors='ignore')
 
         try:
             self.data_all = self.data_all.reindex(
