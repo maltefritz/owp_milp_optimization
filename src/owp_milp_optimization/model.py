@@ -970,8 +970,9 @@ def check_column(col, debug):
             return f'cap_{col[0][0]}'
         elif col[1] == 'total':
             return f'total_{col[0][0]}'
+        elif col[1] == 'storage_losses':
+            return f'storage_losses_{col[0][0]}'
         else:
-            # return f'storage_losses_{col[0][0]}'
             return str(col)
 
     else:
