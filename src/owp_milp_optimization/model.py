@@ -881,7 +881,6 @@ def result_labeling(df, debug=True, **kwargs):
         df.rename(index=labeldict, inplace=True)
 
 def check_column(col, debug):
-    print(col)
     if col[0][1] == 'heat network':
         if col[0][0].rstrip('0123456789') == 'hp':
             if col[1] == 'flow':
@@ -972,10 +971,8 @@ def check_column(col, debug):
         elif col[1] == 'total':
             return f'total_{col[0][0]}'
         else:
-            print('##########################')
-            print(col)
-            print('##########################')
-            return f'storage_losses_{col[0][0]}'
+            # return f'storage_losses_{col[0][0]}'
+            return str(col)
 
     else:
         if debug:
