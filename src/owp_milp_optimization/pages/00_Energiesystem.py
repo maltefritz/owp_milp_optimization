@@ -408,7 +408,7 @@ with tab_net:
     )
     ss.calc_network = st.selectbox(
         'Wähle die Kalkulationsmethode aus, die zu berücksichtigen ist',
-        ['Spezifische Kosten', 'Gesamtkosten'],
+        ['Spezifische Kosten', 'Gesamtkosten', 'Keine Netzkosten'],
         placeholder='Kalkulationsmethode Wärmenetz',
         # help=ss.tt['calc_network'],
         key='select_calc_network'
@@ -418,83 +418,28 @@ with tab_net:
         ss.param_opt['calc_network'] = 'specific'
 
         init_ss_widget(
-            widget_key='select_base_val_net',
-            ss_variable='base_val_net',
-            default_value='Trassenlänge'
-        )
-        ss.base_val_net = st.selectbox(
-            'Wähle die Bezugsgröße aus, die zu berücksichtigen ist',
-            ['Trassenlänge', 'Leistung', 'Nutzung'],
-            placeholder='Bezugsgröße der Kalkulationsmethode',
-            # help=ss.tt['base_val_net'],
-            key='select_base_val_net'
-        )
-
-        col_spec_mw, col_spec_km, col_abs = st.columns([1, 1, 1], gap='large')
-
-        init_ss_widget(
             widget_key='num_input_net_distance',
             ss_variable='net_distance',
             default_value=ss.param_opt['net_dist']
         )
-        ss.net_distance = col_spec_mw.number_input(
+        ss.net_distance = st.number_input(
             'Trassenlänge in km',
             help=ss.tt['net_dist'],
             key='num_input_net_distance'
         )
         ss.param_opt['net_dist'] = ss.net_distance
 
-        Q_max = col_spec_km.number_input(
-            'Spitzenlast in MW',
-            value=heat_load['heat_demand'].max(),
-            disabled=True,
-            key=f'Q_max_{heat_load}',
-        )
-
-        Q_dot_total = col_abs.number_input(
-            'Jährliche Wärmemenge in MWh',
-            value=heat_load['heat_demand'].sum(),
-            disabled=True,
-            key=f'Q_dot_total_{heat_load}'
-        )
-
-        if ss.base_val_net == 'Trassenlänge':
-            net_unit = 'm'
-            calc_value = heat_load['heat_demand'].max()
-        elif ss.base_val_net == 'Leistung':
-            net_unit = 'MW'
-            calc_value = ss.param_opt['net_dist']
-        else:
-            net_unit = 'MWh'
-            calc_value = ss.param_opt['net_dist']
-        inv_value = ss.param_opt['net_inv_spez'] * calc_value
-        fix_value = ss.param_opt['net_op_cost_fix'] * calc_value
-        var_value = ss.param_opt['net_op_cost_var'] * calc_value
-
-        col_spec_mw, col_spec_km, col_abs = st.columns([1, 1, 1], gap='large')
+        col_spec_mw, col_abs = st.columns([1, 1], gap='large')
         # Invest cost
         ss.param_opt['net_inv_spez'] = col_spec_mw.number_input(
-            f'Spez. Investitionskosten in €/{net_unit}',
-            value=inv_value,
+            'Spez. Investitionskosten in €/m',
+            value=ss.param_opt['net_inv_spez'],
             help=ss.tt['net_inv_spez_mw'],
-            key=f'net_inv_spez_mw_{ss.base_val_net}'
-        )
-        ss.param_opt['net_inv_spez'] /= calc_value
-
-        net_inv_spec_mw_m = (
-            ss.param_opt['net_inv_spez'] * calc_value
-        )
-        net_inv_spec_mw_m = format_sep(net_inv_spec_mw_m, dec=0)
-        col_spec_km.metric(
-            'Spez. Investitionskosten in €/MW/m',
-            help=ss.tt['net_inv_spez_mw'],
-            value=ss.param_opt['net_inv_spez']
+            key=f'net_inv_spez'
         )
 
         net_inv_abs = (
-            ss.param_opt['net_inv_spez']
-            * heat_load['heat_demand'].max()
-            * ss.param_opt['net_dist'] * 1000
+            ss.param_opt['net_inv_spez'] * ss.param_opt['net_dist'] * 1000
         )
         net_inv_abs = format_sep(net_inv_abs, dec=0)
         col_abs.metric(
@@ -503,29 +448,16 @@ with tab_net:
         )
 
         # Fixed operation cost
-        col_spec_mw, col_spec_km, col_abs = st.columns([1, 1, 1], gap='large')
+        col_spec_mw, col_abs = st.columns([1, 1], gap='large')
         ss.param_opt['net_op_cost_fix'] = col_spec_mw.number_input(
-            f'Spez. Fixkosten in €/{net_unit}',
-            value=fix_value,
+            'Spez. Fixkosten in €/m',
+            value=ss.param_opt['net_op_cost_fix'],
             help=ss.tt['net_op_cost_fix_mw'],
-            key=f'net_op_cost_fix_mw_{ss.base_val_net}'
-        )
-        ss.param_opt['net_op_cost_fix'] /= calc_value
-
-        net_fix_spec_mw_m = (
-            ss.param_opt['net_op_cost_fix'] * calc_value
-        )
-        net_fix_spec_mw_m = format_sep(net_fix_spec_mw_m, dec=0)
-        col_spec_km.metric(
-            'Spez. Fixkosten in €/MW/m', 
-            help=ss.tt['net_op_cost_fix_mw'],
-            value=ss.param_opt['net_op_cost_fix']
+            key=f'net_op_cost_fix_mw'
         )
 
         net_fix_abs = (
-            ss.param_opt['net_op_cost_fix']
-            * heat_load['heat_demand'].max()
-            * ss.param_opt['net_dist']
+            ss.param_opt['net_op_cost_fix'] * ss.param_opt['net_dist'] * 1000
         )
         net_fix_abs = format_sep(net_fix_abs, dec=0)
         col_abs.metric(
@@ -533,36 +465,23 @@ with tab_net:
         )
 
         # Variable operation cost
-        col_spec_mw, col_spec_km, col_abs = st.columns([1, 1, 1], gap='large')
+        col_spec_mw, col_abs = st.columns([1, 1], gap='large')
         ss.param_opt['net_op_cost_var'] = col_spec_mw.number_input(
-            f'Spez. variable Kosten in €/{net_unit}',
-            value=var_value,
+            'Spez. variable Kosten in €/m',
+            value=ss.param_opt['net_op_cost_var'],
             help=ss.tt['net_op_cost_var_mw'],
-            key=f'net_op_cost_var_mw_{ss.base_val_net}'
-        )
-
-        ss.param_opt['net_op_cost_var'] /= calc_value
-
-        net_var_spec_mw_m = (
-            ss.param_opt['net_op_cost_var'] * calc_value
-        )
-        net_var_spec_mw_m = format_sep(net_var_spec_mw_m, dec=0)
-        col_spec_km.metric(
-            'Spez. variable Kosten in €/MWh/m', 
-            value=ss.param_opt['net_op_cost_var']
+            key=f'net_op_cost_var_mw'
         )
 
         net_var_abs = (
-            ss.param_opt['net_op_cost_var']
-            * heat_load['heat_demand'].sum()
-            * ss.param_opt['net_dist']
+            ss.param_opt['net_op_cost_var'] * ss.param_opt['net_dist'] * 1000
         )
         net_var_abs = format_sep(net_var_abs, dec=0)
         col_abs.metric(
             'Gesamte variable Kosten in €/a', value=net_var_abs
         )
 
-    else:
+    elif ss.calc_network == 'Gesamtkosten':
         ss.param_opt['calc_network'] = 'total'
         ss.param_opt['net_inv_total'] = st.number_input(
             'Gesamte Investitionskosten in €',
@@ -581,6 +500,25 @@ with tab_net:
             value=ss.param_opt['net_op_cost_var_total'],
             # help=ss.tt['net_inv_spez_mw'],
             key='net_op_cost_var_total'
+        )
+    
+    elif ss.calc_network == 'Keine Netzkosten':
+        ss.param_opt['calc_network'] = 'total'
+        ss.param_opt['net_inv_total'] = 0
+        ss.param_opt['net_op_cost_fix_total'] = 0
+        ss.param_opt['net_op_cost_var_total'] = 0
+
+        st.warning(
+            'Bei der Optimierung werden keine Netzkosten berücksichtigt. '
+            + 'Das bedeutet, dass Investitions-, variable und fixe '
+            + 'Betriebskosten für den Netzanschluss beziehungsweise für die '
+            + 'Infrastruktur zum Transport und zur Verteilung der Wärme nicht '
+            + 'in die Berechnung einfließen werden.\n\n'
+            + 'Somit stellen die ausgewiesen Wärmegestehungskosten stellen '
+            + 'ausschließlich die Kosten der Erzeugung innerhalb der '
+            + 'betrachteten Systems dar. Würden zusätzliche Netzkosten '
+            + 'einbezogen, würden sich die Wärmegestehungskosten entsprechend '
+            + 'erhöhen.'
         )
 
 # %% MARK: Energy System
