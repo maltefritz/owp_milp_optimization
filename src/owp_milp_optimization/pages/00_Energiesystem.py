@@ -404,17 +404,17 @@ with tab_net:
     init_ss_widget(
         widget_key='select_calc_network',
         ss_variable='calc_network',
-        default_value='Spezfisische Kosten'
+        default_value='Spezifische Kosten'
     )
     ss.calc_network = st.selectbox(
         'Wähle die Kalkulationsmethode aus, die zu berücksichtigen ist',
-        ['Spezfisische Kosten', 'Gesamtkosten'],
+        ['Spezifische Kosten', 'Gesamtkosten'],
         placeholder='Kalkulationsmethode Wärmenetz',
         # help=ss.tt['calc_network'],
         key='select_calc_network'
     )
 
-    if ss.calc_network == 'Spezfisische Kosten':
+    if ss.calc_network == 'Spezifische Kosten':
         ss.param_opt['calc_network'] = 'specific'
 
         init_ss_widget(
