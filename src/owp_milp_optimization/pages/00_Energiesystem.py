@@ -452,7 +452,7 @@ with tab_net:
         ss.param_opt['net_op_cost_fix'] = col_spec_mw.number_input(
             'Spez. Fixkosten in €/m',
             value=ss.param_opt['net_op_cost_fix'],
-            help=ss.tt['net_op_cost_fix_mw'],
+            help=ss.tt['net_op_cost_fix'],
             key=f'net_op_cost_fix_mw'
         )
 
@@ -467,18 +467,29 @@ with tab_net:
         # Variable operation cost
         col_spec_mw, col_abs = st.columns([1, 1], gap='large')
         ss.param_opt['net_op_cost_var'] = col_spec_mw.number_input(
-            'Spez. variable Kosten in €/m',
+            'Spez. variable Kosten in €/MWh',
             value=ss.param_opt['net_op_cost_var'],
-            help=ss.tt['net_op_cost_var_mw'],
+            help=ss.tt['net_op_cost_var'],
             key=f'net_op_cost_var_mw'
         )
 
         net_var_abs = (
             ss.param_opt['net_op_cost_var'] * ss.param_opt['net_dist'] * 1000
         )
+        net_var_abs = (
+            ss.param_opt['net_op_cost_var'] * heat_load['heat_demand'].sum()
+        )
+
+        
+        col_var_cost, col_demand_sum = col_abs.columns([1, 1], gap='large')
         net_var_abs = format_sep(net_var_abs, dec=0)
-        col_abs.metric(
+        col_var_cost.metric(
             'Gesamte variable Kosten in €/a', value=net_var_abs
+        )
+        demand_sum = format_sep(heat_load['heat_demand'].sum(), dec=0)
+        col_demand_sum.metric(
+            'Aufsummierte jährliche Wärmelast MWh',
+            value=demand_sum
         )
 
     elif ss.calc_network == 'Gesamtkosten':

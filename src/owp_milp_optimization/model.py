@@ -639,20 +639,17 @@ class EnergySystem():
         if self.param_opt['calc_network'] == 'specific':
             self.key_params['invest_net_total'] = (
                 self.param_opt['net_inv_spez']
-                * self.data_all['Q_demand'].max()
                 * self.param_opt['net_dist'] * 1000
             )
 
             self.key_params['cost_net_fix_total'] = (
                 self.param_opt['net_op_cost_fix']
-                * self.data_all['Q_demand'].max()
-                * self.param_opt['net_dist']
+                * self.param_opt['net_dist'] * 1000
             )
 
             self.key_params['cost_net_var_total'] = (
                 self.param_opt['net_op_cost_var']
                 * self.data_all['Q_demand'].sum()
-                * self.param_opt['net_dist']
             )
         elif self.param_opt['calc_network'] == 'total':
             self.key_params['invest_net_total'] = (
