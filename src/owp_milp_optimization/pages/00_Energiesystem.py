@@ -958,13 +958,14 @@ with tab_supply:
                     el_prices = user_file_el[['el_spot_price']].copy()
                     el_em = user_file_el[['ef_om']].copy()
 
+# %% MARK: El. price comps
             init_ss_widget(
                 widget_key='use_elp_toggle',
                 ss_variable='use_elp',
                 default_value=True
             )
             ss.use_elp = col_elp.toggle(
-                'Berücksichtigung der Strompreisbestandteile',
+                'Berücksichtigung zusätzlicher Strompreisbestandteile',
                 key='use_elp_toggle'
             )
 
@@ -977,14 +978,28 @@ with tab_supply:
                     help=ss.tt['el_elements']
                 )
 
-                el_price_year = str(el_prices.index[-1].year)
-                if not el_price_year in ss.bound_inputs.keys():
-                    el_price_year = str(max(
-                        int(y) for y in ss.bound_inputs.keys()
-                    ))
+                el_prices_comp_year = list(
+                    ss.all_el_prices.index.year.unique()
+                )
+                if heat_load_year:
+                    default_el_price_comp_year = heat_load_year
+                else:
+                    default_el_price_comp_year = 2024
+                init_ss_widget(
+                    widget_key='select_gas_prices_year',
+                    ss_variable='el_price_comp_year',
+                    default_value=default_el_price_comp_year
+                )
+                ss.el_price_comp_year = col_elp.selectbox(
+                    'Wähle das Jahr der Daten aus',
+                    el_prices_comp_year,
+                    placeholder='Betrachtungsjahr',
+                    key='select_gas_prices_comp_year'
+                )
+
                 st.session_state['edited_elp'] = {
                     k: v for k, v in ss.bound_inputs[
-                            str(el_price_year)
+                            str(ss.el_price_comp_year)
                         ].items()
                 }
 
@@ -996,7 +1011,9 @@ with tab_supply:
                 )
 
                 elp_sum = col_elp.dataframe(
-                    pd.DataFrame(st.session_state['edited_elp']).sum().to_frame(name='Summe').T,
+                    pd.DataFrame(
+                        st.session_state['edited_elp']
+                    ).sum().to_frame(name='Summe').T,
                     width='stretch',
                     key='elp_sum'
                 )
@@ -1009,9 +1026,8 @@ with tab_supply:
                 ss.param_opt['elec_consumer_charges_self'] = round(
                     sum(val * 10 for val in edited_elp['Eigennutzung'].values()), 2
                 )
-                col_elp.info(
-                    f'Data for fees and levies from the year {el_price_year}'
-                )
+
+            col_emi, col_vis_emi = st.columns([1, 2], gap='large')
 
             col_vis_el.subheader('Spotmarkt Strompreise')
             el_prices.reset_index(inplace=True)
@@ -1026,9 +1042,9 @@ with tab_supply:
                 width='stretch'
                 )
 
-            col_vis_el.subheader('Emissionsfaktoren des Strommixes')
+            col_vis_emi.subheader('Emissionsfaktoren des Strommixes')
             el_em.reset_index(inplace=True)
-            col_vis_el.altair_chart(
+            col_vis_emi.altair_chart(
                 alt.Chart(el_em).mark_line(color='#74ADC0').encode(
                     y=alt.Y(
                         'ef_om',
