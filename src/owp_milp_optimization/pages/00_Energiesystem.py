@@ -958,44 +958,60 @@ with tab_supply:
                     el_prices = user_file_el[['el_spot_price']].copy()
                     el_em = user_file_el[['ef_om']].copy()
 
-            col_elp.subheader(
-                'Strompreisbestandteile in ct/kWh', help=ss.tt['el_elements']
+            init_ss_widget(
+                widget_key='use_elp_toggle',
+                ss_variable='use_elp',
+                default_value=True
+            )
+            ss.use_elp = col_elp.toggle(
+                'Berücksichtigung der Strompreisbestandteile',
+                key='use_elp_toggle'
+            )
+
+            if not ss.use_elp:
+                ss.param_opt['elec_consumer_charges_grid'] = 0.0
+                ss.param_opt['elec_consumer_charges_self'] = 0.0
+            else:
+                col_elp.markdown(
+                    '#### Strompreisbestandteile in ct/kWh',
+                    help=ss.tt['el_elements']
                 )
 
-            el_price_year = str(el_prices.index[-1].year)
-            if not el_price_year in ss.bound_inputs.keys():
-                el_price_year = str(max(
-                    int(y) for y in ss.bound_inputs.keys()
-                ))
+                el_price_year = str(el_prices.index[-1].year)
+                if not el_price_year in ss.bound_inputs.keys():
+                    el_price_year = str(max(
+                        int(y) for y in ss.bound_inputs.keys()
+                    ))
+                st.session_state['edited_elp'] = {
+                    k: v for k, v in ss.bound_inputs[
+                            str(el_price_year)
+                        ].items()
+                }
 
-            # if 'edited_elp' not in st.session_state:
-            st.session_state['edited_elp'] = {
-                k: v for k, v in ss.bound_inputs[
-                        str(el_price_year)
-                    ].items()
-            }
+                st.session_state['edited_elp'] = col_elp.data_editor(
+                    st.session_state['edited_elp'],
+                    width='stretch',
+                    disabled=['index', 0],
+                    key='el_elements'
+                )
 
-            st.session_state['edited_elp'] = col_elp.data_editor(
-                st.session_state['edited_elp'],
-                width='stretch',
-                disabled=['index', 0],
-                key='el_elements'
-            )
+                elp_sum = col_elp.dataframe(
+                    pd.DataFrame(st.session_state['edited_elp']).sum().to_frame(name='Summe').T,
+                    width='stretch',
+                    key='elp_sum'
+                )
 
-            elp_sum = col_elp.dataframe(
-                pd.DataFrame(st.session_state['edited_elp']).sum().to_frame(name='Summe').T,
-                width='stretch',
-                key='elp_sum'
-            )
+                edited_elp = st.session_state['edited_elp']
 
-            edited_elp = st.session_state['edited_elp']
-
-            ss.param_opt['elec_consumer_charges_grid'] = round(
-                sum(val * 10 for val in edited_elp['Netzbezug'].values()), 2
-            )
-            ss.param_opt['elec_consumer_charges_self'] = round(
-                sum(val * 10 for val in edited_elp['Eigennutzung'].values()), 2
-            )
+                ss.param_opt['elec_consumer_charges_grid'] = round(
+                    sum(val * 10 for val in edited_elp['Netzbezug'].values()), 2
+                )
+                ss.param_opt['elec_consumer_charges_self'] = round(
+                    sum(val * 10 for val in edited_elp['Eigennutzung'].values()), 2
+                )
+                col_elp.info(
+                    f'Data for fees and levies from the year {el_price_year}'
+                )
 
             col_vis_el.subheader('Spotmarkt Strompreise')
             el_prices.reset_index(inplace=True)
@@ -1207,7 +1223,7 @@ with tab_supply:
                         user_data_gas = pd.read_excel(user_file_gas, index_col=0)
                     gas_prices = user_data_gas[['gas_price']].copy()
 
-            col_gas.subheader('Emissionsfaktor Gas')
+            col_gas.markdown('#### Emissionsfaktor Gas')
             init_ss_widget(
                 widget_key='num_input_ef_gas',
                 ss_variable='ef_gas',
