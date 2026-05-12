@@ -1046,39 +1046,56 @@ with tab_supply:
             if ss.select_gas == 'Variabel':
                 gas_prices_years = list(ss.all_gas_prices.index.year.unique())
                 if heat_load_year:
-                    gas_year_idx = gas_prices_years.index(heat_load_year)
+                    default_gas_year = heat_load_year
                 else:
-                    gas_year_idx = len(gas_prices_years) - 1
-                gas_prices_year = col_gas.selectbox(
+                    default_gas_year = 2024
+                init_ss_widget(
+                    widget_key='select_gas_prices_year',
+                    ss_variable='gas_prices_year',
+                    default_value=default_gas_year
+                )
+                ss.gas_prices_year = col_gas.selectbox(
                     'Wähle das Jahr der Gaspreisdaten aus',
-                    gas_prices_years, index=gas_year_idx,
-                    placeholder='Betrachtungsjahr'
+                    gas_prices_years,
+                    placeholder='Betrachtungsjahr',
+                    key='select_gas_prices_year'
                 )
                 gas_prices = ss.all_gas_prices[
-                    ss.all_gas_prices.index.year == gas_prices_year
+                    ss.all_gas_prices.index.year == ss.gas_prices_year
                     ].copy()
-                precise_dates = col_gas.toggle(
+                init_ss_widget(
+                    widget_key='prec_dates_gas_prices',
+                    ss_variable='precise_dates_gas',
+                    default_value=False
+                )
+                ss.precise_dates_gas = col_gas.toggle(
                     'Exakten Zeitraum wählen', key='prec_dates_gas_prices'
                     )
-                if precise_dates:
-                    gas_dates = col_gas.date_input(
+                if ss.precise_dates_gas:
+                    init_ss_widget(
+                        widget_key='date_picker_gas_prices',
+                        ss_variable='gas_dates',
+                        default_value=(
+                            dates if dates is not None else (
+                                dt.date(int(heat_load_year), 3, 28),
+                                dt.date(int(heat_load_year), 7, 2)
+                            )
+                        )
+                    )
+                    ss.gas_dates = col_gas.date_input(
                         'Zeitraum auswählen:',
-                        value=dates if dates is not None else (
-                            dt.date(int(heat_load_year), 3, 28),
-                            dt.date(int(heat_load_year), 7, 2)
-                            ),
                         min_value=dt.date(int(heat_load_year), 1, 1),
                         max_value=dt.date(int(heat_load_year), 12, 31),
                         format='DD.MM.YYYY',
                         help=ss.tt['date_picker_gas_prices'],
                         key='date_picker_gas_prices'
                         )
-                    gas_dates = [
+                    ss.gas_dates = [
                         dt.datetime(
                             year=d.year, month=d.month, day=d.day
-                        ) for d in gas_dates
+                        ) for d in ss.gas_dates
                     ]
-                    gas_prices = gas_prices.loc[gas_dates[0]:gas_dates[1], :]
+                    gas_prices = gas_prices.loc[ss.gas_dates[0]:ss.gas_dates[1], :]
 
                 if any(heat_load):
                     nr_steps_hl = len(heat_load.index)
@@ -1091,33 +1108,64 @@ with tab_supply:
                             + 'Bitte die Daten angleichen.'
                             )
 
-                scale_gas = col_gas.toggle('Daten skalieren', key='scale_gas')
-                if scale_gas:
-                    scale_method_gas = col_gas.selectbox(
+                init_ss_widget(
+                    widget_key='toggle_scale_gas',
+                    ss_variable='scale_gas',
+                    default_value=False
+                )
+                ss.scale_gas = col_gas.toggle(
+                    'Daten skalieren', key='toggle_scale_gas'
+                )
+                if ss.scale_gas:
+                    init_ss_widget(
+                        widget_key='select_scale_method_gas',
+                        ss_variable='scale_method_gas',
+                        default_value='Faktor'
+                    )
+                    ss.scale_method_gas = col_gas.selectbox(
                         'Methode', ['Faktor', 'Erweitert'],
-                        help=ss.tt['scale_method_gas'], key='scale_method_gas'
+                        help=ss.tt['scale_method_gas'],
+                        key='select_scale_method_gas'
                         )
-                    if scale_method_gas == 'Faktor':
-                        scale_factor_gas = col_gas.number_input(
-                            'Skalierungsfaktor', value=1.0, step=0.1,
-                            min_value=0.0, help=ss.tt['scale_factor_gas'],
-                            key='scale_factor_gas'
+                    if ss.scale_method_gas == 'Faktor':
+                        init_ss_widget(
+                            widget_key='num_input_scale_factor_gas',
+                            ss_variable='scale_factor_gas',
+                            default_value=1.0
+                        )
+                        ss.scale_factor_gas = col_gas.number_input(
+                            'Skalierungsfaktor',
+                            step=0.1, min_value=0.0,
+                            help=ss.tt['scale_factor_gas'],
+                            key='num_input_scale_factor_gas'
                             )
-                        gas_prices['gas_price'] *= scale_factor_gas
-                    elif scale_method_gas == 'Erweitert':
-                        scale_amp_gas = col_gas.number_input(
-                            'Stauchungsfaktor', value=1.0, step=0.1,
-                            min_value=0.0, help=ss.tt['scale_amp_gas'],
-                            key='scale_amp_gas'
+                        gas_prices['gas_price'] *= ss.scale_factor_gas
+                    elif ss.scale_method_gas == 'Erweitert':
+                        init_ss_widget(
+                            widget_key='num_input_scale_amp_gas',
+                            ss_variable='scale_amp_gas',
+                            default_value=1.0
+                        )
+                        ss.scale_amp_gas = col_gas.number_input(
+                            'Stauchungsfaktor', 
+                            step=0.1, min_value=0.0,
+                            help=ss.tt['scale_amp_gas'],
+                            key='num_input_scale_amp_gas'
                             )
-                        scale_off_gas = col_gas.number_input(
-                            'Offset', value=1.0, step=0.1,
-                            help=ss.tt['scale_amp_gas'], key='scale_off_gas'
+                        init_ss_widget(
+                            widget_key='num_input_scale_off_gas',
+                            ss_variable='scale_off_gas',
+                            default_value=1.0
+                        )
+                        ss.scale_off_gas = col_gas.number_input(
+                            'Offset', step=0.1,
+                            help=ss.tt['scale_amp_gas'],
+                            key='num_input_scale_off_gas'
                             )
                         gas_prices_median = gas_prices['gas_price'].median()
                         gas_prices['gas_price'] = (
                             (gas_prices['gas_price'] - gas_prices_median)
-                            * scale_amp_gas + gas_prices_median + scale_off_gas
+                            * ss.scale_amp_gas + gas_prices_median + ss.scale_off_gas
                             )
 
             elif ss.select_gas == 'Konstant':
@@ -1159,11 +1207,17 @@ with tab_supply:
                     gas_prices = user_data_gas[['gas_price']].copy()
 
             col_gas.subheader('Emissionsfaktor Gas')
-            ss.param_opt['ef_gas'] = col_gas.number_input(
+            init_ss_widget(
+                widget_key='num_input_ef_gas',
+                ss_variable='ef_gas',
+                default_value=ss.param_opt['ef_gas']
+            )
+            ss.ef_gas = col_gas.number_input(
                 'Emissionsfaktor in t CO₂/MWh',
-                value=ss.param_opt['ef_gas'], help=ss.tt['ef_gas'],
-                format='%.4f', key='ef_gas'
+                help=ss.tt['ef_gas'], format='%.4f',
+                key='num_input_ef_gas'
                 )
+            ss.param_opt['ef_gas'] = ss.ef_gas
 
             col_vis_gas.subheader('Gaspreis')
 
