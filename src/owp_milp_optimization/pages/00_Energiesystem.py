@@ -916,7 +916,6 @@ with tab_supply:
                 )
                 el_prices['el_spot_price'] = ss.constant_el_value
 
-
                 init_ss_widget(
                     widget_key='num_input_constant_el_em_value',
                     ss_variable='constant_el_em_value',
@@ -958,6 +957,19 @@ with tab_supply:
                     el_prices = user_file_el[['el_spot_price']].copy()
                     el_em = user_file_el[['ef_om']].copy()
 
+            col_vis_el.subheader('Spotmarkt Strompreise')
+            el_prices.reset_index(inplace=True)
+            col_vis_el.altair_chart(
+                alt.Chart(el_prices).mark_line(color='#00395B').encode(
+                    y=alt.Y(
+                        'el_spot_price',
+                        title='Day-Ahead Spotmarkt Strompreise in €/MWh'
+                        ),
+                    x=alt.X('Date', title='Datum')
+                    ),
+                width='stretch'
+                )
+
 # %% MARK: El. price comps
             init_ss_widget(
                 widget_key='use_elp_toggle',
@@ -986,7 +998,7 @@ with tab_supply:
                 else:
                     default_el_price_comp_year = 2024
                 init_ss_widget(
-                    widget_key='select_gas_prices_year',
+                    widget_key='select_el_prices_comp_year',
                     ss_variable='el_price_comp_year',
                     default_value=default_el_price_comp_year
                 )
@@ -994,7 +1006,7 @@ with tab_supply:
                     'Wähle das Jahr der Daten aus',
                     el_prices_comp_year,
                     placeholder='Betrachtungsjahr',
-                    key='select_gas_prices_comp_year'
+                    key='select_el_prices_comp_year'
                 )
 
                 st.session_state['edited_elp'] = {
@@ -1027,20 +1039,90 @@ with tab_supply:
                     sum(val * 10 for val in edited_elp['Eigennutzung'].values()), 2
                 )
 
+
+# %% MARK: Emissionsfactor electricity
+            st.markdown('#### Emissionsfaktor Elektrizität')
             col_emi, col_vis_emi = st.columns([1, 2], gap='large')
 
-            col_vis_el.subheader('Spotmarkt Strompreise')
-            el_prices.reset_index(inplace=True)
-            col_vis_el.altair_chart(
-                alt.Chart(el_prices).mark_line(color='#00395B').encode(
-                    y=alt.Y(
-                        'el_spot_price',
-                        title='Day-Ahead Spotmarkt Strompreise in €/MWh'
-                        ),
-                    x=alt.X('Date', title='Datum')
-                    ),
-                width='stretch'
+            init_ss_widget(
+                widget_key='select_ef_electricity',
+                ss_variable='select_ef_el',
+                default_value='Variabel'
+            )
+            ss.select_ef_el = col_emi.selectbox(
+                'Preisvariante', 
+                ['Variabel', 'Konstant', 'Eigene Daten'],
+                key='select_ef_electricity'
+            )
+
+            if ss.select_ef_el == 'Variabel':
+                ss.ef_el_years = list(
+                    ss.all_el_prices.index.year.unique()
                 )
+                if heat_load_year:
+                    default_ef_el_year = heat_load_year
+                else:
+                    default_ef_el_year = 2024
+    
+                init_ss_widget(
+                    widget_key='select_ef_el_year',
+                    ss_variable='ef_el_year',
+                    default_value=default_ef_el_year
+                )
+                ss.ef_el_year = col_emi.selectbox(
+                    'Wähle das Jahr der Strompreisdaten aus',
+                    ss.ef_el_years,
+                    placeholder='Betrachtungsjahr',
+                    key='select_ef_el_year'
+                )
+                el_em = ss.all_el_emissions[
+                    ss.all_el_emissions.index.year == ss.ef_el_year
+                    ].copy()
+            
+                # Prices dates
+                # Scale data
+
+            elif ss.select_ef_el == 'Konstant':
+                el_em = ss.all_el_emissions.loc[heat_load['Date']]
+
+                init_ss_widget(
+                    widget_key='num_input_constant_el_em_value',
+                    ss_variable='constant_el_em_value',
+                    default_value=55.00
+                )
+                ss.constant_el_em_value = col_emi.number_input(
+                    'Emissionsfaktor Strommix in kg CO₂/MWh',
+                    step=1.00,
+                    key='num_input_constant_el_em_value'
+                )
+                el_em['ef_om'] = ss.constant_el_em_value
+
+            elif ss.select_ef_el == 'Eigene Daten':
+                user_file_ef_el = col_emi.file_uploader(
+                    'Datensatz einlesen', type=['csv', 'xlsx'],
+                    help=ss.tt['own_data_ef_el'],
+                    key='own_data__ef_el'
+                    )
+                if user_file_ef_el is None:
+                    col_emi.info(
+                        'Bitte fügen Sie eine Datei ein.'
+                        )
+                    el_em = pd.DataFrame({
+                            'Date': [pd.Timestamp('2025-01-01')],
+                            'ef_om': [0.0],
+                        })
+                else:
+                    filename = user_file_ef_el.name.lower()
+                    if filename.endswith('csv'):
+                        user_file_ef_el = pd.read_csv(
+                            user_file_ef_el, sep=';', index_col=0,
+                            parse_dates=True
+                            )
+                    elif filename.endswith('xlsx'):
+                        user_file_ef_el = pd.read_excel(
+                            user_file_ef_el, index_col=0
+                        )
+                    el_em = user_file_ef_el[['ef_om']].copy()
 
             col_vis_emi.subheader('Emissionsfaktoren des Strommixes')
             el_em.reset_index(inplace=True)
@@ -1266,7 +1348,7 @@ with tab_supply:
                 )
 
 # %% MARK: CO₂
-            st.subheader('CO₂-Preisdaten')
+            st.markdown('#### CO₂-Preisdaten')
             col_co2, col_vis_co2 = st.columns([1, 2], gap='large')
 
             init_ss_widget(
