@@ -1023,7 +1023,7 @@ with tab_supply:
                 width='stretch'
                 )
 
-# %% MARK: Gas & CO₂
+# %% MARK: Gas
     gas_units = [
         'Spitzenlastkessel', 'Gas- und Dampfkraftwerk', 'Blockheizkraftwerk'
         ]
@@ -1063,6 +1063,7 @@ with tab_supply:
                 gas_prices = ss.all_gas_prices[
                     ss.all_gas_prices.index.year == ss.gas_prices_year
                     ].copy()
+
                 init_ss_widget(
                     widget_key='prec_dates_gas_prices',
                     ss_variable='precise_dates_gas',
@@ -1232,6 +1233,7 @@ with tab_supply:
                 width='stretch'
                 )
 
+# %% MARK: CO₂
             st.subheader('CO₂-Preisdaten')
             col_co2, col_vis_co2 = st.columns([1, 2], gap='large')
 
@@ -1249,40 +1251,61 @@ with tab_supply:
             if ss.select_co2 == 'Variabel':
                 co2_prices_years = list(ss.all_co2_prices.index.year.unique())
                 if heat_load_year:
-                    co2_year_idx = co2_prices_years.index(heat_load_year)
+                    default_co2_year = heat_load_year
                 else:
-                    co2_year_idx = len(co2_prices_years) - 1
-                co2_prices_year = col_co2.selectbox(
+                    default_co2_year = 2024
+
+                init_ss_widget(
+                    widget_key='select_co2_prices_year',
+                    ss_variable='co2_prices_year',
+                    default_value=default_co2_year
+                )
+                ss.co2_prices_year = col_co2.selectbox(
                     'Wähle das Jahr für die CO₂-Preise aus',
-                    co2_prices_years, index=co2_year_idx,
-                    placeholder='Betrachtungsjahr'
+                    co2_prices_years,
+                    placeholder='Betrachtungsjahr',
+                    key='select_co2_prices_year'
                 )
                 co2_prices = ss.all_co2_prices[
-                    ss.all_co2_prices.index.year == co2_prices_year
+                    ss.all_co2_prices.index.year == ss.co2_prices_year
                     ].copy()
 
-                precise_dates = col_co2.toggle(
-                    'Exakten Zeitraum wählen', key='prec_dates_co2_prices'
+                init_ss_widget(
+                    widget_key='prec_dates_co2_prices',
+                    ss_variable='precise_dates_co2',
+                    default_value=False
+                )
+                ss.precise_dates_co2 = col_co2.toggle(
+                    'Exakten Zeitraum wählen',
+                    key='prec_dates_co2_prices'
                     )
-                if precise_dates:
-                    co2_dates = col_co2.date_input(
+                if ss.precise_dates_co2:
+                    init_ss_widget(
+                        widget_key='date_picker_co2_prices',
+                        ss_variable='co2_dates',
+                        default_value=(
+                            dates if dates is not None else (
+                                dt.date(int(heat_load_year), 3, 28),
+                                dt.date(int(heat_load_year), 7, 2)
+                            )
+                        )
+                    )
+                    ss.co2_dates = col_co2.date_input(
                         'Zeitraum auswählen:',
-                        value=dates if dates is not None else (
-                            dt.date(int(heat_load_year), 3, 28),
-                            dt.date(int(heat_load_year), 7, 2)
-                            ),
                         min_value=dt.date(int(heat_load_year), 1, 1),
                         max_value=dt.date(int(heat_load_year), 12, 31),
                         format='DD.MM.YYYY',
                         help=ss.tt['date_picker_co2_prices'],
                         key='date_picker_co2_prices'
                         )
-                    co2_dates = [
+                    ss.co2_dates = [
                         dt.datetime(
                             year=d.year, month=d.month, day=d.day
-                        ) for d in co2_dates
+                        ) for d in ss.co2_dates
                     ]
-                    co2_prices = co2_prices.loc[co2_dates[0]:co2_dates[1], :]
+                    co2_prices = co2_prices.loc[
+                        ss.co2_dates[0]:ss.co2_dates[1], :
+                    ]
 
                 if any(heat_load):
                     nr_steps_hl = len(heat_load.index)
@@ -1295,33 +1318,65 @@ with tab_supply:
                             + 'Bitte die Daten angleichen.'
                             )
 
-                scale_co2 = col_co2.toggle('Daten skalieren', key='scale_co2')
-                if scale_co2:
-                    scale_method_co2 = col_co2.selectbox(
+                init_ss_widget(
+                    widget_key='toggle_scale_co2',
+                    ss_variable='scale_co2',
+                    default_value=False
+                )
+                ss.scale_co2 = col_co2.toggle(
+                    'Daten skalieren', key='toggle_scale_co2'
+                )
+                if ss.scale_co2:
+                    init_ss_widget(
+                        widget_key='select_scale_method_co2',
+                        ss_variable='scale_method_co2',
+                        default_value='Faktor'
+                    )
+                    ss.scale_method_co2 = col_co2.selectbox(
                         'Methode', ['Faktor', 'Erweitert'],
-                        help=ss.tt['scale_method_co2'], key='scale_method_co2'
+                        help=ss.tt['scale_method_co2'],
+                        key='select_scale_method_co2'
                         )
-                    if scale_method_co2 == 'Faktor':
-                        scale_factor_co2 = col_co2.number_input(
-                            'Skalierungsfaktor', value=1.0, step=0.1,
-                            min_value=0.0, help=ss.tt['scale_factor_co2'],
-                            key='scale_factor_co2'
-                            )
-                        co2_prices['co2_price'] *= scale_factor_co2
-                    elif scale_method_co2 == 'Erweitert':
-                        scale_amp_co2 = col_co2.number_input(
-                            'Stauchungsfaktor', value=1.0, step=0.1,
-                            min_value=0.0, help=ss.tt['scale_amp_co2'],
-                            key='scale_amp_co2'
-                            )
-                        scale_off_co2 = col_co2.number_input(
-                            'Offset', value=1.0, step=0.1,
-                            help=ss.tt['scale_amp_co2'], key='scale_off_co2'
+                    if ss.scale_method_co2 == 'Faktor':
+                        init_ss_widget(
+                            widget_key='num_input_scale_factor_co2',
+                            ss_variable='scale_factor_co2',
+                            default_value=1.0
+                        )
+                        ss.scale_factor_co2 = col_co2.number_input(
+                            'Skalierungsfaktor', 
+                            step=0.1, min_value=0.0,
+                            help=ss.tt['scale_factor_co2'],
+                            key='num_input_scale_factor_co2'
+                        )
+                        co2_prices['co2_price'] *= ss.scale_factor_co2
+                    elif ss.scale_method_co2 == 'Erweitert':
+                        init_ss_widget(
+                            widget_key='num_input_scale_amp_co2',
+                            ss_variable='scale_amp_co2',
+                            default_value=1.0
+                        )
+                        ss.scale_amp_co2 = col_co2.number_input(
+                            'Stauchungsfaktor', 
+                            step=0.1,  min_value=0.0,
+                            help=ss.tt['scale_amp_co2'],
+                            key='num_input_scale_amp_co2'
+                        )
+                        init_ss_widget(
+                            widget_key='num_input_scale_off_co2',
+                            ss_variable='scale_off_co2',
+                            default_value=1.0
+                        )
+                        ss.scale_off_co2 = col_co2.number_input(
+                            'Offset', step=0.1,
+                            help=ss.tt['scale_amp_co2'],
+                            key='num_input_scale_off_co2'
                             )
                         co2_prices_median = co2_prices['co2_price'].median()
                         co2_prices['co2_price'] = (
                             (co2_prices['co2_price'] - co2_prices_median)
-                            * scale_amp_co2 + co2_prices_median + scale_off_co2
+                            * ss.scale_amp_co2 + co2_prices_median
+                            + ss.scale_off_co2
                             )
 
             elif ss.select_co2 == 'Konstant':
