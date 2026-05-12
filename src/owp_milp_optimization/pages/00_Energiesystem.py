@@ -488,7 +488,7 @@ with tab_net:
         )
         demand_sum = format_sep(heat_load['heat_demand'].sum(), dec=0)
         col_demand_sum.metric(
-            'Aufsummierte jährliche Wärmelast MWh',
+            'Aufsummierte jährliche Wärmelast MWh/a',
             value=demand_sum
         )
 
@@ -1044,7 +1044,7 @@ with tab_supply:
             )
 
             if ss.select_gas == 'Variabel':
-                gas_prices_years = list(ss.all_el_prices.index.year.unique())
+                gas_prices_years = list(ss.all_gas_prices.index.year.unique())
                 if heat_load_year:
                     gas_year_idx = gas_prices_years.index(heat_load_year)
                 else:
@@ -1084,6 +1084,17 @@ with tab_supply:
                     gas_prices = gas_prices.loc[gas_dates[0]:gas_dates[1], :]
                     co2_prices = co2_prices.loc[gas_dates[0]:gas_dates[1], :]
 
+                if any(heat_load):
+                    nr_steps_hl = len(heat_load.index)
+                    nr_steps_gas = len(gas_prices.index)
+                    if nr_steps_hl != nr_steps_gas:
+                        st.error(
+                            'Die Anzahl der Zeitschritte der Wärmelastdaten '
+                            + f'({nr_steps_hl}) stimmt nicht mit denen der '
+                            + f' Gaspreiszeitreihe ({nr_steps_gas}) überein. '
+                            + 'Bitte die Daten angleichen.'
+                            )
+
                 scale_gas = col_gas.toggle('Daten skalieren', key='scale_gas')
                 if scale_gas:
                     scale_method_gas = col_gas.selectbox(
@@ -1111,17 +1122,6 @@ with tab_supply:
                         gas_prices['gas_price'] = (
                             (gas_prices['gas_price'] - gas_prices_median)
                             * scale_amp_gas + gas_prices_median + scale_off_gas
-                            )
-
-                if any(heat_load):
-                    nr_steps_hl = len(heat_load.index)
-                    nr_steps_gas = len(gas_prices.index)
-                    if nr_steps_hl != nr_steps_gas:
-                        st.error(
-                            'Die Anzahl der Zeitschritte der Wärmelastdaten '
-                            + f'({nr_steps_hl}) stimmt nicht mit denen der '
-                            + f' Gaspreiszeitreihe ({nr_steps_gas}) überein. '
-                            + 'Bitte die Daten angleichen.'
                             )
 
             elif ss.select_gas == 'Konstant':
@@ -1180,6 +1180,7 @@ with tab_supply:
                     co2_prices = user_data_gas[['co2_price']].copy()
 
             col_vis_gas.subheader('Gaspreis')
+
             gas_prices.reset_index(inplace=True)
             col_vis_gas.altair_chart(
                 alt.Chart(gas_prices).mark_line(color='#B54036').encode(
@@ -1191,21 +1192,151 @@ with tab_supply:
                 width='stretch'
                 )
 
+            st.subheader('CO₂-Preisdaten')
+            col_co2, col_vis_co2 = st.columns([1, 2], gap='large')
+
+            init_ss_widget(
+                widget_key='select_co2_supply',
+                ss_variable='select_co2',
+                default_value='Variabel'
+            )
+            ss.select_co2 = col_co2.selectbox(
+                'Preisvariante', 
+                ['Variabel', 'Konstant', 'Eigene Daten'],
+                key='select_co2_supply'
+            )
+
+            if ss.select_co2 == 'Variabel':
+                co2_prices_years = list(ss.all_co2_prices.index.year.unique())
+                if heat_load_year:
+                    co2_year_idx = co2_prices_years.index(heat_load_year)
+                else:
+                    co2_year_idx = len(co2_prices_years) - 1
+                co2_prices_year = col_co2.selectbox(
+                    'Wähle das Jahr für die CO₂-Preise aus',
+                    co2_prices_years, index=co2_year_idx,
+                    placeholder='Betrachtungsjahr'
+                )
+                co2_prices = ss.all_co2_prices[
+                    ss.all_co2_prices.index.year == co2_prices_year
+                    ].copy()
+
+                precise_dates = col_co2.toggle(
+                    'Exakten Zeitraum wählen', key='prec_dates_co2_prices'
+                    )
+                if precise_dates:
+                    co2_dates = col_co2.date_input(
+                        'Zeitraum auswählen:',
+                        value=dates if dates is not None else (
+                            dt.date(int(heat_load_year), 3, 28),
+                            dt.date(int(heat_load_year), 7, 2)
+                            ),
+                        min_value=dt.date(int(heat_load_year), 1, 1),
+                        max_value=dt.date(int(heat_load_year), 12, 31),
+                        format='DD.MM.YYYY',
+                        help=ss.tt['date_picker_co2_prices'],
+                        key='date_picker_co2_prices'
+                        )
+                    co2_dates = [
+                        dt.datetime(
+                            year=d.year, month=d.month, day=d.day
+                        ) for d in co2_dates
+                    ]
+                    co2_prices = co2_prices.loc[co2_dates[0]:co2_dates[1], :]
+
+                if any(heat_load):
+                    nr_steps_hl = len(heat_load.index)
+                    nr_steps_co2 = len(co2_prices.index)
+                    if nr_steps_hl != nr_steps_co2:
+                        st.error(
+                            'Die Anzahl der Zeitschritte der Wärmelastdaten '
+                            + f'({nr_steps_hl}) stimmt nicht mit denen der '
+                            + f' CO₂-Preiszeitreihe ({nr_steps_co2}) überein. '
+                            + 'Bitte die Daten angleichen.'
+                            )
+
+                scale_co2 = col_co2.toggle('Daten skalieren', key='scale_co2')
+                if scale_co2:
+                    scale_method_co2 = col_co2.selectbox(
+                        'Methode', ['Faktor', 'Erweitert'],
+                        help=ss.tt['scale_method_co2'], key='scale_method_co2'
+                        )
+                    if scale_method_co2 == 'Faktor':
+                        scale_factor_co2 = col_co2.number_input(
+                            'Skalierungsfaktor', value=1.0, step=0.1,
+                            min_value=0.0, help=ss.tt['scale_factor_co2'],
+                            key='scale_factor_co2'
+                            )
+                        co2_prices['co2_price'] *= scale_factor_co2
+                    elif scale_method_co2 == 'Erweitert':
+                        scale_amp_co2 = col_co2.number_input(
+                            'Stauchungsfaktor', value=1.0, step=0.1,
+                            min_value=0.0, help=ss.tt['scale_amp_co2'],
+                            key='scale_amp_co2'
+                            )
+                        scale_off_co2 = col_co2.number_input(
+                            'Offset', value=1.0, step=0.1,
+                            help=ss.tt['scale_amp_co2'], key='scale_off_co2'
+                            )
+                        co2_prices_median = co2_prices['co2_price'].median()
+                        co2_prices['co2_price'] = (
+                            (co2_prices['co2_price'] - co2_prices_median)
+                            * scale_amp_co2 + co2_prices_median + scale_off_co2
+                            )
+
+            elif ss.select_co2 == 'Konstant':
+                co2_prices = ss.all_co2_prices.loc[heat_load['Date']]
+
+                init_ss_widget(
+                    widget_key='num_input_constant_co2_value',
+                    ss_variable='constant_co2_value',
+                    default_value=30.00
+                )
+                ss.constant_co2_value = col_co2.number_input(
+                    'CO₂-Zertifikatpreis in €/t CO₂', step=1.00,
+                    key='num_input_constant_co2_value'
+                )
+                co2_prices['co2_price'] = ss.constant_co2_value
+
+            elif ss.select_co2 == 'Eigene Daten':
+                user_file_co2 = col_co2.file_uploader(
+                    'Datensatz einlesen', type=['csv', 'xlsx'],
+                    help=ss.tt['own_data_gas'], key='own_data_co2'
+                    )
+                if user_file_co2 is None:
+                    col_co2.info(
+                        'Bitte fügen Sie eine Datei ein.'
+                        )
+                    co2_prices = pd.DataFrame({
+                            'Date': [pd.Timestamp('2025-01-01')],
+                            'co2_price': [0.0],
+                        })
+                else:
+                    filename = user_file_co2.name.lower()
+                    if filename.endswith('csv'):
+                        user_data_gas = pd.read_csv(
+                            user_file_co2, sep=';', index_col=0,
+                            parse_dates=True
+                            )
+                    elif filename.endswith('xlsx'):
+                        user_data_co2 = pd.read_excel(user_file_co2, index_col=0)
+                    co2_prices = user_data_co2[['co2_price']].copy()
+
             col_gas.subheader('Emissionsfaktor Gas')
             ss.param_opt['ef_gas'] = col_gas.number_input(
                 'Emissionsfaktor in t CO₂/MWh',
                 value=ss.param_opt['ef_gas'], help=ss.tt['ef_gas'],
                 format='%.4f', key='ef_gas'
                 )
-
-            col_vis_gas.subheader('CO₂-Preise')
+    
+            col_vis_co2.subheader('CO₂-Preise')
 
             co2_prices.reset_index(inplace=True)
-            col_vis_gas.altair_chart(
+            col_vis_co2.altair_chart(
                 alt.Chart(co2_prices).mark_line(color='#74ADC0').encode(
                     y=alt.Y(
                         'co2_price',
-                        title='CO₂-Preise in €/kg'
+                        title='CO₂-Preise in €/t'
                         ),
                     x=alt.X('Date', title='Datum')
                     ),
