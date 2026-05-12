@@ -1057,9 +1057,6 @@ with tab_supply:
                 gas_prices = ss.all_gas_prices[
                     ss.all_gas_prices.index.year == gas_prices_year
                     ].copy()
-                co2_prices = ss.all_co2_prices[
-                    ss.all_co2_prices.index.year == gas_prices_year
-                    ].copy()
                 precise_dates = col_gas.toggle(
                     'Exakten Zeitraum wählen', key='prec_dates_gas_prices'
                     )
@@ -1082,7 +1079,6 @@ with tab_supply:
                         ) for d in gas_dates
                     ]
                     gas_prices = gas_prices.loc[gas_dates[0]:gas_dates[1], :]
-                    co2_prices = co2_prices.loc[gas_dates[0]:gas_dates[1], :]
 
                 if any(heat_load):
                     nr_steps_hl = len(heat_load.index)
@@ -1126,7 +1122,6 @@ with tab_supply:
 
             elif ss.select_gas == 'Konstant':
                 gas_prices = ss.all_gas_prices.loc[heat_load['Date']]
-                co2_prices = ss.all_co2_prices.loc[heat_load['Date']]
 
                 init_ss_widget(
                     widget_key='num_input_constant_gas_value',
@@ -1138,17 +1133,6 @@ with tab_supply:
                     key='num_input_constant_gas_value'
                 )
                 gas_prices['gas_price'] = ss.constant_gas_value
-
-                init_ss_widget(
-                    widget_key='num_input_constant_co2_value',
-                    ss_variable='constant_co2_value',
-                    default_value=30.00
-                )
-                ss.constant_co2_value = col_gas.number_input(
-                    'CO₂-Zertifikatpreis in €/t CO₂', step=1.00,
-                    key='num_input_constant_co2_value'
-                )
-                co2_prices['co2_price'] = ss.constant_co2_value
 
             elif ss.select_gas == 'Eigene Daten':
                 user_file_gas = col_gas.file_uploader(
@@ -1163,10 +1147,6 @@ with tab_supply:
                             'Date': [pd.Timestamp('2025-01-01')],
                             'gas_price': [0.0],
                         })
-                    co2_prices = pd.DataFrame({
-                            'Date': [pd.Timestamp('2025-01-01')],
-                            'co2_price': [0.0],
-                        })
                 else:
                     filename = user_file_gas.name.lower()
                     if filename.endswith('csv'):
@@ -1177,7 +1157,13 @@ with tab_supply:
                     elif filename.endswith('xlsx'):
                         user_data_gas = pd.read_excel(user_file_gas, index_col=0)
                     gas_prices = user_data_gas[['gas_price']].copy()
-                    co2_prices = user_data_gas[['co2_price']].copy()
+
+            col_gas.subheader('Emissionsfaktor Gas')
+            ss.param_opt['ef_gas'] = col_gas.number_input(
+                'Emissionsfaktor in t CO₂/MWh',
+                value=ss.param_opt['ef_gas'], help=ss.tt['ef_gas'],
+                format='%.4f', key='ef_gas'
+                )
 
             col_vis_gas.subheader('Gaspreis')
 
@@ -1321,13 +1307,6 @@ with tab_supply:
                     elif filename.endswith('xlsx'):
                         user_data_co2 = pd.read_excel(user_file_co2, index_col=0)
                     co2_prices = user_data_co2[['co2_price']].copy()
-
-            col_gas.subheader('Emissionsfaktor Gas')
-            ss.param_opt['ef_gas'] = col_gas.number_input(
-                'Emissionsfaktor in t CO₂/MWh',
-                value=ss.param_opt['ef_gas'], help=ss.tt['ef_gas'],
-                format='%.4f', key='ef_gas'
-                )
     
             col_vis_co2.subheader('CO₂-Preise')
 
