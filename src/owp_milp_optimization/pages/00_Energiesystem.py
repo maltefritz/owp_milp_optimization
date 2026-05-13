@@ -835,9 +835,6 @@ with tab_supply:
                 el_prices = ss.all_el_prices[
                     ss.all_el_prices.index.year == el_prices_year
                     ].copy()
-                el_em = ss.all_el_emissions[
-                    ss.all_el_emissions.index.year == el_prices_year
-                    ].copy()
 
                 precise_dates = col_elp.toggle(
                     'Exakten Zeitraum wählen', key='prec_dates_el_prices'
@@ -915,18 +912,6 @@ with tab_supply:
                 )
                 el_prices['el_spot_price'] = ss.constant_el_value
 
-                init_ss_widget(
-                    widget_key='num_input_constant_el_em_value',
-                    ss_variable='constant_el_em_value',
-                    default_value=55.00
-                )
-                ss.constant_el_em_value = col_elp.number_input(
-                    'Emissionsfaktor Strommix in kg CO₂/MWh',
-                    step=1.00,
-                    key='num_input_constant_el_em_value'
-                )
-                el_em['ef_om'] = ss.constant_el_em_value
-
             elif ss.select_el == 'Eigene Daten':
                 user_file_el = col_elp.file_uploader(
                     'Datensatz einlesen', type=['csv', 'xlsx'],
@@ -940,10 +925,6 @@ with tab_supply:
                             'Date': [pd.Timestamp('2025-01-01')],
                             'el_spot_price': [0.0],
                         })
-                    el_em = pd.DataFrame({
-                            'Date': [pd.Timestamp('2025-01-01')],
-                            'ef_om': [0.0],
-                        })
                 else:
                     filename = user_file_el.name.lower()
                     if filename.endswith('csv'):
@@ -954,7 +935,6 @@ with tab_supply:
                     elif filename.endswith('xlsx'):
                         user_file_el = pd.read_excel(user_file_el, index_col=0)
                     el_prices = user_file_el[['el_spot_price']].copy()
-                    el_em = user_file_el[['ef_om']].copy()
 
             col_vis_el.subheader('Spotmarkt Strompreise')
             el_prices.reset_index(inplace=True)
