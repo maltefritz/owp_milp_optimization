@@ -859,7 +859,6 @@ with tab_supply:
                         dt.datetime(year=d.year, month=d.month, day=d.day) for d in el_dates
                         ]
                     el_prices = el_prices.loc[el_dates[0]:el_dates[1], :]
-                    el_em = el_em.loc[el_dates[0]:el_dates[1], :]
 
                 scale_el = col_elp.toggle('Daten skalieren', key='scale_el')
                 if scale_el:
@@ -1078,9 +1077,113 @@ with tab_supply:
                 el_em = ss.all_el_emissions[
                     ss.all_el_emissions.index.year == ss.ef_el_year
                     ].copy()
-            
-                # Prices dates
-                # Scale data
+
+                init_ss_widget(
+                    widget_key='toggle_prec_dates_el_em',
+                    ss_variable='precise_dates_el_em',
+                    default_value=False
+                )
+                ss.precise_dates_el_em = col_emi.toggle(
+                    'Exakten Zeitraum wählen', key='toggle_prec_dates_el_em'
+                    )
+                if ss.precise_dates_el_em:
+                    init_ss_widget(
+                        widget_key='date_picker_el_ems',
+                        ss_variable='el_em_dates',
+                        default_value=(
+                            dates if dates is not None else (
+                                dt.date(int(heat_load_year), 3, 28),
+                                dt.date(int(heat_load_year), 7, 2)
+                            )
+                        )
+                    )
+
+                    ss.el_em_dates = col_emi.date_input(
+                        'Zeitraum auswählen:',
+                        min_value=dt.date(int(heat_load_year), 1, 1),
+                        max_value=dt.date(int(heat_load_year), 12, 31),
+                        format='DD.MM.YYYY',
+                        help=ss.tt['date_picker'],
+                        key='date_picker_el_ems'
+                    )
+                    ss.el_em_dates = [
+                        dt.datetime(
+                            year=d.year, month=d.month, day=d.day
+                        ) for d in ss.el_em_dates
+                    ]
+                    el_em = el_em.loc[ss.el_em_dates[0]:ss.el_em_dates[1], :]
+
+                if any(heat_load):
+                    nr_steps_hl = len(heat_load.index)
+                    nr_steps_el_em = len(el_em.index)
+                    if nr_steps_hl != nr_steps_el_em:
+                        st.error(
+                            'Die Anzahl der Zeitschritte der Wärmelastdaten '
+                            + f'({nr_steps_hl}) stimmt nicht mit denen der '
+                            + f' Gaspreiszeitreihe ({nr_steps_el_em}) überein. '
+                            + 'Bitte die Daten angleichen.'
+                        )
+
+                init_ss_widget(
+                    widget_key='toggle_scale_el_em',
+                    ss_variable='scale_el_em',
+                    default_value=False
+                )
+                ss.scale_el_em = col_emi.toggle(
+                    'Daten skalieren', key='toggle_scale_el_em'
+                )
+                if ss.scale_el_em:
+                    init_ss_widget(
+                        widget_key='select_scale_method_el_em',
+                        ss_variable='scale_method_el_em',
+                        default_value='Faktor'
+                    )
+                    ss.scale_method_el_em = col_emi.selectbox(
+                        'Methode', ['Faktor', 'Erweitert'],
+                        help=ss.tt['scale_method_el_em'],
+                        key='select_scale_method_el_em'
+                        )
+                    if ss.scale_method_el_em == 'Faktor':
+                        init_ss_widget(
+                            widget_key='num_input_scale_factor_el_em',
+                            ss_variable='scale_factor_el_em',
+                            default_value=1.0
+                        )
+                        ss.scale_factor_el_em = col_emi.number_input(
+                            'Skalierungsfaktor', 
+                            step=0.1, min_value=0.0,
+                            help=ss.tt['scale_factor_el_em'],
+                            key='num_input_scale_factor_el_em'
+                        )
+                        el_em['ef_om'] *= ss.scale_factor_el_em
+                    elif ss.scale_method_el_em == 'Erweitert':
+                        init_ss_widget(
+                            widget_key='num_input_scale_amp_el_em',
+                            ss_variable='scale_amp_el_em',
+                            default_value=1.0
+                        )
+                        ss.scale_amp_el_em = col_emi.number_input(
+                            'Stauchungsfaktor', 
+                            step=0.1,  min_value=0.0,
+                            help=ss.tt['scale_amp_el_em'],
+                            key='num_input_scale_amp_el_em'
+                        )
+                        init_ss_widget(
+                            widget_key='num_input_scale_off_el_em',
+                            ss_variable='scale_off_el_em',
+                            default_value=1.0
+                        )
+                        ss.scale_off_el_em = col_emi.number_input(
+                            'Offset', step=0.1,
+                            help=ss.tt['scale_off_el_em'],
+                            key='num_input_scale_off_el_em'
+                            )
+                        el_em_median = el_em['ef_om'].median()
+                        el_em['ef_om'] = (
+                            (el_em['ef_om'] - el_em_median)
+                            * ss.scale_amp_el_em + el_em_median
+                            + ss.scale_off_el_em
+                            )
 
             elif ss.select_ef_el == 'Konstant':
                 el_em = ss.all_el_emissions.loc[heat_load['Date']]
@@ -1088,7 +1191,7 @@ with tab_supply:
                 init_ss_widget(
                     widget_key='num_input_constant_el_em_value',
                     ss_variable='constant_el_em_value',
-                    default_value=55.00
+                    default_value=350.00
                 )
                 ss.constant_el_em_value = col_emi.number_input(
                     'Emissionsfaktor Strommix in kg CO₂/MWh',
@@ -1202,7 +1305,7 @@ with tab_supply:
                         min_value=dt.date(int(heat_load_year), 1, 1),
                         max_value=dt.date(int(heat_load_year), 12, 31),
                         format='DD.MM.YYYY',
-                        help=ss.tt['date_picker_gas_prices'],
+                        help=ss.tt['date_picker'],
                         key='date_picker_gas_prices'
                         )
                     ss.gas_dates = [
@@ -1210,7 +1313,9 @@ with tab_supply:
                             year=d.year, month=d.month, day=d.day
                         ) for d in ss.gas_dates
                     ]
-                    gas_prices = gas_prices.loc[ss.gas_dates[0]:ss.gas_dates[1], :]
+                    gas_prices = gas_prices.loc[
+                        ss.gas_dates[0]:ss.gas_dates[1], :
+                    ]
 
                 if any(heat_load):
                     nr_steps_hl = len(heat_load.index)
@@ -1409,7 +1514,7 @@ with tab_supply:
                         min_value=dt.date(int(heat_load_year), 1, 1),
                         max_value=dt.date(int(heat_load_year), 12, 31),
                         format='DD.MM.YYYY',
-                        help=ss.tt['date_picker_co2_prices'],
+                        help=ss.tt['date_picker'],
                         key='date_picker_co2_prices'
                         )
                     ss.co2_dates = [
@@ -1483,7 +1588,7 @@ with tab_supply:
                         )
                         ss.scale_off_co2 = col_co2.number_input(
                             'Offset', step=0.1,
-                            help=ss.tt['scale_amp_co2'],
+                            help=ss.tt['scale_off_co2'],
                             key='num_input_scale_off_co2'
                             )
                         co2_prices_median = co2_prices['co2_price'].median()
