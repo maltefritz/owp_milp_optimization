@@ -15,7 +15,6 @@
     "elec_consumer_charges_self": 20.50,
     "heat_price": 76.74,
     "energy_tax": 5.50,
-    "TEHG_bonus": 3.0,
     "vNNE": 7.0,
     "capital_interest": 0.05,
     "lifetime": 20

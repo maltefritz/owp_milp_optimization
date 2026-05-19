@@ -193,7 +193,7 @@ param_overview = pd.DataFrame.from_dict(
 if ss.param_opt['calc_network'] == 'specific':
     param_overview.drop(
         index=[
-            'MIPGap', 'TimeLimit', 'heat_price', 'TEHG_bonus',
+            'MIPGap', 'TimeLimit', 'heat_price',
             'net_op_cost_fix', 'net_op_cost_var', 'net_inv_total',
             'net_op_cost_fix_total', 'net_op_cost_var_total', 'calc_network'
             ], inplace=True
@@ -201,7 +201,7 @@ if ss.param_opt['calc_network'] == 'specific':
 elif ss.param_opt['calc_network'] == 'total':
     param_overview.drop(
         index=[
-            'MIPGap', 'TimeLimit', 'heat_price', 'TEHG_bonus',
+            'MIPGap', 'TimeLimit', 'heat_price',
             'net_op_cost_fix', 'net_op_cost_var', 'net_dist', 'net_inv_spez',
             'calc_network', 'net_op_cost_fix_total', 'net_op_cost_var_total'
             ], inplace=True
