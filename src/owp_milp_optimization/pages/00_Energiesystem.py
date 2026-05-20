@@ -835,6 +835,8 @@ with tab_supply:
                 el_prices = ss.all_el_prices[
                     ss.all_el_prices.index.year == el_prices_year
                     ].copy()
+                el_subheader = 'Spotmarkt Strompreise'
+                el_title = 'Day-Ahead Spotmarkt Strompreise in €/MWh'
 
                 precise_dates = col_elp.toggle(
                     'Exakten Zeitraum wählen', key='prec_dates_el_prices'
@@ -911,6 +913,8 @@ with tab_supply:
                     key='num_input_constant_el_value'
                 )
                 el_prices['el_spot_price'] = ss.constant_el_value
+                el_subheader = 'Strompreise'
+                el_title = 'Strompreise in €/MWh'
 
             elif ss.select_el == 'Eigene Daten':
                 user_file_el = col_elp.file_uploader(
@@ -935,14 +939,16 @@ with tab_supply:
                     elif filename.endswith('xlsx'):
                         user_file_el = pd.read_excel(user_file_el, index_col=0)
                     el_prices = user_file_el[['el_spot_price']].copy()
+                el_subheader = 'Strompreise'
+                el_title = 'Strompreise in €/MWh'
 
-            col_vis_el.subheader('Spotmarkt Strompreise')
+            col_vis_el.subheader(f'{el_subheader}')
             el_prices.reset_index(inplace=True)
             col_vis_el.altair_chart(
                 alt.Chart(el_prices).mark_line(color='#00395B').encode(
                     y=alt.Y(
                         'el_spot_price',
-                        title='Day-Ahead Spotmarkt Strompreise in €/MWh'
+                        title=f'{el_title}'
                         ),
                     x=alt.X('Date', title='Datum')
                     ),
