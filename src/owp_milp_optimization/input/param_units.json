@@ -28,7 +28,7 @@
         "cap_max": 353,
         "cap_min": 0
     },
-    "plb": {
+    "gb": {
         "cap_N": 353,
         "Q_rel_max": 1.0,
         "Q_rel_min": 0.15,

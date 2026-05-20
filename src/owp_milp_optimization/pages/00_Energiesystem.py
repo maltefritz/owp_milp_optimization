@@ -65,7 +65,7 @@ shortnames = {
     'Gas- und Dampfkraftwerk': 'ccet',
     'Blockheizkraftwerk': 'ice',
     'Solarthermie': 'sol',
-    'Spitzenlastkessel': 'plb',
+    'Gaskessel': 'gb',
     'Elektrodenheizkessel': 'eb',
     'Externe Wärmequelle': 'exhs',
     'Wärmespeicher': 'tes'
@@ -75,7 +75,7 @@ longnames = {
     'ccet': 'Gas- und Dampfkraftwerk',
     'ice': 'Blockheizkraftwerk',
     'sol': 'Solarthermie',
-    'plb': 'Spitzenlastkessel',
+    'gb': 'Gaskessel',
     'eb': 'Elektrodenheizkessel',
     'exhs': 'Externe Wärmequelle',
     'tes': 'Wärmespeicher'
@@ -1222,7 +1222,7 @@ with tab_supply:
 
 # %% MARK: Gas
     gas_units = [
-        'Spitzenlastkessel', 'Gas- und Dampfkraftwerk', 'Blockheizkraftwerk'
+        'Gaskessel', 'Gas- und Dampfkraftwerk', 'Blockheizkraftwerk'
         ]
     if any(unit in ss.units for unit in gas_units):
         with st.expander('Gasversorgungsdaten'):

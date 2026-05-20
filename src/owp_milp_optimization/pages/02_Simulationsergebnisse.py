@@ -118,7 +118,7 @@ shortnames = {
     'Gas- und Dampfkraftwerk': 'ccet',
     'Blockheizkraftwerk': 'ice',
     'Solarthermie': 'sol',
-    'Spitzenlastkessel': 'plb',
+    'Gaskessel': 'gb',
     'Elektrodenheizkessel': 'eb',
     'Externe Wärmequelle': 'exhs',
     'Wärmespeicher': 'tes'
@@ -128,7 +128,7 @@ longnames = {
     'ccet': 'Gas- und Dampfkraftwerk',
     'ice': 'Blockheizkraftwerk',
     'sol': 'Solarthermie',
-    'plb': 'Spitzenlastkessel',
+    'gb': 'Gaskessel',
     'eb': 'Elektrodenheizkessel',
     'exhs': 'Externe Wärmequelle',
     'tes': 'Wärmespeicher'
@@ -138,7 +138,7 @@ colors = {
     'Wärmepumpe': '#B54036',
     'Gas- und Dampfkraftwerk': '#00395B',
     'Blockheizkraftwerk': '#00395B',
-    'Spitzenlastkessel': '#EC6707',
+    'Gaskessel': '#EC6707',
     'Solarthermie': '#EC6707',
     'Wärmespeicher Ein': 'slategrey',
     'Wärmespeicher Aus': 'dimgrey',

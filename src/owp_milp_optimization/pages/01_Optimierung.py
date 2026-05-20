@@ -54,7 +54,7 @@ shortnames = {
     'Gas- und Dampfkraftwerk': 'ccet',
     'Blockheizkraftwerk': 'ice',
     'Solarthermie': 'sol',
-    'Spitzenlastkessel': 'plb',
+    'Gaskessel': 'gb',
     'Elektrodenheizkessel': 'eb',
     'Externe Wärmequelle': 'exhs',
     'Wärmespeicher': 'tes'
