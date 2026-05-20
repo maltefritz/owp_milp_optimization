@@ -385,18 +385,6 @@ with tab_heat:
         )
     ss.param_opt['heat_price'] = ss.select_heat_price
 
-    # %% Solarthermie wird anhand der Wärmelastdaten ausgewählt
-    solar_heat_flow = ss.all_solar_heat_flow[
-        ss.all_solar_heat_flow.index.year == heat_load_year
-        ].copy()
-    if 'precise_dates' not in st.session_state:
-        st.session_state['precise_dates'] = False
-
-    if st.session_state['precise_dates']:
-        solar_heat_flow = solar_heat_flow.loc[dates[0]:dates[1], :]
-    solar_heat_flow.reset_index(inplace=True)
-    solar_heat_flow['solar_heat_flow'] *= 1e6
-
 # %% MARK: Network
 with tab_net:
     st.header('Wärmenetz')
@@ -747,50 +735,123 @@ with tab_units:
                     if uinfo['unit'] == '%':
                         unit_params[uinput] /= 100
 
-    Q_tot_max = 0
-    residual_heat_demand = heat_load.copy()
-    for unit, unit_params in ss.param_units.items():
-        unit_cat = unit.rstrip('0123456789')
-        if unit_params['invest_mode']:
-            if unit_cat not in ['sol', 'tes']:
-                Q_tot_max += unit_params['cap_max']
-            elif unit_cat == 'sol':
-                residual_heat_demand['heat_demand'] -= (
-                    unit_params['A_max'] * solar_heat_flow['solar_heat_flow']
-                    )
-            elif unit_cat == 'tes':
-                Q_tot_max += unit_params['Q_max'] * unit_params['Q_out_to_cap']
-        else:
-            if unit_cat not in ['sol', 'tes']:
-                Q_tot_max += unit_params['cap_N']
-            elif unit_cat == 'sol':
-                residual_heat_demand['heat_demand'] -= (
-                    unit_params['A_N'] * solar_heat_flow['solar_heat_flow']
-                    )
-            elif unit_cat == 'tes':
-                Q_tot_max += unit_params['Q_N'] * unit_params['Q_out_to_cap']
+    # Q_tot_max = 0
+    # residual_heat_demand = heat_load.copy()
+    # for unit, unit_params in ss.param_units.items():
+    #     unit_cat = unit.rstrip('0123456789')
+    #     if unit_params['invest_mode']:
+    #         if unit_cat not in ['sol', 'tes']:
+    #             Q_tot_max += unit_params['cap_max']
+    #         elif unit_cat == 'sol':
+    #             residual_heat_demand['heat_demand'] -= (
+    #                 unit_params['A_max'] * solar_heat_flow['solar_heat_flow']
+    #                 )
+    #         elif unit_cat == 'tes':
+    #             Q_tot_max += unit_params['Q_max'] * unit_params['Q_out_to_cap']
+    #     else:
+    #         if unit_cat not in ['sol', 'tes']:
+    #             Q_tot_max += unit_params['cap_N']
+    #         elif unit_cat == 'sol':
+    #             residual_heat_demand['heat_demand'] -= (
+    #                 unit_params['A_N'] * solar_heat_flow['solar_heat_flow']
+    #                 )
+    #         elif unit_cat == 'tes':
+    #             Q_tot_max += unit_params['Q_N'] * unit_params['Q_out_to_cap']
 
-    if Q_tot_max != 0:
-        if residual_heat_demand['heat_demand'].max() > Q_tot_max:
-            placeholder_infeasable.error(
-                'Die gewählten Wärmeanlagen genügen nicht um den maximalen '
-                + 'Wärmebedarf zu decken. Mögliche Ansätze zur Lösung des '
-                + 'Problems könnten sein:\n\n'
-                + '- Erhöhe die installierte oder maximal zu installierende'
-                + ' Leistung der Anlagen\n\n'
-                + '- Füge andere Anlagen hinzu oder erhöhe die Anzahl der '
-                + 'vorhandenen Anlagen\n\n'
-                + '- Füge einen Wärmespeicher hinzu'
-                )
+    # if Q_tot_max != 0:
+    #     if residual_heat_demand['heat_demand'].max() > Q_tot_max:
+    #         placeholder_infeasable.error(
+    #             'Die gewählten Wärmeanlagen genügen nicht um den maximalen '
+    #             + 'Wärmebedarf zu decken. Mögliche Ansätze zur Lösung des '
+    #             + 'Problems könnten sein:\n\n'
+    #             + '- Erhöhe die installierte oder maximal zu installierende'
+    #             + ' Leistung der Anlagen\n\n'
+    #             + '- Füge andere Anlagen hinzu oder erhöhe die Anzahl der '
+    #             + 'vorhandenen Anlagen\n\n'
+    #             + '- Füge einen Wärmespeicher hinzu'
+    #             )
 
 # %% MARK: Solar Thermal
 # if 'Solarthermie' in ss.units:
 with tab_supply:
     if 'Solarthermie' in ss.units:
         with st.expander('Solarthermiedaten'):
-            # solar_heat_flow wird bei der heat load berechnet
             st.subheader('Solarthermiedaten')
-            st.altair_chart(
+            col_sol, col_vis_sol = st.columns([1, 2], gap='large')
+
+            init_ss_widget(
+                widget_key='select_solarthermal',
+                ss_variable='select_sol',
+                default_value='Variabel'
+            )
+            ss.select_sol = col_sol.selectbox(
+                'Preisvariante', 
+                ['Schleswig', 'Kassel', 'Freiburg', 'Eigene Daten'],
+                key='select_solarthermal'
+            )
+
+            if ss.select_sol != 'Eigene Daten':
+                solar_heat_flow_years = list(
+                    ss.all_solar_heat_flow.index.year.unique()
+                )
+                if heat_load_year:
+                    default_solar_heat_flow_years = heat_load_year
+                else:
+                    default_solar_heat_flow_years = 2024
+                init_ss_widget(
+                    widget_key='select_solar_heat_flow_years',
+                    ss_variable='solar_heat_flow_years',
+                    default_value=default_solar_heat_flow_years
+                )
+                ss.solar_heat_flow_years = col_sol.selectbox(
+                    'Wähle das Jahr für die solaren Einstrahlung aus',
+                    solar_heat_flow_years,
+                    placeholder='Betrachtungsjahr',
+                    key='select_solar_heat_flow_years'
+                )
+
+                solar_heat_flow = ss.all_solar_heat_flow[
+                    ss.all_solar_heat_flow.index.year == ss.solar_heat_flow_years
+                    ].copy()
+
+                init_ss_widget(
+                    widget_key='toggle_scale_sol',
+                    ss_variable='scale_sol',
+                    default_value=False
+                )
+                ss.scale_sol = col_sol.toggle(
+                    'Scale data', key='toggle_scale_sol'
+                )
+                if ss.scale_sol:
+                    init_ss_widget(
+                        widget_key='selectbox_scale_method_sol',
+                        ss_variable='scale_method_sol',
+                        default_value='Factor'
+                    )
+                    scale_method_sol = col_sol.selectbox(
+                        'Method', ['Factor'],
+                        help=ss.tt['scale_method_sol'],
+                        key='scale_method_sol'
+                        )
+                    if scale_method_sol == 'Factor':
+                        init_ss_widget(
+                            widget_key='num_input_scale_factor_sol',
+                            ss_variable='scale_factor_sol',
+                            default_value=1.0
+                        )
+                        ss.scale_factor_sol = col_sol.number_input(
+                            'Scaling factor', step=0.1,
+                            min_value=0.0,
+                            help=ss.tt['scale_factor_sol'],
+                            key='num_input_scale_factor_sol'
+                            )
+                        solar_heat_flow['solar_heat_flow'] *= (
+                            ss.scale_factor_sol
+                    )
+
+            solar_heat_flow.reset_index(inplace=True)
+            solar_heat_flow['solar_heat_flow'] *= 1e6
+            col_vis_sol.altair_chart(
                 alt.Chart(solar_heat_flow).mark_line(color='#EC6707').encode(
                     y=alt.Y('solar_heat_flow',
                             title='Spezifische Einstrahlung in Wh/m²'),

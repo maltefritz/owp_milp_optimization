@@ -55,6 +55,8 @@
     "scale_factor_gas": "Multipliziert die Gaspreise mit dem angegebenden Wert.",
     "scale_amp_gas": "Staucht die Gaspreise um den Median.",
     "scale_off_gas": "Verschiebt den Median der Gaspreise.",
+    "scale_method_sol": "Die vorhandenen spezifischen Einstrahlungssdaten können anhand eines Skalierungsfaktors angepasst werden.",
+    "scale_factor_sol": "Multipliziert die spezifische Einstrahlung mit dem angegebenden Wert.",
     "scale_method_co2": "Die vorhandenen CO₂-Preise können anhand eines Skalierungsfaktors oder einer Stauchung und Verschiebung angepasst werden.",
     "scale_factor_co2": "Multipliziert die CO₂-Preise mit dem angegebenden Wert.",
     "scale_amp_co2": "Staucht die CO₂-Preise um den Median.",
