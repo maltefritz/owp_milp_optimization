@@ -88,7 +88,11 @@ if 'eco_data' not in ss:
     ss.all_el_emissions = ss.eco_data['ef_om'].to_frame()
     ss.all_gas_prices = ss.eco_data['gas_price'].to_frame()
     ss.all_co2_prices = ss.eco_data['co2_price'].to_frame()
-    ss.all_solar_heat_flow = ss.eco_data['solar_heat_flow'].to_frame()
+    ss.all_solar_heat_flow = ss.eco_data[[
+        'solar_heat_flow_schleswig',
+        'solar_heat_flow_chemnitz',
+        'solar_heat_flow_stuttgart'
+    ]]
 
 unitpath = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..', 'input', 'param_units.json')
@@ -785,12 +789,13 @@ with tab_supply:
                 default_value='Variabel'
             )
             ss.select_sol = col_sol.selectbox(
-                'Preisvariante', 
-                ['Schleswig', 'Kassel', 'Freiburg', 'Eigene Daten'],
+                'Wähle den Ort für die solare Einstrahlung aus', 
+                ['Schleswig', 'Chemnitz', 'Stuttgart', 'Eigene Daten'],
+                help=ss.tt['select_sol'],
                 key='select_solarthermal'
             )
 
-            if ss.select_sol != 'Eigene Daten':
+            if ss.select_sol in ['Schleswig', 'Chemnitz', 'Stuttgart']:
                 solar_heat_flow_years = list(
                     ss.all_solar_heat_flow.index.year.unique()
                 )
@@ -800,19 +805,28 @@ with tab_supply:
                     default_solar_heat_flow_years = 2024
                 init_ss_widget(
                     widget_key='select_solar_heat_flow_years',
-                    ss_variable='solar_heat_flow_years',
+                    ss_variable='solar_heat_flow_year',
                     default_value=default_solar_heat_flow_years
                 )
-                ss.solar_heat_flow_years = col_sol.selectbox(
+                ss.solar_heat_flow_year = col_sol.selectbox(
                     'Wähle das Jahr für die solaren Einstrahlung aus',
                     solar_heat_flow_years,
                     placeholder='Betrachtungsjahr',
                     key='select_solar_heat_flow_years'
                 )
 
-                solar_heat_flow = ss.all_solar_heat_flow[
-                    ss.all_solar_heat_flow.index.year == ss.solar_heat_flow_years
-                    ].copy()
+                sol_year_mask = (
+                    ss.all_solar_heat_flow.index.year
+                    == ss.solar_heat_flow_year
+                )
+                sol_col_name = f'solar_heat_flow_{ss.select_sol.lower()}'
+                solar_heat_flow = ss.all_solar_heat_flow.loc[
+                    sol_year_mask, sol_col_name
+                    ].copy().to_frame()
+                solar_heat_flow.rename(
+                    columns={sol_col_name: 'solar_heat_flow'},
+                    inplace=True
+                )
 
                 init_ss_widget(
                     widget_key='toggle_scale_sol',
@@ -848,6 +862,9 @@ with tab_supply:
                         solar_heat_flow['solar_heat_flow'] *= (
                             ss.scale_factor_sol
                     )
+
+            elif ss.select_sol == 'Eigene Daten':
+                col_sol.info('Aktuell nicht verfügbar')
 
             solar_heat_flow.reset_index(inplace=True)
             solar_heat_flow['solar_heat_flow'] *= 1e6
