@@ -573,7 +573,7 @@ with tab_net:
             + 'Betriebskosten für den Netzanschluss beziehungsweise für die '
             + 'Infrastruktur zum Transport und zur Verteilung der Wärme nicht '
             + 'in die Berechnung einfließen werden.\n\n'
-            + 'Somit stellen die ausgewiesen Wärmegestehungskosten stellen '
+            + 'Somit stellen die ausgewiesen Wärmegestehungskosten '
             + 'ausschließlich die Kosten der Erzeugung innerhalb der '
             + 'betrachteten Systems dar. Würden zusätzliche Netzkosten '
             + 'einbezogen, würden sich die Wärmegestehungskosten entsprechend '
