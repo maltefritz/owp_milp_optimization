@@ -827,6 +827,8 @@ with tab_supply:
                     'Wähle das Jahr für die solaren Einstrahlung aus',
                     solar_heat_flow_years,
                     placeholder='Betrachtungsjahr',
+                    on_change=reset_ss_vars,
+                    args=('date_picker_solarthermal', 'sol_dates'),
                     key='select_solar_heat_flow_years'
                 )
 
