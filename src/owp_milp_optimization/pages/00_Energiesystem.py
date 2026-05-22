@@ -973,7 +973,8 @@ with tab_supply:
                     el_year_idx = len(el_prices_years) - 1
                 el_prices_year = col_elp.selectbox(
                     'Wähle das Jahr der Strompreisdaten aus',
-                    el_prices_years, index=el_year_idx,
+                    el_prices_years,
+                    index=el_year_idx,
                     placeholder='Betrachtungsjahr'
                 )
                 el_prices = ss.all_el_prices[
@@ -1202,6 +1203,8 @@ with tab_supply:
                     'Wähle das Jahr der Strompreisdaten aus',
                     ss.ef_el_years,
                     placeholder='Betrachtungsjahr',
+                    on_change=reset_ss_vars,
+                    args=('date_picker_el_ems', 'el_em_dates'),
                     key='select_ef_el_year'
                 )
                 el_em = ss.all_el_emissions[
@@ -1221,17 +1224,15 @@ with tab_supply:
                         widget_key='date_picker_el_ems',
                         ss_variable='el_em_dates',
                         default_value=(
-                            dates if dates is not None else (
-                                dt.date(int(heat_load_year), 3, 28),
-                                dt.date(int(heat_load_year), 7, 2)
-                            )
+                            dt.date(int(ss.ef_el_year), 3, 28),
+                            dt.date(int(ss.ef_el_year), 7, 2)
                         )
                     )
 
                     ss.el_em_dates = col_emi.date_input(
                         'Zeitraum auswählen:',
-                        min_value=dt.date(int(heat_load_year), 1, 1),
-                        max_value=dt.date(int(heat_load_year), 12, 31),
+                        min_value=dt.date(int(ss.ef_el_year), 1, 1),
+                        max_value=dt.date(int(ss.ef_el_year), 12, 31),
                         format='DD.MM.YYYY',
                         help=ss.tt['date_picker'],
                         key='date_picker_el_ems'
@@ -1405,6 +1406,8 @@ with tab_supply:
                     'Wähle das Jahr der Gaspreisdaten aus',
                     gas_prices_years,
                     placeholder='Betrachtungsjahr',
+                    on_change=reset_ss_vars,
+                    args=('date_picker_gas_prices', 'gas_dates'),
                     key='select_gas_prices_year'
                 )
                 gas_prices = ss.all_gas_prices[
@@ -1424,16 +1427,14 @@ with tab_supply:
                         widget_key='date_picker_gas_prices',
                         ss_variable='gas_dates',
                         default_value=(
-                            dates if dates is not None else (
-                                dt.date(int(heat_load_year), 3, 28),
-                                dt.date(int(heat_load_year), 7, 2)
-                            )
+                            dt.date(int(ss.gas_prices_year), 3, 28),
+                            dt.date(int(ss.gas_prices_year), 7, 2)
                         )
                     )
                     ss.gas_dates = col_gas.date_input(
                         'Zeitraum auswählen:',
-                        min_value=dt.date(int(heat_load_year), 1, 1),
-                        max_value=dt.date(int(heat_load_year), 12, 31),
+                        min_value=dt.date(int(ss.gas_prices_year), 1, 1),
+                        max_value=dt.date(int(ss.gas_prices_year), 12, 31),
                         format='DD.MM.YYYY',
                         help=ss.tt['date_picker'],
                         key='date_picker_gas_prices'
@@ -1613,6 +1614,8 @@ with tab_supply:
                     'Wähle das Jahr für die CO₂-Preise aus',
                     co2_prices_years,
                     placeholder='Betrachtungsjahr',
+                    on_change=reset_ss_vars,
+                    args=('date_picker_co2_prices', 'co2_dates'),
                     key='select_co2_prices_year'
                 )
                 co2_prices = ss.all_co2_prices[
@@ -1633,16 +1636,14 @@ with tab_supply:
                         widget_key='date_picker_co2_prices',
                         ss_variable='co2_dates',
                         default_value=(
-                            dates if dates is not None else (
-                                dt.date(int(heat_load_year), 3, 28),
-                                dt.date(int(heat_load_year), 7, 2)
-                            )
+                            dt.date(int(ss.co2_prices_year), 3, 28),
+                            dt.date(int(ss.co2_prices_year), 7, 2)
                         )
                     )
                     ss.co2_dates = col_co2.date_input(
                         'Zeitraum auswählen:',
-                        min_value=dt.date(int(heat_load_year), 1, 1),
-                        max_value=dt.date(int(heat_load_year), 12, 31),
+                        min_value=dt.date(int(ss.co2_prices_year), 1, 1),
+                        max_value=dt.date(int(ss.co2_prices_year), 12, 31),
                         format='DD.MM.YYYY',
                         help=ss.tt['date_picker'],
                         key='date_picker_co2_prices'
