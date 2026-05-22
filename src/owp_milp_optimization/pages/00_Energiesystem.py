@@ -754,42 +754,6 @@ with tab_units:
                     if uinfo['unit'] == '%':
                         unit_params[uinput] /= 100
 
-    # Q_tot_max = 0
-    # residual_heat_demand = heat_load.copy()
-    # for unit, unit_params in ss.param_units.items():
-    #     unit_cat = unit.rstrip('0123456789')
-    #     if unit_params['invest_mode']:
-    #         if unit_cat not in ['sol', 'tes']:
-    #             Q_tot_max += unit_params['cap_max']
-    #         elif unit_cat == 'sol':
-    #             residual_heat_demand['heat_demand'] -= (
-    #                 unit_params['A_max'] * solar_heat_flow['solar_heat_flow']
-    #                 )
-    #         elif unit_cat == 'tes':
-    #             Q_tot_max += unit_params['Q_max'] * unit_params['Q_out_to_cap']
-    #     else:
-    #         if unit_cat not in ['sol', 'tes']:
-    #             Q_tot_max += unit_params['cap_N']
-    #         elif unit_cat == 'sol':
-    #             residual_heat_demand['heat_demand'] -= (
-    #                 unit_params['A_N'] * solar_heat_flow['solar_heat_flow']
-    #                 )
-    #         elif unit_cat == 'tes':
-    #             Q_tot_max += unit_params['Q_N'] * unit_params['Q_out_to_cap']
-
-    # if Q_tot_max != 0:
-    #     if residual_heat_demand['heat_demand'].max() > Q_tot_max:
-    #         placeholder_infeasable.error(
-    #             'Die gewählten Wärmeanlagen genügen nicht um den maximalen '
-    #             + 'Wärmebedarf zu decken. Mögliche Ansätze zur Lösung des '
-    #             + 'Problems könnten sein:\n\n'
-    #             + '- Erhöhe die installierte oder maximal zu installierende'
-    #             + ' Leistung der Anlagen\n\n'
-    #             + '- Füge andere Anlagen hinzu oder erhöhe die Anzahl der '
-    #             + 'vorhandenen Anlagen\n\n'
-    #             + '- Füge einen Wärmespeicher hinzu'
-    #             )
-
 # %% MARK: Solar Thermal
 # if 'Solarthermie' in ss.units:
 with tab_supply:
@@ -967,71 +931,61 @@ with tab_supply:
 
             if ss.select_el == 'Variabel':
                 el_prices_years = list(ss.all_el_prices.index.year.unique())
+
                 if heat_load_year:
-                    el_year_idx = el_prices_years.index(heat_load_year)
+                    default_el_year = heat_load_year
                 else:
-                    el_year_idx = len(el_prices_years) - 1
-                el_prices_year = col_elp.selectbox(
+                    default_el_year = 2024
+                init_ss_widget(
+                    widget_key='select_el_prices_year',
+                    ss_variable='el_prices_year',
+                    default_value=default_el_year
+                )
+                ss.el_prices_year = col_elp.selectbox(
                     'Wähle das Jahr der Strompreisdaten aus',
                     el_prices_years,
-                    index=el_year_idx,
-                    placeholder='Betrachtungsjahr'
+                    placeholder='Betrachtungsjahr',
+                    on_change=reset_ss_vars,
+                    args=('date_picker_el_prices', 'el_dates'),
+                    key='select_el_prices_year'
                 )
                 el_prices = ss.all_el_prices[
-                    ss.all_el_prices.index.year == el_prices_year
+                    ss.all_el_prices.index.year == ss.el_prices_year
                     ].copy()
                 el_subheader = 'Spotmarkt Strompreise'
                 el_title = 'Day-Ahead Spotmarkt Strompreise in €/MWh'
 
-                precise_dates = col_elp.toggle(
+                init_ss_widget(
+                    widget_key='prec_dates_el_prices',
+                    ss_variable='precise_dates_el',
+                    default_value=False
+                )
+                ss.precise_dates_el = col_elp.toggle(
                     'Exakten Zeitraum wählen', key='prec_dates_el_prices'
                     )
-                if precise_dates:
-                    el_dates = col_elp.date_input(
+                if ss.precise_dates_el:
+                    init_ss_widget(
+                        widget_key='date_picker_el_prices',
+                        ss_variable='el_dates',
+                        default_value=(
+                            dt.date(int(ss.el_prices_year), 3, 28),
+                            dt.date(int(ss.el_prices_year), 7, 2)
+                        )
+                    )
+                    ss.el_dates = col_elp.date_input(
                         'Zeitraum auswählen:',
-                        value=dates if dates is not None else (
-                            dt.date(int(heat_load_year), 3, 28),
-                            dt.date(int(heat_load_year), 7, 2)
-                            ),
-                        min_value=dt.date(int(heat_load_year), 1, 1),
-                        max_value=dt.date(int(heat_load_year), 12, 31),
+                        min_value=dt.date(int(ss.el_prices_year), 1, 1),
+                        max_value=dt.date(int(ss.el_prices_year), 12, 31),
                         format='DD.MM.YYYY',
                         help=ss.tt['date_picker_el_prices'],
                         key='date_picker_el_prices'
                         )
-                    el_dates = [
-                        dt.datetime(year=d.year, month=d.month, day=d.day) for d in el_dates
-                        ]
-                    el_prices = el_prices.loc[el_dates[0]:el_dates[1], :]
-
-                scale_el = col_elp.toggle('Daten skalieren', key='scale_el')
-                if scale_el:
-                    scale_method_el = col_elp.selectbox(
-                        'Methode', ['Faktor', 'Erweitert'],
-                        help=ss.tt['scale_method_el'], key='scale_method_el'
-                        )
-                    if scale_method_el == 'Faktor':
-                        scale_factor_el = col_elp.number_input(
-                            'Skalierungsfaktor', value=1.0, step=0.1,
-                            min_value=0.0, help=ss.tt['scale_factor_el'],
-                            key='scale_factor_el'
-                            )
-                        el_prices['el_spot_price'] *= scale_factor_el
-                    elif scale_method_el == 'Erweitert':
-                        scale_amp_el = col_elp.number_input(
-                            'Stauchungsfaktor', value=1.0, step=0.1,
-                            min_value=0.0, help=ss.tt['scale_amp_el'],
-                            key='scale_amp_el'
-                            )
-                        scale_off_el = col_elp.number_input(
-                            'Offset', value=1.0, step=0.1,
-                            help=ss.tt['scale_off_el'], key='scale_off_el'
-                            )
-                        el_prices_median = el_prices['el_spot_price'].median()
-                        el_prices['el_spot_price'] = (
-                            (el_prices['el_spot_price'] - el_prices_median)
-                            * scale_amp_el + el_prices_median + scale_off_el
-                            )
+                    ss.el_dates = [
+                        dt.datetime(
+                            year=d.year, month=d.month, day=d.day
+                        ) for d in ss.el_dates
+                    ]
+                    el_prices = el_prices.loc[ss.el_dates[0]:ss.el_dates[1], :]
 
                 if any(heat_load):
                     nr_steps_hl = len(heat_load.index)
@@ -1044,6 +998,67 @@ with tab_supply:
                             + 'Bitte die Daten angleichen.'
                             )
 
+                init_ss_widget(
+                    widget_key='toggle_scale_el',
+                    ss_variable='scale_el',
+                    default_value=False
+                )
+                ss.scale_el = col_elp.toggle(
+                    'Daten skalieren', key='toggle_scale_el'
+                )
+                if ss.scale_el:
+                    init_ss_widget(
+                        widget_key='select_scale_method_el',
+                        ss_variable='scale_method_el',
+                        default_value='Faktor'
+                    )
+                    ss.scale_method_el = col_elp.selectbox(
+                        'Methode', ['Faktor', 'Erweitert'],
+                        help=ss.tt['scale_method_el'],
+                        key='select_scale_method_el'
+                        )
+                    if ss.scale_method_el == 'Faktor':
+                        init_ss_widget(
+                            widget_key='num_input_scale_factor_el',
+                            ss_variable='scale_factor_el',
+                            default_value=1.0
+                        )
+                        ss.scale_factor_el = col_elp.number_input(
+                            'Skalierungsfaktor',
+                            step=0.1, min_value=0.0,
+                            help=ss.tt['scale_factor_el'],
+                            key='num_input_scale_factor_el'
+                            )
+                        el_prices['el_spot_price'] *= ss.scale_factor_el
+                    elif ss.scale_method_el == 'Erweitert':
+                        init_ss_widget(
+                            widget_key='num_input_scale_amp_el',
+                            ss_variable='scale_amp_el',
+                            default_value=1.0
+                        )
+                        ss.scale_amp_el = col_elp.number_input(
+                            'Stauchungsfaktor',
+                            step=0.1, min_value=0.0,
+                            help=ss.tt['scale_amp_el'],
+                            key='num_input_scale_amp_el'
+                            )
+                        init_ss_widget(
+                            widget_key='num_input_scale_off_el',
+                            ss_variable='scale_off_el',
+                            default_value=1.0
+                        )
+                        ss.scale_off_el = col_elp.number_input(
+                            'Offset', step=0.1,
+                            help=ss.tt['scale_off_el'],
+                            key='num_input_scale_off_el'
+                            )
+                        el_prices_median = el_prices['el_spot_price'].median()
+                        el_prices['el_spot_price'] = (
+                            (el_prices['el_spot_price'] - el_prices_median)
+                            * ss.scale_amp_el + el_prices_median
+                            + ss.scale_off_el
+                            )
+
             elif ss.select_el == 'Konstant':
                 el_prices = ss.all_el_prices.loc[heat_load['Date']]
                 el_em = ss.all_el_emissions.loc[heat_load['Date']]
@@ -1054,7 +1069,7 @@ with tab_supply:
                     default_value=80.00
                 )
                 ss.constant_el_value = col_elp.number_input(
-                    'Spotmarktpreis in €/MWh', step=1.00,
+                    'Strompreise in €/MWh', step=1.00,
                     key='num_input_constant_el_value'
                 )
                 el_prices['el_spot_price'] = ss.constant_el_value
@@ -1516,7 +1531,8 @@ with tab_supply:
                         gas_prices_median = gas_prices['gas_price'].median()
                         gas_prices['gas_price'] = (
                             (gas_prices['gas_price'] - gas_prices_median)
-                            * ss.scale_amp_gas + gas_prices_median + ss.scale_off_gas
+                            * ss.scale_amp_gas + gas_prices_median
+                            + ss.scale_off_gas
                             )
 
             elif ss.select_gas == 'Konstant':
@@ -1870,6 +1886,44 @@ with tab_misc:
         st.page_link(
             'pages/01_Optimierung.py', label='**Zur Optimierung**',
             icon='📝', width='stretch'
+            )
+
+
+# %%: Troubleshooting
+Q_tot_max = 0
+residual_heat_demand = heat_load.copy()
+for unit, unit_params in ss.param_units.items():
+    unit_cat = unit.rstrip('0123456789')
+    if unit_params['invest_mode']:
+        if unit_cat not in ['sol', 'tes']:
+            Q_tot_max += unit_params['cap_max']
+        elif unit_cat == 'sol':
+            residual_heat_demand['heat_demand'] -= (
+                unit_params['A_max'] * solar_heat_flow['solar_heat_flow']
+                )
+        elif unit_cat == 'tes':
+            Q_tot_max += unit_params['Q_max'] * unit_params['Q_out_to_cap']
+    else:
+        if unit_cat not in ['sol', 'tes']:
+            Q_tot_max += unit_params['cap_N']
+        elif unit_cat == 'sol':
+            residual_heat_demand['heat_demand'] -= (
+                unit_params['A_N'] * solar_heat_flow['solar_heat_flow']
+                )
+        elif unit_cat == 'tes':
+            Q_tot_max += unit_params['Q_N'] * unit_params['Q_out_to_cap']
+
+if Q_tot_max != 0:
+    if residual_heat_demand['heat_demand'].max() > Q_tot_max:
+        placeholder_infeasable.error(
+            'Die gewählten Wärmeanlagen genügen nicht um den maximalen '
+            + 'Wärmebedarf zu decken. Mögliche Ansätze zur Lösung des '
+            + 'Problems könnten sein:\n\n'
+            + '- Erhöhe die installierte oder maximal zu installierende'
+            + ' Leistung der Anlagen\n\n'
+            + '- Füge andere Anlagen hinzu oder erhöhe die Anzahl der '
+            + 'vorhandenen Anlagen\n\n'
+            + '- Füge einen Wärmespeicher hinzu'
             )
 
 # %% MARK: Footer
