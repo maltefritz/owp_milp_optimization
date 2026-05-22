@@ -228,7 +228,7 @@ with tab_heat:
 
     heat_load = pd.DataFrame()
     if ss.dataset_name == 'Eigene Daten':
-        heat_load_year = None
+        ss.heat_load_year = None
         user_file = col_sel.file_uploader(
             'Datensatz einlesen', type=['csv', 'xlsx'],
             help=ss.tt['own_data_heat_load'], key='own_data_heat_load'
@@ -255,17 +255,24 @@ with tab_heat:
         heat_load_years = ss.all_heat_load.loc[
             ~ss.all_heat_load[ss.dataset_name].isna(), ss.dataset_name
             ].index.year.unique()
-        heat_load_year = col_sel.selectbox(
-            'Wähle das Jahr der Wärmelastdaten aus',
-            heat_load_years, index=len(heat_load_years)-1,
-            placeholder='Betrachtungsjahr'
+        init_ss_widget(
+            widget_key='select_hl_year',
+            ss_variable='heat_load_year',
+            default_value=heat_load_years[-1]
         )
-        yearmask = ss.all_heat_load.index.year == heat_load_year
+        ss.heat_load_year = col_sel.selectbox(
+            'Wähle das Jahr der Wärmelastdaten aus',
+            heat_load_years,
+            placeholder='Betrachtungsjahr',
+            on_change=reset_ss_vars,
+            args=('date_picker_heat_load', 'hl_dates'),
+            key='select_hl_year'
+        )
+        yearmask = ss.all_heat_load.index.year == ss.heat_load_year
         heat_load = ss.all_heat_load.loc[
             yearmask, ss.dataset_name
             ].copy().to_frame()
 
-        dates = None
         if ss.dataset_name != 'Eigene Daten':
 
             init_ss_widget(
@@ -273,33 +280,38 @@ with tab_heat:
                 ss_variable='precise_dates_hl',
                 default_value=False
             )
-
             ss.precise_dates_hl = col_sel.toggle(
                 'Exakten Zeitraum wählen', key='prec_dates_heat_load'
             )
             if ss.precise_dates_hl:
-                dates = col_sel.date_input(
+                init_ss_widget(
+                    widget_key='date_picker_heat_load',
+                    ss_variable='hl_dates',
+                    default_value=(
+                        dt.date(int(ss.heat_load_year), 3, 28),
+                        dt.date(int(ss.heat_load_year), 7, 2)
+                    )
+                )
+                ss.hl_dates = col_sel.date_input(
                     'Zeitraum auswählen:',
-                    value=(
-                        dt.date(int(heat_load_year), 3, 28),
-                        dt.date(int(heat_load_year), 7, 2)
-                        ),
-                    min_value=dt.date(int(heat_load_year), 1, 1),
-                    max_value=dt.date(int(heat_load_year), 12, 31),
-                    format='DD.MM.YYYY', help=ss.tt['date_picker_heat_load'],
+                    min_value=dt.date(int(ss.heat_load_year), 1, 1),
+                    max_value=dt.date(int(ss.heat_load_year), 12, 31),
+                    format='DD.MM.YYYY',
+                    help=ss.tt['date_picker_heat_load'],
                     key='date_picker_heat_load'
                     )
-                dates = [
-                    dt.datetime(year=d.year, month=d.month, day=d.day) for d in dates
-                    ]
-                heat_load = heat_load.loc[dates[0]:dates[1], :]
+                ss.hl_dates = [
+                    dt.datetime(
+                        year=d.year, month=d.month, day=d.day
+                    ) for d in ss.hl_dates
+                ]
+                heat_load = heat_load.loc[ss.hl_dates[0]:ss.hl_dates[1], :]
 
             init_ss_widget(
                 widget_key='toggle_scale_hl',
                 ss_variable='scale_hl',
                 default_value=False
             )
-
             ss.scale_hl = col_sel.toggle(
                 'Daten skalieren', key='toggle_scale_hl'
             )
@@ -364,8 +376,8 @@ with tab_heat:
                         )
                     heat_load_median = heat_load[ss.dataset_name].median()
                     heat_load[ss.dataset_name] = (
-                        (heat_load[ss.dataset_name] - heat_load_median) * ss.scale_amp_hl
-                        + heat_load_median + ss.scale_off_hl
+                        (heat_load[ss.dataset_name] - heat_load_median)
+                        * ss.scale_amp_hl + heat_load_median + ss.scale_off_hl
                         )
                     # negative_mask = heat_load[dataset_name] < 0
                     if (heat_load[ss.dataset_name] < 0).values.any():
@@ -778,8 +790,8 @@ with tab_supply:
                 solar_heat_flow_years = list(
                     ss.all_solar_heat_flow.index.year.unique()
                 )
-                if heat_load_year:
-                    default_solar_heat_flow_years = heat_load_year
+                if ss.heat_load_year:
+                    default_solar_heat_flow_years = ss.heat_load_year
                 else:
                     default_solar_heat_flow_years = 2024
                 init_ss_widget(
@@ -932,8 +944,8 @@ with tab_supply:
             if ss.select_el == 'Variabel':
                 el_prices_years = list(ss.all_el_prices.index.year.unique())
 
-                if heat_load_year:
-                    default_el_year = heat_load_year
+                if ss.heat_load_year:
+                    default_el_year = ss.heat_load_year
                 else:
                     default_el_year = 2024
                 init_ss_widget(
@@ -1138,8 +1150,8 @@ with tab_supply:
                 el_prices_comp_year = list(
                     ss.all_el_prices.index.year.unique()
                 )
-                if heat_load_year:
-                    default_el_price_comp_year = heat_load_year
+                if ss.heat_load_year:
+                    default_el_price_comp_year = ss.heat_load_year
                 else:
                     default_el_price_comp_year = 2024
                 init_ss_widget(
@@ -1204,8 +1216,8 @@ with tab_supply:
                 ss.ef_el_years = list(
                     ss.all_el_prices.index.year.unique()
                 )
-                if heat_load_year:
-                    default_ef_el_year = heat_load_year
+                if ss.heat_load_year:
+                    default_ef_el_year = ss.heat_load_year
                 else:
                     default_ef_el_year = 2024
     
@@ -1408,8 +1420,8 @@ with tab_supply:
 
             if ss.select_gas == 'Variabel':
                 gas_prices_years = list(ss.all_gas_prices.index.year.unique())
-                if heat_load_year:
-                    default_gas_year = heat_load_year
+                if ss.heat_load_year:
+                    default_gas_year = ss.heat_load_year
                 else:
                     default_gas_year = 2024
                 init_ss_widget(
@@ -1616,8 +1628,8 @@ with tab_supply:
 
             if ss.select_co2 == 'Variabel':
                 co2_prices_years = list(ss.all_co2_prices.index.year.unique())
-                if heat_load_year:
-                    default_co2_year = heat_load_year
+                if ss.heat_load_year:
+                    default_co2_year = ss.heat_load_year
                 else:
                     default_co2_year = 2024
 
