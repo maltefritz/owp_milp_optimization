@@ -829,6 +829,55 @@ with tab_supply:
                 )
 
                 init_ss_widget(
+                    widget_key='prec_dates_solarthermal',
+                    ss_variable='precise_dates_sol',
+                    default_value=False
+                )
+                ss.precise_dates_sol = col_sol.toggle(
+                    'Exakten Zeitraum wählen', key='prec_dates_solarthermal'
+                    )
+                if ss.precise_dates_sol:
+                    init_ss_widget(
+                        widget_key='date_picker_solarthermal',
+                        ss_variable='sol_dates',
+                        default_value=(
+                            dt.date(int(ss.solar_heat_flow_year), 3, 28),
+                            dt.date(int(ss.solar_heat_flow_year), 7, 2)
+                        )
+                    )
+                    ss.sol_dates = col_sol.date_input(
+                        'Zeitraum auswählen:',
+                        min_value=dt.date(
+                            int(ss.solar_heat_flow_year), 1, 1
+                        ),
+                        max_value=dt.date(
+                            int(ss.solar_heat_flow_year), 12, 31
+                        ),
+                        format='DD.MM.YYYY',
+                        help=ss.tt['date_picker'],
+                        key='date_picker_solarthermal'
+                        )
+                    ss.sol_dates = [
+                        dt.datetime(
+                            year=d.year, month=d.month, day=d.day
+                        ) for d in ss.sol_dates
+                    ]
+                    solar_heat_flow = solar_heat_flow.loc[
+                        ss.sol_dates[0]:ss.sol_dates[1], :
+                    ]
+
+                if any(heat_load):
+                    nr_steps_hl = len(heat_load.index)
+                    nr_steps_sol = len(solar_heat_flow.index)
+                    if nr_steps_hl != nr_steps_sol:
+                        st.error(
+                            'Die Anzahl der Zeitschritte der Wärmelastdaten '
+                            + f'({nr_steps_hl}) stimmt nicht mit denen der '
+                            + f' Gaspreiszeitreihe ({nr_steps_sol}) überein. '
+                            + 'Bitte die Daten angleichen.'
+                            )
+
+                init_ss_widget(
                     widget_key='toggle_scale_sol',
                     ss_variable='scale_sol',
                     default_value=False
