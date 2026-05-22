@@ -450,12 +450,17 @@ with tab_net:
 
         col_spec_mw, col_abs = st.columns([1, 1], gap='large')
         # Invest cost
-        ss.param_opt['net_inv_spez'] = col_spec_mw.number_input(
-            'Spez. Investitionskosten in €/m',
-            value=ss.param_opt['net_inv_spez'],
-            help=ss.tt['net_inv_spez_mw'],
-            key=f'net_inv_spez'
+        init_ss_widget(
+            widget_key='num_input_net_inv_spez',
+            ss_variable='net_inv_spez',
+            default_value=ss.param_opt['net_inv_spez']
         )
+        ss.net_inv_spez = col_spec_mw.number_input(
+            'Spez. Investitionskosten in €/m',
+            help=ss.tt['net_inv_spez_mw'],
+            key=f'num_input_net_inv_spez'
+        )
+        ss.param_opt['net_inv_spez'] = ss.net_inv_spez
 
         net_inv_abs = (
             ss.param_opt['net_inv_spez'] * ss.param_opt['net_dist'] * 1000
@@ -468,12 +473,17 @@ with tab_net:
 
         # Fixed operation cost
         col_spec_mw, col_abs = st.columns([1, 1], gap='large')
-        ss.param_opt['net_op_cost_fix'] = col_spec_mw.number_input(
-            'Spez. Fixkosten in €/m',
-            value=ss.param_opt['net_op_cost_fix'],
-            help=ss.tt['net_op_cost_fix'],
-            key=f'net_op_cost_fix_mw'
+        init_ss_widget(
+            widget_key='num_input_net_op_cost_fix',
+            ss_variable='net_op_cost_fix',
+            default_value=ss.param_opt['net_op_cost_fix']
         )
+        ss.net_op_cost_fix = col_spec_mw.number_input(
+            'Spez. Fixkosten in €/m',
+            help=ss.tt['net_op_cost_fix'],
+            key=f'num_input_net_op_cost_fix'
+        )
+        ss.param_opt['net_op_cost_fix'] = ss.net_op_cost_fix
 
         net_fix_abs = (
             ss.param_opt['net_op_cost_fix'] * ss.param_opt['net_dist'] * 1000
@@ -485,21 +495,23 @@ with tab_net:
 
         # Variable operation cost
         col_spec_mw, col_abs = st.columns([1, 1], gap='large')
-        ss.param_opt['net_op_cost_var'] = col_spec_mw.number_input(
+        init_ss_widget(
+            widget_key='num_input_net_op_cost_var',
+            ss_variable='net_op_cost_var',
+            default_value=ss.param_opt['net_op_cost_var']
+        )
+        ss.net_op_cost_var = col_spec_mw.number_input(
             'Spez. variable Kosten in €/MWh',
             value=ss.param_opt['net_op_cost_var'],
             help=ss.tt['net_op_cost_var'],
-            key=f'net_op_cost_var_mw'
+            key=f'num_input_net_op_cost_var'
         )
+        ss.param_opt['net_op_cost_var'] = ss.net_op_cost_var
 
-        net_var_abs = (
-            ss.param_opt['net_op_cost_var'] * ss.param_opt['net_dist'] * 1000
-        )
         net_var_abs = (
             ss.param_opt['net_op_cost_var'] * heat_load['heat_demand'].sum()
         )
 
-        
         col_var_cost, col_demand_sum = col_abs.columns([1, 1], gap='large')
         net_var_abs = format_sep(net_var_abs, dec=0)
         col_var_cost.metric(
@@ -513,24 +525,41 @@ with tab_net:
 
     elif ss.calc_network == 'Gesamtkosten':
         ss.param_opt['calc_network'] = 'total'
-        ss.param_opt['net_inv_total'] = st.number_input(
+        init_ss_widget(
+            widget_key='num_input_net_inv_total',
+            ss_variable='net_inv_total',
+            default_value=ss.param_opt['net_inv_total']
+        )
+        ss.net_inv_total = st.number_input(
             'Gesamte Investitionskosten in €',
-            value=ss.param_opt['net_inv_total'],
             # help=ss.tt['invest_net_total'],
-            key='net_inv_total'
+            key='num_input_net_inv_total'
         )
-        ss.param_opt['net_op_cost_fix_total'] = st.number_input(
+        ss.param_opt['net_inv_total'] = ss.net_inv_total
+
+        init_ss_widget(
+            widget_key='num_input_net_op_cost_fix_total',
+            ss_variable='net_op_cost_fix_total',
+            default_value=ss.param_opt['net_op_cost_fix_total']
+        )
+        ss.net_op_cost_fix_total = st.number_input(
             'Fixe jährliche Betriebskosten in €',
-            value=ss.param_opt['net_op_cost_fix_total'],
             # help=ss.tt['cost_net_fix_total'],
-            key='net_op_cost_fix_total'
+            key='num_input_net_op_cost_fix_total'
         )
-        ss.param_opt['net_op_cost_var_total'] = st.number_input(
+        ss.param_opt['net_op_cost_fix_total'] = ss.net_op_cost_fix_total
+
+        init_ss_widget(
+            widget_key='num_input_net_op_cost_var_total',
+            ss_variable='net_op_cost_var_total',
+            default_value=ss.param_opt['net_op_cost_var_total']
+        )
+        ss.net_op_cost_var_total = st.number_input(
             'Variable jährliche Betriebskosten in €',
-            value=ss.param_opt['net_op_cost_var_total'],
             # help=ss.tt['net_inv_spez_mw'],
-            key='net_op_cost_var_total'
+            key='num_input_net_op_cost_var_total'
         )
+        ss.param_opt['net_op_cost_var_total'] = ss.net_op_cost_var_total
     
     elif ss.calc_network == 'Keine Netzkosten':
         ss.param_opt['calc_network'] = 'total'
