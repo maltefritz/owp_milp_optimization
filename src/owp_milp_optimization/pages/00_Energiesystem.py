@@ -59,6 +59,21 @@ def init_ss_widget(widget_key, ss_variable, default_value):
         ss[widget_key] = ss[ss_variable]
 
 
+def reset_ss_vars(*args):
+    """
+    Pop one or more variables from session state.
+
+    Parameters
+    ----------
+
+    args : tuple(str)
+        Tuple of strings passed to args parameter of widget
+    """
+    for arg in args:
+        if arg in ss:
+            ss.pop(arg)
+
+
 # %% MARK: Parameters
 shortnames = {
     'Wärmepumpe': 'hp',
