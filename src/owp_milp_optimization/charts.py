@@ -25,7 +25,7 @@ LONGNAMES = {
     'ccet': 'Gas- und Dampfkraftwerk',
     'ice': 'Blockheizkraftwerk',
     'sol': 'Solarthermie',
-    'plb': 'Spitzenlastkessel',
+    'gb': 'Gaskessel',
     'eb': 'Elektrodenheizkessel',
     'exhs': 'Externe Wärmequelle',
     'tes': 'Wärmespeicher'

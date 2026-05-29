@@ -28,7 +28,7 @@
         "cap_max": 353,
         "cap_min": 0
     },
-    "plb": {
+    "gb": {
         "cap_N": 353,
         "Q_rel_max": 1.0,
         "Q_rel_min": 0.15,
@@ -83,7 +83,7 @@
         "Q_out_to_cap": 0.041666667,
         "Q_rel_loss": 5e-05,
         "balanced": true,
-        "init_storage": 0
+        "init_storage": 0.5
     },
     "eb": {
         "cap_N": 353,

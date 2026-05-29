@@ -30,7 +30,7 @@ class EnergySystem():
             )
         self.gas_used = (
             self.chp_used or any([
-                u.rstrip('0123456789') == 'plb'
+                u.rstrip('0123456789') == 'gb'
                 for u in self.param_units.keys()
                 ])
             )
@@ -249,7 +249,7 @@ class EnergySystem():
                 self.es.add(self.comps[unit])
                 internal_el = True
 
-            if unit_cat in ['hp', 'plb', 'eb']:
+            if unit_cat in ['hp', 'gb', 'eb']:
                 if unit_cat == 'hp':
                     eff = 'cop'
                     input_nw = 'enw'
@@ -258,7 +258,7 @@ class EnergySystem():
                         * (1 - unit_params['op_cost_bonus_rel'])
                         + self.param_opt['elec_consumer_charges_self']
                         )
-                elif unit_cat == 'plb':
+                elif unit_cat == 'gb':
                     eff = 'eta'
                     input_nw = 'gnw'
                     var_cost = (
@@ -568,7 +568,7 @@ class EnergySystem():
             unit_E_N = self.data_caps.loc[0, f'cap_{unit}']
             add_cost = 0
 
-            if unit_cat == 'plb':
+            if unit_cat == 'gb':
                 add_cost = self.param_opt['energy_tax']
                 E_N_label = f'Q_{unit}'
             elif unit_cat == 'hp':
@@ -639,20 +639,17 @@ class EnergySystem():
         if self.param_opt['calc_network'] == 'specific':
             self.key_params['invest_net_total'] = (
                 self.param_opt['net_inv_spez']
-                * self.data_all['Q_demand'].max()
                 * self.param_opt['net_dist'] * 1000
             )
 
             self.key_params['cost_net_fix_total'] = (
                 self.param_opt['net_op_cost_fix']
-                * self.data_all['Q_demand'].max()
-                * self.param_opt['net_dist']
+                * self.param_opt['net_dist'] * 1000
             )
 
             self.key_params['cost_net_var_total'] = (
                 self.param_opt['net_op_cost_var']
                 * self.data_all['Q_demand'].sum()
-                * self.param_opt['net_dist']
             )
         elif self.param_opt['calc_network'] == 'total':
             self.key_params['invest_net_total'] = (

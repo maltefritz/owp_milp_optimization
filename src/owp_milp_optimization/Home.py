@@ -36,7 +36,11 @@ if 'eco_data' not in ss:
     ss.all_el_emissions = ss.eco_data['ef_om'].to_frame()
     ss.all_gas_prices = ss.eco_data['gas_price'].to_frame()
     ss.all_co2_prices = ss.eco_data['co2_price'].to_frame()
-    ss.all_solar_heat_flow = ss.eco_data['solar_heat_flow'].to_frame()
+    ss.all_solar_heat_flow = ss.eco_data[[
+        'solar_heat_flow_schleswig',
+        'solar_heat_flow_chemnitz',
+        'solar_heat_flow_stuttgart'
+    ]]
 
 # %% Sidebar
 with st.sidebar:

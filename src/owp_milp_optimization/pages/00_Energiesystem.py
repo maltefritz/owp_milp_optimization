@@ -59,13 +59,28 @@ def init_ss_widget(widget_key, ss_variable, default_value):
         ss[widget_key] = ss[ss_variable]
 
 
+def reset_ss_vars(*args):
+    """
+    Pop one or more variables from session state.
+
+    Parameters
+    ----------
+
+    args : tuple(str)
+        Tuple of strings passed to args parameter of widget
+    """
+    for arg in args:
+        if arg in ss:
+            ss.pop(arg)
+
+
 # %% MARK: Parameters
 shortnames = {
     'Wärmepumpe': 'hp',
     'Gas- und Dampfkraftwerk': 'ccet',
     'Blockheizkraftwerk': 'ice',
     'Solarthermie': 'sol',
-    'Spitzenlastkessel': 'plb',
+    'Gaskessel': 'gb',
     'Elektrodenheizkessel': 'eb',
     'Externe Wärmequelle': 'exhs',
     'Wärmespeicher': 'tes'
@@ -75,7 +90,7 @@ longnames = {
     'ccet': 'Gas- und Dampfkraftwerk',
     'ice': 'Blockheizkraftwerk',
     'sol': 'Solarthermie',
-    'plb': 'Spitzenlastkessel',
+    'gb': 'Gaskessel',
     'eb': 'Elektrodenheizkessel',
     'exhs': 'Externe Wärmequelle',
     'tes': 'Wärmespeicher'
@@ -88,7 +103,11 @@ if 'eco_data' not in ss:
     ss.all_el_emissions = ss.eco_data['ef_om'].to_frame()
     ss.all_gas_prices = ss.eco_data['gas_price'].to_frame()
     ss.all_co2_prices = ss.eco_data['co2_price'].to_frame()
-    ss.all_solar_heat_flow = ss.eco_data['solar_heat_flow'].to_frame()
+    ss.all_solar_heat_flow = ss.eco_data[[
+        'solar_heat_flow_schleswig',
+        'solar_heat_flow_chemnitz',
+        'solar_heat_flow_stuttgart'
+    ]]
 
 unitpath = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..', 'input', 'param_units.json')
@@ -209,7 +228,7 @@ with tab_heat:
 
     heat_load = pd.DataFrame()
     if ss.dataset_name == 'Eigene Daten':
-        heat_load_year = None
+        ss.heat_load_year = None
         user_file = col_sel.file_uploader(
             'Datensatz einlesen', type=['csv', 'xlsx'],
             help=ss.tt['own_data_heat_load'], key='own_data_heat_load'
@@ -236,17 +255,24 @@ with tab_heat:
         heat_load_years = ss.all_heat_load.loc[
             ~ss.all_heat_load[ss.dataset_name].isna(), ss.dataset_name
             ].index.year.unique()
-        heat_load_year = col_sel.selectbox(
-            'Wähle das Jahr der Wärmelastdaten aus',
-            heat_load_years, index=len(heat_load_years)-1,
-            placeholder='Betrachtungsjahr'
+        init_ss_widget(
+            widget_key='select_hl_year',
+            ss_variable='heat_load_year',
+            default_value=heat_load_years[-1]
         )
-        yearmask = ss.all_heat_load.index.year == heat_load_year
+        ss.heat_load_year = col_sel.selectbox(
+            'Wähle das Jahr der Wärmelastdaten aus',
+            heat_load_years,
+            placeholder='Betrachtungsjahr',
+            on_change=reset_ss_vars,
+            args=('date_picker_heat_load', 'hl_dates'),
+            key='select_hl_year'
+        )
+        yearmask = ss.all_heat_load.index.year == ss.heat_load_year
         heat_load = ss.all_heat_load.loc[
             yearmask, ss.dataset_name
             ].copy().to_frame()
 
-        dates = None
         if ss.dataset_name != 'Eigene Daten':
 
             init_ss_widget(
@@ -254,33 +280,38 @@ with tab_heat:
                 ss_variable='precise_dates_hl',
                 default_value=False
             )
-
             ss.precise_dates_hl = col_sel.toggle(
                 'Exakten Zeitraum wählen', key='prec_dates_heat_load'
             )
             if ss.precise_dates_hl:
-                dates = col_sel.date_input(
+                init_ss_widget(
+                    widget_key='date_picker_heat_load',
+                    ss_variable='hl_dates',
+                    default_value=(
+                        dt.date(int(ss.heat_load_year), 3, 28),
+                        dt.date(int(ss.heat_load_year), 7, 2)
+                    )
+                )
+                ss.hl_dates = col_sel.date_input(
                     'Zeitraum auswählen:',
-                    value=(
-                        dt.date(int(heat_load_year), 3, 28),
-                        dt.date(int(heat_load_year), 7, 2)
-                        ),
-                    min_value=dt.date(int(heat_load_year), 1, 1),
-                    max_value=dt.date(int(heat_load_year), 12, 31),
-                    format='DD.MM.YYYY', help=ss.tt['date_picker_heat_load'],
+                    min_value=dt.date(int(ss.heat_load_year), 1, 1),
+                    max_value=dt.date(int(ss.heat_load_year), 12, 31),
+                    format='DD.MM.YYYY',
+                    help=ss.tt['date_picker_heat_load'],
                     key='date_picker_heat_load'
                     )
-                dates = [
-                    dt.datetime(year=d.year, month=d.month, day=d.day) for d in dates
-                    ]
-                heat_load = heat_load.loc[dates[0]:dates[1], :]
+                ss.hl_dates = [
+                    dt.datetime(
+                        year=d.year, month=d.month, day=d.day
+                    ) for d in ss.hl_dates
+                ]
+                heat_load = heat_load.loc[ss.hl_dates[0]:ss.hl_dates[1], :]
 
             init_ss_widget(
                 widget_key='toggle_scale_hl',
                 ss_variable='scale_hl',
                 default_value=False
             )
-
             ss.scale_hl = col_sel.toggle(
                 'Daten skalieren', key='toggle_scale_hl'
             )
@@ -345,8 +376,8 @@ with tab_heat:
                         )
                     heat_load_median = heat_load[ss.dataset_name].median()
                     heat_load[ss.dataset_name] = (
-                        (heat_load[ss.dataset_name] - heat_load_median) * ss.scale_amp_hl
-                        + heat_load_median + ss.scale_off_hl
+                        (heat_load[ss.dataset_name] - heat_load_median)
+                        * ss.scale_amp_hl + heat_load_median + ss.scale_off_hl
                         )
                     # negative_mask = heat_load[dataset_name] < 0
                     if (heat_load[ss.dataset_name] < 0).values.any():
@@ -385,18 +416,6 @@ with tab_heat:
         )
     ss.param_opt['heat_price'] = ss.select_heat_price
 
-    # %% Solarthermie wird anhand der Wärmelastdaten ausgewählt
-    solar_heat_flow = ss.all_solar_heat_flow[
-        ss.all_solar_heat_flow.index.year == heat_load_year
-        ].copy()
-    if 'precise_dates' not in st.session_state:
-        st.session_state['precise_dates'] = False
-
-    if st.session_state['precise_dates']:
-        solar_heat_flow = solar_heat_flow.loc[dates[0]:dates[1], :]
-    solar_heat_flow.reset_index(inplace=True)
-    solar_heat_flow['solar_heat_flow'] *= 1e6
-
 # %% MARK: Network
 with tab_net:
     st.header('Wärmenetz')
@@ -404,97 +423,47 @@ with tab_net:
     init_ss_widget(
         widget_key='select_calc_network',
         ss_variable='calc_network',
-        default_value='Spezfisische Kosten'
+        default_value='Spezifische Kosten'
     )
     ss.calc_network = st.selectbox(
         'Wähle die Kalkulationsmethode aus, die zu berücksichtigen ist',
-        ['Spezfisische Kosten', 'Gesamtkosten'],
+        ['Spezifische Kosten', 'Gesamtkosten', 'Keine Netzkosten'],
         placeholder='Kalkulationsmethode Wärmenetz',
         # help=ss.tt['calc_network'],
         key='select_calc_network'
     )
 
-    if ss.calc_network == 'Spezfisische Kosten':
+    if ss.calc_network == 'Spezifische Kosten':
         ss.param_opt['calc_network'] = 'specific'
-
-        init_ss_widget(
-            widget_key='select_base_val_net',
-            ss_variable='base_val_net',
-            default_value='Trassenlänge'
-        )
-        ss.base_val_net = st.selectbox(
-            'Wähle die Bezugsgröße aus, die zu berücksichtigen ist',
-            ['Trassenlänge', 'Leistung', 'Nutzung'],
-            placeholder='Bezugsgröße der Kalkulationsmethode',
-            # help=ss.tt['base_val_net'],
-            key='select_base_val_net'
-        )
-
-        col_spec_mw, col_spec_km, col_abs = st.columns([1, 1, 1], gap='large')
 
         init_ss_widget(
             widget_key='num_input_net_distance',
             ss_variable='net_distance',
             default_value=ss.param_opt['net_dist']
         )
-        ss.net_distance = col_spec_mw.number_input(
+        ss.net_distance = st.number_input(
             'Trassenlänge in km',
             help=ss.tt['net_dist'],
             key='num_input_net_distance'
         )
         ss.param_opt['net_dist'] = ss.net_distance
 
-        Q_max = col_spec_km.number_input(
-            'Spitzenlast in MW',
-            value=heat_load['heat_demand'].max(),
-            disabled=True,
-            key=f'Q_max_{heat_load}',
-        )
-
-        Q_dot_total = col_abs.number_input(
-            'Jährliche Wärmemenge in MWh',
-            value=heat_load['heat_demand'].sum(),
-            disabled=True,
-            key=f'Q_dot_total_{heat_load}'
-        )
-
-        if ss.base_val_net == 'Trassenlänge':
-            net_unit = 'm'
-            calc_value = heat_load['heat_demand'].max()
-        elif ss.base_val_net == 'Leistung':
-            net_unit = 'MW'
-            calc_value = ss.param_opt['net_dist']
-        else:
-            net_unit = 'MWh'
-            calc_value = ss.param_opt['net_dist']
-        inv_value = ss.param_opt['net_inv_spez'] * calc_value
-        fix_value = ss.param_opt['net_op_cost_fix'] * calc_value
-        var_value = ss.param_opt['net_op_cost_var'] * calc_value
-
-        col_spec_mw, col_spec_km, col_abs = st.columns([1, 1, 1], gap='large')
+        col_spec_mw, col_abs = st.columns([1, 1], gap='large')
         # Invest cost
-        ss.param_opt['net_inv_spez'] = col_spec_mw.number_input(
-            f'Spez. Investitionskosten in €/{net_unit}',
-            value=inv_value,
+        init_ss_widget(
+            widget_key='num_input_net_inv_spez',
+            ss_variable='net_inv_spez',
+            default_value=ss.param_opt['net_inv_spez']
+        )
+        ss.net_inv_spez = col_spec_mw.number_input(
+            'Spez. Investitionskosten in €/m',
             help=ss.tt['net_inv_spez_mw'],
-            key=f'net_inv_spez_mw_{ss.base_val_net}'
+            key=f'num_input_net_inv_spez'
         )
-        ss.param_opt['net_inv_spez'] /= calc_value
-
-        net_inv_spec_mw_m = (
-            ss.param_opt['net_inv_spez'] * calc_value
-        )
-        net_inv_spec_mw_m = format_sep(net_inv_spec_mw_m, dec=0)
-        col_spec_km.metric(
-            'Spez. Investitionskosten in €/MW/m',
-            help=ss.tt['net_inv_spez_mw'],
-            value=ss.param_opt['net_inv_spez']
-        )
+        ss.param_opt['net_inv_spez'] = ss.net_inv_spez
 
         net_inv_abs = (
-            ss.param_opt['net_inv_spez']
-            * heat_load['heat_demand'].max()
-            * ss.param_opt['net_dist'] * 1000
+            ss.param_opt['net_inv_spez'] * ss.param_opt['net_dist'] * 1000
         )
         net_inv_abs = format_sep(net_inv_abs, dec=0)
         col_abs.metric(
@@ -503,29 +472,21 @@ with tab_net:
         )
 
         # Fixed operation cost
-        col_spec_mw, col_spec_km, col_abs = st.columns([1, 1, 1], gap='large')
-        ss.param_opt['net_op_cost_fix'] = col_spec_mw.number_input(
-            f'Spez. Fixkosten in €/{net_unit}',
-            value=fix_value,
-            help=ss.tt['net_op_cost_fix_mw'],
-            key=f'net_op_cost_fix_mw_{ss.base_val_net}'
+        col_spec_mw, col_abs = st.columns([1, 1], gap='large')
+        init_ss_widget(
+            widget_key='num_input_net_op_cost_fix',
+            ss_variable='net_op_cost_fix',
+            default_value=ss.param_opt['net_op_cost_fix']
         )
-        ss.param_opt['net_op_cost_fix'] /= calc_value
-
-        net_fix_spec_mw_m = (
-            ss.param_opt['net_op_cost_fix'] * calc_value
+        ss.net_op_cost_fix = col_spec_mw.number_input(
+            'Spez. Fixkosten in €/m',
+            help=ss.tt['net_op_cost_fix'],
+            key=f'num_input_net_op_cost_fix'
         )
-        net_fix_spec_mw_m = format_sep(net_fix_spec_mw_m, dec=0)
-        col_spec_km.metric(
-            'Spez. Fixkosten in €/MW/m', 
-            help=ss.tt['net_op_cost_fix_mw'],
-            value=ss.param_opt['net_op_cost_fix']
-        )
+        ss.param_opt['net_op_cost_fix'] = ss.net_op_cost_fix
 
         net_fix_abs = (
-            ss.param_opt['net_op_cost_fix']
-            * heat_load['heat_demand'].max()
-            * ss.param_opt['net_dist']
+            ss.param_opt['net_op_cost_fix'] * ss.param_opt['net_dist'] * 1000
         )
         net_fix_abs = format_sep(net_fix_abs, dec=0)
         col_abs.metric(
@@ -533,54 +494,89 @@ with tab_net:
         )
 
         # Variable operation cost
-        col_spec_mw, col_spec_km, col_abs = st.columns([1, 1, 1], gap='large')
-        ss.param_opt['net_op_cost_var'] = col_spec_mw.number_input(
-            f'Spez. variable Kosten in €/{net_unit}',
-            value=var_value,
-            help=ss.tt['net_op_cost_var_mw'],
-            key=f'net_op_cost_var_mw_{ss.base_val_net}'
+        col_spec_mw, col_abs = st.columns([1, 1], gap='large')
+        init_ss_widget(
+            widget_key='num_input_net_op_cost_var',
+            ss_variable='net_op_cost_var',
+            default_value=ss.param_opt['net_op_cost_var']
         )
-
-        ss.param_opt['net_op_cost_var'] /= calc_value
-
-        net_var_spec_mw_m = (
-            ss.param_opt['net_op_cost_var'] * calc_value
+        ss.net_op_cost_var = col_spec_mw.number_input(
+            'Spez. variable Kosten in €/MWh',
+            help=ss.tt['net_op_cost_var'],
+            key=f'num_input_net_op_cost_var'
         )
-        net_var_spec_mw_m = format_sep(net_var_spec_mw_m, dec=0)
-        col_spec_km.metric(
-            'Spez. variable Kosten in €/MWh/m', 
-            value=ss.param_opt['net_op_cost_var']
-        )
+        ss.param_opt['net_op_cost_var'] = ss.net_op_cost_var
 
         net_var_abs = (
-            ss.param_opt['net_op_cost_var']
-            * heat_load['heat_demand'].sum()
-            * ss.param_opt['net_dist']
-        )
-        net_var_abs = format_sep(net_var_abs, dec=0)
-        col_abs.metric(
-            'Gesamte variable Kosten in €/a', value=net_var_abs
+            ss.param_opt['net_op_cost_var'] * heat_load['heat_demand'].sum()
         )
 
-    else:
+        col_var_cost, col_demand_sum = col_abs.columns([1, 1], gap='large')
+        net_var_abs = format_sep(net_var_abs, dec=0)
+        col_var_cost.metric(
+            'Gesamte variable Kosten in €/a', value=net_var_abs
+        )
+        demand_sum = format_sep(heat_load['heat_demand'].sum(), dec=0)
+        col_demand_sum.metric(
+            'Aufsummierte jährliche Wärmelast MWh/a',
+            value=demand_sum
+        )
+
+    elif ss.calc_network == 'Gesamtkosten':
         ss.param_opt['calc_network'] = 'total'
-        ss.param_opt['net_inv_total'] = st.number_input(
+        init_ss_widget(
+            widget_key='num_input_net_inv_total',
+            ss_variable='net_inv_total',
+            default_value=ss.param_opt['net_inv_total']
+        )
+        ss.net_inv_total = st.number_input(
             'Gesamte Investitionskosten in €',
-            value=ss.param_opt['net_inv_total'],
             # help=ss.tt['invest_net_total'],
-            key='net_inv_total'
+            key='num_input_net_inv_total'
         )
-        ss.param_opt['net_op_cost_fix_total'] = st.number_input(
+        ss.param_opt['net_inv_total'] = ss.net_inv_total
+
+        init_ss_widget(
+            widget_key='num_input_net_op_cost_fix_total',
+            ss_variable='net_op_cost_fix_total',
+            default_value=ss.param_opt['net_op_cost_fix_total']
+        )
+        ss.net_op_cost_fix_total = st.number_input(
             'Fixe jährliche Betriebskosten in €',
-            value=ss.param_opt['net_op_cost_fix_total'],
             # help=ss.tt['cost_net_fix_total'],
-            key='net_op_cost_fix_total'
+            key='num_input_net_op_cost_fix_total'
         )
-        ss.param_opt['net_op_cost_var_total'] = st.number_input(
+        ss.param_opt['net_op_cost_fix_total'] = ss.net_op_cost_fix_total
+
+        init_ss_widget(
+            widget_key='num_input_net_op_cost_var_total',
+            ss_variable='net_op_cost_var_total',
+            default_value=ss.param_opt['net_op_cost_var_total']
+        )
+        ss.net_op_cost_var_total = st.number_input(
             'Variable jährliche Betriebskosten in €',
-            value=ss.param_opt['net_op_cost_var_total'],
             # help=ss.tt['net_inv_spez_mw'],
-            key='net_op_cost_var_total'
+            key='num_input_net_op_cost_var_total'
+        )
+        ss.param_opt['net_op_cost_var_total'] = ss.net_op_cost_var_total
+    
+    elif ss.calc_network == 'Keine Netzkosten':
+        ss.param_opt['calc_network'] = 'total'
+        ss.param_opt['net_inv_total'] = 0
+        ss.param_opt['net_op_cost_fix_total'] = 0
+        ss.param_opt['net_op_cost_var_total'] = 0
+
+        st.warning(
+            'Bei der Optimierung werden keine Netzkosten berücksichtigt. '
+            + 'Das bedeutet, dass Investitions-, variable und fixe '
+            + 'Betriebskosten für den Netzanschluss beziehungsweise für die '
+            + 'Infrastruktur zum Transport und zur Verteilung der Wärme nicht '
+            + 'in die Berechnung einfließen werden.\n\n'
+            + 'Somit stellen die ausgewiesen Wärmegestehungskosten '
+            + 'ausschließlich die Kosten der Erzeugung innerhalb der '
+            + 'betrachteten Systems dar. Würden zusätzliche Netzkosten '
+            + 'einbezogen, würden sich die Wärmegestehungskosten entsprechend '
+            + 'erhöhen.'
         )
 
 # %% MARK: Energy System
@@ -798,50 +794,151 @@ with tab_units:
                     if uinfo['unit'] == '%':
                         unit_params[uinput] /= 100
 
-    Q_tot_max = 0
-    residual_heat_demand = heat_load.copy()
-    for unit, unit_params in ss.param_units.items():
-        unit_cat = unit.rstrip('0123456789')
-        if unit_params['invest_mode']:
-            if unit_cat not in ['sol', 'tes']:
-                Q_tot_max += unit_params['cap_max']
-            elif unit_cat == 'sol':
-                residual_heat_demand['heat_demand'] -= (
-                    unit_params['A_max'] * solar_heat_flow['solar_heat_flow']
-                    )
-            elif unit_cat == 'tes':
-                Q_tot_max += unit_params['Q_max'] * unit_params['Q_out_to_cap']
-        else:
-            if unit_cat not in ['sol', 'tes']:
-                Q_tot_max += unit_params['cap_N']
-            elif unit_cat == 'sol':
-                residual_heat_demand['heat_demand'] -= (
-                    unit_params['A_N'] * solar_heat_flow['solar_heat_flow']
-                    )
-            elif unit_cat == 'tes':
-                Q_tot_max += unit_params['Q_N'] * unit_params['Q_out_to_cap']
-
-    if Q_tot_max != 0:
-        if residual_heat_demand['heat_demand'].max() > Q_tot_max:
-            placeholder_infeasable.error(
-                'Die gewählten Wärmeanlagen genügen nicht um den maximalen '
-                + 'Wärmebedarf zu decken. Mögliche Ansätze zur Lösung des '
-                + 'Problems könnten sein:\n\n'
-                + '- Erhöhe die installierte oder maximal zu installierende'
-                + ' Leistung der Anlagen\n\n'
-                + '- Füge andere Anlagen hinzu oder erhöhe die Anzahl der '
-                + 'vorhandenen Anlagen\n\n'
-                + '- Füge einen Wärmespeicher hinzu'
-                )
-
 # %% MARK: Solar Thermal
 # if 'Solarthermie' in ss.units:
 with tab_supply:
     if 'Solarthermie' in ss.units:
         with st.expander('Solarthermiedaten'):
-            # solar_heat_flow wird bei der heat load berechnet
             st.subheader('Solarthermiedaten')
-            st.altair_chart(
+            col_sol, col_vis_sol = st.columns([1, 2], gap='large')
+
+            init_ss_widget(
+                widget_key='select_solarthermal',
+                ss_variable='select_sol',
+                default_value='Schleswig'
+            )
+            ss.select_sol = col_sol.selectbox(
+                'Wähle den Ort für die solare Einstrahlung aus', 
+                ['Schleswig', 'Chemnitz', 'Stuttgart', 'Eigene Daten'],
+                help=ss.tt['select_sol'],
+                key='select_solarthermal'
+            )
+
+            if ss.select_sol in ['Schleswig', 'Chemnitz', 'Stuttgart']:
+                solar_heat_flow_years = list(
+                    ss.all_solar_heat_flow.index.year.unique()
+                )
+                if ss.heat_load_year:
+                    default_solar_heat_flow_years = ss.heat_load_year
+                else:
+                    default_solar_heat_flow_years = 2024
+                init_ss_widget(
+                    widget_key='select_solar_heat_flow_years',
+                    ss_variable='solar_heat_flow_year',
+                    default_value=default_solar_heat_flow_years
+                )
+                ss.solar_heat_flow_year = col_sol.selectbox(
+                    'Wähle das Jahr für die solaren Einstrahlung aus',
+                    solar_heat_flow_years,
+                    placeholder='Betrachtungsjahr',
+                    on_change=reset_ss_vars,
+                    args=('date_picker_solarthermal', 'sol_dates'),
+                    key='select_solar_heat_flow_years'
+                )
+
+                sol_year_mask = (
+                    ss.all_solar_heat_flow.index.year
+                    == ss.solar_heat_flow_year
+                )
+                sol_col_name = f'solar_heat_flow_{ss.select_sol.lower()}'
+                solar_heat_flow = ss.all_solar_heat_flow.loc[
+                    sol_year_mask, sol_col_name
+                    ].copy().to_frame()
+                solar_heat_flow.rename(
+                    columns={sol_col_name: 'solar_heat_flow'},
+                    inplace=True
+                )
+
+                init_ss_widget(
+                    widget_key='prec_dates_solarthermal',
+                    ss_variable='precise_dates_sol',
+                    default_value=False
+                )
+                ss.precise_dates_sol = col_sol.toggle(
+                    'Exakten Zeitraum wählen', key='prec_dates_solarthermal'
+                    )
+                if ss.precise_dates_sol:
+                    init_ss_widget(
+                        widget_key='date_picker_solarthermal',
+                        ss_variable='sol_dates',
+                        default_value=(
+                            dt.date(int(ss.solar_heat_flow_year), 3, 28),
+                            dt.date(int(ss.solar_heat_flow_year), 7, 2)
+                        )
+                    )
+                    ss.sol_dates = col_sol.date_input(
+                        'Zeitraum auswählen:',
+                        min_value=dt.date(
+                            int(ss.solar_heat_flow_year), 1, 1
+                        ),
+                        max_value=dt.date(
+                            int(ss.solar_heat_flow_year), 12, 31
+                        ),
+                        format='DD.MM.YYYY',
+                        help=ss.tt['date_picker'],
+                        key='date_picker_solarthermal'
+                        )
+                    ss.sol_dates = [
+                        dt.datetime(
+                            year=d.year, month=d.month, day=d.day
+                        ) for d in ss.sol_dates
+                    ]
+                    solar_heat_flow = solar_heat_flow.loc[
+                        ss.sol_dates[0]:ss.sol_dates[1], :
+                    ]
+
+                if any(heat_load):
+                    nr_steps_hl = len(heat_load.index)
+                    nr_steps_sol = len(solar_heat_flow.index)
+                    if nr_steps_hl != nr_steps_sol:
+                        st.error(
+                            'Die Anzahl der Zeitschritte der Wärmelastdaten '
+                            + f'({nr_steps_hl}) stimmt nicht mit denen der '
+                            + f' Gaspreiszeitreihe ({nr_steps_sol}) überein. '
+                            + 'Bitte die Daten angleichen.'
+                            )
+
+                init_ss_widget(
+                    widget_key='toggle_scale_sol',
+                    ss_variable='scale_sol',
+                    default_value=False
+                )
+                ss.scale_sol = col_sol.toggle(
+                    'Scale data', key='toggle_scale_sol'
+                )
+                if ss.scale_sol:
+                    init_ss_widget(
+                        widget_key='selectbox_scale_method_sol',
+                        ss_variable='scale_method_sol',
+                        default_value='Factor'
+                    )
+                    scale_method_sol = col_sol.selectbox(
+                        'Method', ['Factor'],
+                        help=ss.tt['scale_method_sol'],
+                        key='scale_method_sol'
+                        )
+                    if scale_method_sol == 'Factor':
+                        init_ss_widget(
+                            widget_key='num_input_scale_factor_sol',
+                            ss_variable='scale_factor_sol',
+                            default_value=1.0
+                        )
+                        ss.scale_factor_sol = col_sol.number_input(
+                            'Scaling factor', step=0.1,
+                            min_value=0.0,
+                            help=ss.tt['scale_factor_sol'],
+                            key='num_input_scale_factor_sol'
+                            )
+                        solar_heat_flow['solar_heat_flow'] *= (
+                            ss.scale_factor_sol
+                    )
+
+            elif ss.select_sol == 'Eigene Daten':
+                col_sol.info('Aktuell nicht verfügbar')
+
+            solar_heat_flow.reset_index(inplace=True)
+            solar_heat_flow['solar_heat_flow'] *= 1e6
+            col_vis_sol.altair_chart(
                 alt.Chart(solar_heat_flow).mark_line(color='#EC6707').encode(
                     y=alt.Y('solar_heat_flow',
                             title='Spezifische Einstrahlung in Wh/m²'),
@@ -874,72 +971,61 @@ with tab_supply:
 
             if ss.select_el == 'Variabel':
                 el_prices_years = list(ss.all_el_prices.index.year.unique())
-                if heat_load_year:
-                    el_year_idx = el_prices_years.index(heat_load_year)
+
+                if ss.heat_load_year:
+                    default_el_year = ss.heat_load_year
                 else:
-                    el_year_idx = len(el_prices_years) - 1
-                el_prices_year = col_elp.selectbox(
+                    default_el_year = 2024
+                init_ss_widget(
+                    widget_key='select_el_prices_year',
+                    ss_variable='el_prices_year',
+                    default_value=default_el_year
+                )
+                ss.el_prices_year = col_elp.selectbox(
                     'Wähle das Jahr der Strompreisdaten aus',
-                    el_prices_years, index=el_year_idx,
-                    placeholder='Betrachtungsjahr'
+                    el_prices_years,
+                    placeholder='Betrachtungsjahr',
+                    on_change=reset_ss_vars,
+                    args=('date_picker_el_prices', 'el_dates'),
+                    key='select_el_prices_year'
                 )
                 el_prices = ss.all_el_prices[
-                    ss.all_el_prices.index.year == el_prices_year
+                    ss.all_el_prices.index.year == ss.el_prices_year
                     ].copy()
-                el_em = ss.all_el_emissions[
-                    ss.all_el_emissions.index.year == el_prices_year
-                    ].copy()
+                el_subheader = 'Spotmarkt Strompreise'
+                el_title = 'Day-Ahead Spotmarkt Strompreise in €/MWh'
 
-                precise_dates = col_elp.toggle(
+                init_ss_widget(
+                    widget_key='prec_dates_el_prices',
+                    ss_variable='precise_dates_el',
+                    default_value=False
+                )
+                ss.precise_dates_el = col_elp.toggle(
                     'Exakten Zeitraum wählen', key='prec_dates_el_prices'
                     )
-                if precise_dates:
-                    el_dates = col_elp.date_input(
+                if ss.precise_dates_el:
+                    init_ss_widget(
+                        widget_key='date_picker_el_prices',
+                        ss_variable='el_dates',
+                        default_value=(
+                            dt.date(int(ss.el_prices_year), 3, 28),
+                            dt.date(int(ss.el_prices_year), 7, 2)
+                        )
+                    )
+                    ss.el_dates = col_elp.date_input(
                         'Zeitraum auswählen:',
-                        value=dates if dates is not None else (
-                            dt.date(int(heat_load_year), 3, 28),
-                            dt.date(int(heat_load_year), 7, 2)
-                            ),
-                        min_value=dt.date(int(heat_load_year), 1, 1),
-                        max_value=dt.date(int(heat_load_year), 12, 31),
+                        min_value=dt.date(int(ss.el_prices_year), 1, 1),
+                        max_value=dt.date(int(ss.el_prices_year), 12, 31),
                         format='DD.MM.YYYY',
                         help=ss.tt['date_picker_el_prices'],
                         key='date_picker_el_prices'
                         )
-                    el_dates = [
-                        dt.datetime(year=d.year, month=d.month, day=d.day) for d in el_dates
-                        ]
-                    el_prices = el_prices.loc[el_dates[0]:el_dates[1], :]
-                    el_em = el_em.loc[el_dates[0]:el_dates[1], :]
-
-                scale_el = col_elp.toggle('Daten skalieren', key='scale_el')
-                if scale_el:
-                    scale_method_el = col_elp.selectbox(
-                        'Methode', ['Faktor', 'Erweitert'],
-                        help=ss.tt['scale_method_el'], key='scale_method_el'
-                        )
-                    if scale_method_el == 'Faktor':
-                        scale_factor_el = col_elp.number_input(
-                            'Skalierungsfaktor', value=1.0, step=0.1,
-                            min_value=0.0, help=ss.tt['scale_factor_el'],
-                            key='scale_factor_el'
-                            )
-                        el_prices['el_spot_price'] *= scale_factor_el
-                    elif scale_method_el == 'Erweitert':
-                        scale_amp_el = col_elp.number_input(
-                            'Stauchungsfaktor', value=1.0, step=0.1,
-                            min_value=0.0, help=ss.tt['scale_amp_el'],
-                            key='scale_amp_el'
-                            )
-                        scale_off_el = col_elp.number_input(
-                            'Offset', value=1.0, step=0.1,
-                            help=ss.tt['scale_off_el'], key='scale_off_el'
-                            )
-                        el_prices_median = el_prices['el_spot_price'].median()
-                        el_prices['el_spot_price'] = (
-                            (el_prices['el_spot_price'] - el_prices_median)
-                            * scale_amp_el + el_prices_median + scale_off_el
-                            )
+                    ss.el_dates = [
+                        dt.datetime(
+                            year=d.year, month=d.month, day=d.day
+                        ) for d in ss.el_dates
+                    ]
+                    el_prices = el_prices.loc[ss.el_dates[0]:ss.el_dates[1], :]
 
                 if any(heat_load):
                     nr_steps_hl = len(heat_load.index)
@@ -952,6 +1038,67 @@ with tab_supply:
                             + 'Bitte die Daten angleichen.'
                             )
 
+                init_ss_widget(
+                    widget_key='toggle_scale_el',
+                    ss_variable='scale_el',
+                    default_value=False
+                )
+                ss.scale_el = col_elp.toggle(
+                    'Daten skalieren', key='toggle_scale_el'
+                )
+                if ss.scale_el:
+                    init_ss_widget(
+                        widget_key='select_scale_method_el',
+                        ss_variable='scale_method_el',
+                        default_value='Faktor'
+                    )
+                    ss.scale_method_el = col_elp.selectbox(
+                        'Methode', ['Faktor', 'Erweitert'],
+                        help=ss.tt['scale_method_el'],
+                        key='select_scale_method_el'
+                        )
+                    if ss.scale_method_el == 'Faktor':
+                        init_ss_widget(
+                            widget_key='num_input_scale_factor_el',
+                            ss_variable='scale_factor_el',
+                            default_value=1.0
+                        )
+                        ss.scale_factor_el = col_elp.number_input(
+                            'Skalierungsfaktor',
+                            step=0.1, min_value=0.0,
+                            help=ss.tt['scale_factor_el'],
+                            key='num_input_scale_factor_el'
+                            )
+                        el_prices['el_spot_price'] *= ss.scale_factor_el
+                    elif ss.scale_method_el == 'Erweitert':
+                        init_ss_widget(
+                            widget_key='num_input_scale_amp_el',
+                            ss_variable='scale_amp_el',
+                            default_value=1.0
+                        )
+                        ss.scale_amp_el = col_elp.number_input(
+                            'Stauchungsfaktor',
+                            step=0.1, min_value=0.0,
+                            help=ss.tt['scale_amp_el'],
+                            key='num_input_scale_amp_el'
+                            )
+                        init_ss_widget(
+                            widget_key='num_input_scale_off_el',
+                            ss_variable='scale_off_el',
+                            default_value=1.0
+                        )
+                        ss.scale_off_el = col_elp.number_input(
+                            'Offset', step=0.1,
+                            help=ss.tt['scale_off_el'],
+                            key='num_input_scale_off_el'
+                            )
+                        el_prices_median = el_prices['el_spot_price'].median()
+                        el_prices['el_spot_price'] = (
+                            (el_prices['el_spot_price'] - el_prices_median)
+                            * ss.scale_amp_el + el_prices_median
+                            + ss.scale_off_el
+                            )
+
             elif ss.select_el == 'Konstant':
                 el_prices = ss.all_el_prices.loc[heat_load['Date']]
                 el_em = ss.all_el_emissions.loc[heat_load['Date']]
@@ -962,23 +1109,12 @@ with tab_supply:
                     default_value=80.00
                 )
                 ss.constant_el_value = col_elp.number_input(
-                    'Spotmarktpreis in €/MWh', step=1.00,
+                    'Strompreise in €/MWh', step=1.00,
                     key='num_input_constant_el_value'
                 )
                 el_prices['el_spot_price'] = ss.constant_el_value
-
-
-                init_ss_widget(
-                    widget_key='num_input_constant_el_em_value',
-                    ss_variable='constant_el_em_value',
-                    default_value=55.00
-                )
-                ss.constant_el_em_value = col_elp.number_input(
-                    'Emissionsfaktor Strommix in kg CO₂/MWh',
-                    step=1.00,
-                    key='num_input_constant_el_em_value'
-                )
-                el_em['ef_om'] = ss.constant_el_em_value
+                el_subheader = 'Strompreise'
+                el_title = 'Strompreise in €/MWh'
 
             elif ss.select_el == 'Eigene Daten':
                 user_file_el = col_elp.file_uploader(
@@ -993,10 +1129,6 @@ with tab_supply:
                             'Date': [pd.Timestamp('2025-01-01')],
                             'el_spot_price': [0.0],
                         })
-                    el_em = pd.DataFrame({
-                            'Date': [pd.Timestamp('2025-01-01')],
-                            'ef_om': [0.0],
-                        })
                 else:
                     filename = user_file_el.name.lower()
                     if filename.endswith('csv'):
@@ -1007,63 +1139,283 @@ with tab_supply:
                     elif filename.endswith('xlsx'):
                         user_file_el = pd.read_excel(user_file_el, index_col=0)
                     el_prices = user_file_el[['el_spot_price']].copy()
-                    el_em = user_file_el[['ef_om']].copy()
+                el_subheader = 'Strompreise'
+                el_title = 'Strompreise in €/MWh'
 
-            col_elp.subheader(
-                'Strompreisbestandteile in ct/kWh', help=ss.tt['el_elements']
-                )
-
-            el_price_year = str(el_prices.index[-1].year)
-            if not el_price_year in ss.bound_inputs.keys():
-                el_price_year = str(max(
-                    int(y) for y in ss.bound_inputs.keys()
-                ))
-
-            # if 'edited_elp' not in st.session_state:
-            st.session_state['edited_elp'] = {
-                k: v for k, v in ss.bound_inputs[
-                        str(el_price_year)
-                    ].items()
-            }
-
-            st.session_state['edited_elp'] = col_elp.data_editor(
-                st.session_state['edited_elp'],
-                width='stretch',
-                disabled=['index', 0],
-                key='el_elements'
-            )
-
-            elp_sum = col_elp.dataframe(
-                pd.DataFrame(st.session_state['edited_elp']).sum().to_frame(name='Summe').T,
-                width='stretch',
-                key='elp_sum'
-            )
-
-            edited_elp = st.session_state['edited_elp']
-
-            ss.param_opt['elec_consumer_charges_grid'] = round(
-                sum(val * 10 for val in edited_elp['Netzbezug'].values()), 2
-            )
-            ss.param_opt['elec_consumer_charges_self'] = round(
-                sum(val * 10 for val in edited_elp['Eigennutzung'].values()), 2
-            )
-
-            col_vis_el.subheader('Spotmarkt Strompreise')
+            col_vis_el.subheader(f'{el_subheader}')
             el_prices.reset_index(inplace=True)
             col_vis_el.altair_chart(
                 alt.Chart(el_prices).mark_line(color='#00395B').encode(
                     y=alt.Y(
                         'el_spot_price',
-                        title='Day-Ahead Spotmarkt Strompreise in €/MWh'
+                        title=f'{el_title}'
                         ),
                     x=alt.X('Date', title='Datum')
                     ),
                 width='stretch'
                 )
 
-            col_vis_el.subheader('Emissionsfaktoren des Strommixes')
+# %% MARK: El. price comps
+            init_ss_widget(
+                widget_key='use_elp_toggle',
+                ss_variable='use_elp',
+                default_value=True
+            )
+            ss.use_elp = col_elp.toggle(
+                'Berücksichtigung zusätzlicher Strompreisbestandteile',
+                key='use_elp_toggle'
+            )
+
+            if not ss.use_elp:
+                ss.param_opt['elec_consumer_charges_grid'] = 0.0
+                ss.param_opt['elec_consumer_charges_self'] = 0.0
+            else:
+                col_elp.markdown(
+                    '#### Strompreisbestandteile in ct/kWh',
+                    help=ss.tt['el_elements']
+                )
+
+                el_prices_comp_year = list(
+                    ss.all_el_prices.index.year.unique()
+                )
+                if ss.heat_load_year:
+                    default_el_price_comp_year = ss.heat_load_year
+                else:
+                    default_el_price_comp_year = 2024
+                init_ss_widget(
+                    widget_key='select_el_prices_comp_year',
+                    ss_variable='el_price_comp_year',
+                    default_value=default_el_price_comp_year
+                )
+                ss.el_price_comp_year = col_elp.selectbox(
+                    'Wähle das Jahr der Daten aus',
+                    el_prices_comp_year,
+                    placeholder='Betrachtungsjahr',
+                    key='select_el_prices_comp_year'
+                )
+
+                st.session_state['edited_elp'] = {
+                    k: v for k, v in ss.bound_inputs[
+                            str(ss.el_price_comp_year)
+                        ].items()
+                }
+
+                st.session_state['edited_elp'] = col_elp.data_editor(
+                    st.session_state['edited_elp'],
+                    width='stretch',
+                    disabled=['index', 0],
+                    key='el_elements'
+                )
+
+                elp_sum = col_elp.dataframe(
+                    pd.DataFrame(
+                        st.session_state['edited_elp']
+                    ).sum().to_frame(name='Summe').T,
+                    width='stretch',
+                    key='elp_sum'
+                )
+
+                edited_elp = st.session_state['edited_elp']
+
+                ss.param_opt['elec_consumer_charges_grid'] = round(
+                    sum(val * 10 for val in edited_elp['Netzbezug'].values()), 2
+                )
+                ss.param_opt['elec_consumer_charges_self'] = round(
+                    sum(val * 10 for val in edited_elp['Eigennutzung'].values()), 2
+                )
+
+
+# %% MARK: Emissionsfactor electricity
+            st.markdown('#### Emissionsfaktor Elektrizität')
+            col_emi, col_vis_emi = st.columns([1, 2], gap='large')
+
+            init_ss_widget(
+                widget_key='select_ef_electricity',
+                ss_variable='select_ef_el',
+                default_value='Variabel'
+            )
+            ss.select_ef_el = col_emi.selectbox(
+                'Preisvariante', 
+                ['Variabel', 'Konstant', 'Eigene Daten'],
+                key='select_ef_electricity'
+            )
+
+            if ss.select_ef_el == 'Variabel':
+                ss.ef_el_years = list(
+                    ss.all_el_prices.index.year.unique()
+                )
+                if ss.heat_load_year:
+                    default_ef_el_year = ss.heat_load_year
+                else:
+                    default_ef_el_year = 2024
+    
+                init_ss_widget(
+                    widget_key='select_ef_el_year',
+                    ss_variable='ef_el_year',
+                    default_value=default_ef_el_year
+                )
+                ss.ef_el_year = col_emi.selectbox(
+                    'Wähle das Jahr der Strompreisdaten aus',
+                    ss.ef_el_years,
+                    placeholder='Betrachtungsjahr',
+                    on_change=reset_ss_vars,
+                    args=('date_picker_el_ems', 'el_em_dates'),
+                    key='select_ef_el_year'
+                )
+                el_em = ss.all_el_emissions[
+                    ss.all_el_emissions.index.year == ss.ef_el_year
+                    ].copy()
+
+                init_ss_widget(
+                    widget_key='toggle_prec_dates_el_em',
+                    ss_variable='precise_dates_el_em',
+                    default_value=False
+                )
+                ss.precise_dates_el_em = col_emi.toggle(
+                    'Exakten Zeitraum wählen', key='toggle_prec_dates_el_em'
+                    )
+                if ss.precise_dates_el_em:
+                    init_ss_widget(
+                        widget_key='date_picker_el_ems',
+                        ss_variable='el_em_dates',
+                        default_value=(
+                            dt.date(int(ss.ef_el_year), 3, 28),
+                            dt.date(int(ss.ef_el_year), 7, 2)
+                        )
+                    )
+
+                    ss.el_em_dates = col_emi.date_input(
+                        'Zeitraum auswählen:',
+                        min_value=dt.date(int(ss.ef_el_year), 1, 1),
+                        max_value=dt.date(int(ss.ef_el_year), 12, 31),
+                        format='DD.MM.YYYY',
+                        help=ss.tt['date_picker'],
+                        key='date_picker_el_ems'
+                    )
+                    ss.el_em_dates = [
+                        dt.datetime(
+                            year=d.year, month=d.month, day=d.day
+                        ) for d in ss.el_em_dates
+                    ]
+                    el_em = el_em.loc[ss.el_em_dates[0]:ss.el_em_dates[1], :]
+
+                if any(heat_load):
+                    nr_steps_hl = len(heat_load.index)
+                    nr_steps_el_em = len(el_em.index)
+                    if nr_steps_hl != nr_steps_el_em:
+                        st.error(
+                            'Die Anzahl der Zeitschritte der Wärmelastdaten '
+                            + f'({nr_steps_hl}) stimmt nicht mit denen der '
+                            + f' Gaspreiszeitreihe ({nr_steps_el_em}) überein. '
+                            + 'Bitte die Daten angleichen.'
+                        )
+
+                init_ss_widget(
+                    widget_key='toggle_scale_el_em',
+                    ss_variable='scale_el_em',
+                    default_value=False
+                )
+                ss.scale_el_em = col_emi.toggle(
+                    'Daten skalieren', key='toggle_scale_el_em'
+                )
+                if ss.scale_el_em:
+                    init_ss_widget(
+                        widget_key='select_scale_method_el_em',
+                        ss_variable='scale_method_el_em',
+                        default_value='Faktor'
+                    )
+                    ss.scale_method_el_em = col_emi.selectbox(
+                        'Methode', ['Faktor', 'Erweitert'],
+                        help=ss.tt['scale_method_el_em'],
+                        key='select_scale_method_el_em'
+                        )
+                    if ss.scale_method_el_em == 'Faktor':
+                        init_ss_widget(
+                            widget_key='num_input_scale_factor_el_em',
+                            ss_variable='scale_factor_el_em',
+                            default_value=1.0
+                        )
+                        ss.scale_factor_el_em = col_emi.number_input(
+                            'Skalierungsfaktor', 
+                            step=0.1, min_value=0.0,
+                            help=ss.tt['scale_factor_el_em'],
+                            key='num_input_scale_factor_el_em'
+                        )
+                        el_em['ef_om'] *= ss.scale_factor_el_em
+                    elif ss.scale_method_el_em == 'Erweitert':
+                        init_ss_widget(
+                            widget_key='num_input_scale_amp_el_em',
+                            ss_variable='scale_amp_el_em',
+                            default_value=1.0
+                        )
+                        ss.scale_amp_el_em = col_emi.number_input(
+                            'Stauchungsfaktor', 
+                            step=0.1,  min_value=0.0,
+                            help=ss.tt['scale_amp_el_em'],
+                            key='num_input_scale_amp_el_em'
+                        )
+                        init_ss_widget(
+                            widget_key='num_input_scale_off_el_em',
+                            ss_variable='scale_off_el_em',
+                            default_value=1.0
+                        )
+                        ss.scale_off_el_em = col_emi.number_input(
+                            'Offset', step=0.1,
+                            help=ss.tt['scale_off_el_em'],
+                            key='num_input_scale_off_el_em'
+                            )
+                        el_em_median = el_em['ef_om'].median()
+                        el_em['ef_om'] = (
+                            (el_em['ef_om'] - el_em_median)
+                            * ss.scale_amp_el_em + el_em_median
+                            + ss.scale_off_el_em
+                            )
+
+            elif ss.select_ef_el == 'Konstant':
+                el_em = ss.all_el_emissions.loc[heat_load['Date']]
+
+                init_ss_widget(
+                    widget_key='num_input_constant_el_em_value',
+                    ss_variable='constant_el_em_value',
+                    default_value=350.00
+                )
+                ss.constant_el_em_value = col_emi.number_input(
+                    'Emissionsfaktor Strommix in kg CO₂/MWh',
+                    step=1.00,
+                    key='num_input_constant_el_em_value'
+                )
+                el_em['ef_om'] = ss.constant_el_em_value
+
+            elif ss.select_ef_el == 'Eigene Daten':
+                user_file_ef_el = col_emi.file_uploader(
+                    'Datensatz einlesen', type=['csv', 'xlsx'],
+                    help=ss.tt['own_data_ef_el'],
+                    key='own_data__ef_el'
+                    )
+                if user_file_ef_el is None:
+                    col_emi.info(
+                        'Bitte fügen Sie eine Datei ein.'
+                        )
+                    el_em = pd.DataFrame({
+                            'Date': [pd.Timestamp('2025-01-01')],
+                            'ef_om': [0.0],
+                        })
+                else:
+                    filename = user_file_ef_el.name.lower()
+                    if filename.endswith('csv'):
+                        user_file_ef_el = pd.read_csv(
+                            user_file_ef_el, sep=';', index_col=0,
+                            parse_dates=True
+                            )
+                    elif filename.endswith('xlsx'):
+                        user_file_ef_el = pd.read_excel(
+                            user_file_ef_el, index_col=0
+                        )
+                    el_em = user_file_ef_el[['ef_om']].copy()
+
+            col_vis_emi.subheader('Emissionsfaktoren des Strommixes')
             el_em.reset_index(inplace=True)
-            col_vis_el.altair_chart(
+            col_vis_emi.altair_chart(
                 alt.Chart(el_em).mark_line(color='#74ADC0').encode(
                     y=alt.Y(
                         'ef_om',
@@ -1074,9 +1426,9 @@ with tab_supply:
                 width='stretch'
                 )
 
-# %% MARK: Gas & CO₂
+# %% MARK: Gas
     gas_units = [
-        'Spitzenlastkessel', 'Gas- und Dampfkraftwerk', 'Blockheizkraftwerk'
+        'Gaskessel', 'Gas- und Dampfkraftwerk', 'Blockheizkraftwerk'
         ]
     if any(unit in ss.units for unit in gas_units):
         with st.expander('Gasversorgungsdaten'):
@@ -1095,74 +1447,61 @@ with tab_supply:
             )
 
             if ss.select_gas == 'Variabel':
-                gas_prices_years = list(ss.all_el_prices.index.year.unique())
-                if heat_load_year:
-                    gas_year_idx = gas_prices_years.index(heat_load_year)
+                gas_prices_years = list(ss.all_gas_prices.index.year.unique())
+                if ss.heat_load_year:
+                    default_gas_year = ss.heat_load_year
                 else:
-                    gas_year_idx = len(gas_prices_years) - 1
-                gas_prices_year = col_gas.selectbox(
+                    default_gas_year = 2024
+                init_ss_widget(
+                    widget_key='select_gas_prices_year',
+                    ss_variable='gas_prices_year',
+                    default_value=default_gas_year
+                )
+                ss.gas_prices_year = col_gas.selectbox(
                     'Wähle das Jahr der Gaspreisdaten aus',
-                    gas_prices_years, index=gas_year_idx,
-                    placeholder='Betrachtungsjahr'
+                    gas_prices_years,
+                    placeholder='Betrachtungsjahr',
+                    on_change=reset_ss_vars,
+                    args=('date_picker_gas_prices', 'gas_dates'),
+                    key='select_gas_prices_year'
                 )
                 gas_prices = ss.all_gas_prices[
-                    ss.all_gas_prices.index.year == gas_prices_year
+                    ss.all_gas_prices.index.year == ss.gas_prices_year
                     ].copy()
-                co2_prices = ss.all_co2_prices[
-                    ss.all_co2_prices.index.year == gas_prices_year
-                    ].copy()
-                precise_dates = col_gas.toggle(
+
+                init_ss_widget(
+                    widget_key='prec_dates_gas_prices',
+                    ss_variable='precise_dates_gas',
+                    default_value=False
+                )
+                ss.precise_dates_gas = col_gas.toggle(
                     'Exakten Zeitraum wählen', key='prec_dates_gas_prices'
                     )
-                if precise_dates:
-                    gas_dates = col_gas.date_input(
+                if ss.precise_dates_gas:
+                    init_ss_widget(
+                        widget_key='date_picker_gas_prices',
+                        ss_variable='gas_dates',
+                        default_value=(
+                            dt.date(int(ss.gas_prices_year), 3, 28),
+                            dt.date(int(ss.gas_prices_year), 7, 2)
+                        )
+                    )
+                    ss.gas_dates = col_gas.date_input(
                         'Zeitraum auswählen:',
-                        value=dates if dates is not None else (
-                            dt.date(int(heat_load_year), 3, 28),
-                            dt.date(int(heat_load_year), 7, 2)
-                            ),
-                        min_value=dt.date(int(heat_load_year), 1, 1),
-                        max_value=dt.date(int(heat_load_year), 12, 31),
+                        min_value=dt.date(int(ss.gas_prices_year), 1, 1),
+                        max_value=dt.date(int(ss.gas_prices_year), 12, 31),
                         format='DD.MM.YYYY',
-                        help=ss.tt['date_picker_gas_prices'],
+                        help=ss.tt['date_picker'],
                         key='date_picker_gas_prices'
                         )
-                    gas_dates = [
+                    ss.gas_dates = [
                         dt.datetime(
                             year=d.year, month=d.month, day=d.day
-                        ) for d in gas_dates
+                        ) for d in ss.gas_dates
                     ]
-                    gas_prices = gas_prices.loc[gas_dates[0]:gas_dates[1], :]
-                    co2_prices = co2_prices.loc[gas_dates[0]:gas_dates[1], :]
-
-                scale_gas = col_gas.toggle('Daten skalieren', key='scale_gas')
-                if scale_gas:
-                    scale_method_gas = col_gas.selectbox(
-                        'Methode', ['Faktor', 'Erweitert'],
-                        help=ss.tt['scale_method_gas'], key='scale_method_gas'
-                        )
-                    if scale_method_gas == 'Faktor':
-                        scale_factor_gas = col_gas.number_input(
-                            'Skalierungsfaktor', value=1.0, step=0.1,
-                            min_value=0.0, help=ss.tt['scale_factor_gas'],
-                            key='scale_factor_gas'
-                            )
-                        gas_prices['gas_price'] *= scale_factor_gas
-                    elif scale_method_gas == 'Erweitert':
-                        scale_amp_gas = col_gas.number_input(
-                            'Stauchungsfaktor', value=1.0, step=0.1,
-                            min_value=0.0, help=ss.tt['scale_amp_gas'],
-                            key='scale_amp_gas'
-                            )
-                        scale_off_gas = col_gas.number_input(
-                            'Offset', value=1.0, step=0.1,
-                            help=ss.tt['scale_amp_gas'], key='scale_off_gas'
-                            )
-                        gas_prices_median = gas_prices['gas_price'].median()
-                        gas_prices['gas_price'] = (
-                            (gas_prices['gas_price'] - gas_prices_median)
-                            * scale_amp_gas + gas_prices_median + scale_off_gas
-                            )
+                    gas_prices = gas_prices.loc[
+                        ss.gas_dates[0]:ss.gas_dates[1], :
+                    ]
 
                 if any(heat_load):
                     nr_steps_hl = len(heat_load.index)
@@ -1175,9 +1514,69 @@ with tab_supply:
                             + 'Bitte die Daten angleichen.'
                             )
 
+                init_ss_widget(
+                    widget_key='toggle_scale_gas',
+                    ss_variable='scale_gas',
+                    default_value=False
+                )
+                ss.scale_gas = col_gas.toggle(
+                    'Daten skalieren', key='toggle_scale_gas'
+                )
+                if ss.scale_gas:
+                    init_ss_widget(
+                        widget_key='select_scale_method_gas',
+                        ss_variable='scale_method_gas',
+                        default_value='Faktor'
+                    )
+                    ss.scale_method_gas = col_gas.selectbox(
+                        'Methode', ['Faktor', 'Erweitert'],
+                        help=ss.tt['scale_method_gas'],
+                        key='select_scale_method_gas'
+                        )
+                    if ss.scale_method_gas == 'Faktor':
+                        init_ss_widget(
+                            widget_key='num_input_scale_factor_gas',
+                            ss_variable='scale_factor_gas',
+                            default_value=1.0
+                        )
+                        ss.scale_factor_gas = col_gas.number_input(
+                            'Skalierungsfaktor',
+                            step=0.1, min_value=0.0,
+                            help=ss.tt['scale_factor_gas'],
+                            key='num_input_scale_factor_gas'
+                            )
+                        gas_prices['gas_price'] *= ss.scale_factor_gas
+                    elif ss.scale_method_gas == 'Erweitert':
+                        init_ss_widget(
+                            widget_key='num_input_scale_amp_gas',
+                            ss_variable='scale_amp_gas',
+                            default_value=1.0
+                        )
+                        ss.scale_amp_gas = col_gas.number_input(
+                            'Stauchungsfaktor', 
+                            step=0.1, min_value=0.0,
+                            help=ss.tt['scale_amp_gas'],
+                            key='num_input_scale_amp_gas'
+                            )
+                        init_ss_widget(
+                            widget_key='num_input_scale_off_gas',
+                            ss_variable='scale_off_gas',
+                            default_value=1.0
+                        )
+                        ss.scale_off_gas = col_gas.number_input(
+                            'Offset', step=0.1,
+                            help=ss.tt['scale_amp_gas'],
+                            key='num_input_scale_off_gas'
+                            )
+                        gas_prices_median = gas_prices['gas_price'].median()
+                        gas_prices['gas_price'] = (
+                            (gas_prices['gas_price'] - gas_prices_median)
+                            * ss.scale_amp_gas + gas_prices_median
+                            + ss.scale_off_gas
+                            )
+
             elif ss.select_gas == 'Konstant':
                 gas_prices = ss.all_gas_prices.loc[heat_load['Date']]
-                co2_prices = ss.all_co2_prices.loc[heat_load['Date']]
 
                 init_ss_widget(
                     widget_key='num_input_constant_gas_value',
@@ -1189,17 +1588,6 @@ with tab_supply:
                     key='num_input_constant_gas_value'
                 )
                 gas_prices['gas_price'] = ss.constant_gas_value
-
-                init_ss_widget(
-                    widget_key='num_input_constant_co2_value',
-                    ss_variable='constant_co2_value',
-                    default_value=30.00
-                )
-                ss.constant_co2_value = col_gas.number_input(
-                    'CO₂-Zertifikatpreis in €/t CO₂', step=1.00,
-                    key='num_input_constant_co2_value'
-                )
-                co2_prices['co2_price'] = ss.constant_co2_value
 
             elif ss.select_gas == 'Eigene Daten':
                 user_file_gas = col_gas.file_uploader(
@@ -1214,10 +1602,6 @@ with tab_supply:
                             'Date': [pd.Timestamp('2025-01-01')],
                             'gas_price': [0.0],
                         })
-                    co2_prices = pd.DataFrame({
-                            'Date': [pd.Timestamp('2025-01-01')],
-                            'co2_price': [0.0],
-                        })
                 else:
                     filename = user_file_gas.name.lower()
                     if filename.endswith('csv'):
@@ -1228,9 +1612,22 @@ with tab_supply:
                     elif filename.endswith('xlsx'):
                         user_data_gas = pd.read_excel(user_file_gas, index_col=0)
                     gas_prices = user_data_gas[['gas_price']].copy()
-                    co2_prices = user_data_gas[['co2_price']].copy()
+
+            col_gas.markdown('#### Emissionsfaktor Gas')
+            init_ss_widget(
+                widget_key='num_input_ef_gas',
+                ss_variable='ef_gas',
+                default_value=ss.param_opt['ef_gas']
+            )
+            ss.ef_gas = col_gas.number_input(
+                'Emissionsfaktor in t CO₂/MWh',
+                help=ss.tt['ef_gas'], format='%.4f',
+                key='num_input_ef_gas'
+                )
+            ss.param_opt['ef_gas'] = ss.ef_gas
 
             col_vis_gas.subheader('Gaspreis')
+
             gas_prices.reset_index(inplace=True)
             col_vis_gas.altair_chart(
                 alt.Chart(gas_prices).mark_line(color='#B54036').encode(
@@ -1242,21 +1639,198 @@ with tab_supply:
                 width='stretch'
                 )
 
-            col_gas.subheader('Emissionsfaktor Gas')
-            ss.param_opt['ef_gas'] = col_gas.number_input(
-                'Emissionsfaktor in t CO₂/MWh',
-                value=ss.param_opt['ef_gas'], help=ss.tt['ef_gas'],
-                format='%.4f', key='ef_gas'
-                )
+# %% MARK: CO₂
+            st.markdown('#### CO₂-Preisdaten')
+            col_co2, col_vis_co2 = st.columns([1, 2], gap='large')
 
-            col_vis_gas.subheader('CO₂-Preise')
+            init_ss_widget(
+                widget_key='select_co2_supply',
+                ss_variable='select_co2',
+                default_value='Variabel'
+            )
+            ss.select_co2 = col_co2.selectbox(
+                'Preisvariante', 
+                ['Variabel', 'Konstant', 'Eigene Daten'],
+                key='select_co2_supply'
+            )
+
+            if ss.select_co2 == 'Variabel':
+                co2_prices_years = list(ss.all_co2_prices.index.year.unique())
+                if ss.heat_load_year:
+                    default_co2_year = ss.heat_load_year
+                else:
+                    default_co2_year = 2024
+
+                init_ss_widget(
+                    widget_key='select_co2_prices_year',
+                    ss_variable='co2_prices_year',
+                    default_value=default_co2_year
+                )
+                ss.co2_prices_year = col_co2.selectbox(
+                    'Wähle das Jahr für die CO₂-Preise aus',
+                    co2_prices_years,
+                    placeholder='Betrachtungsjahr',
+                    on_change=reset_ss_vars,
+                    args=('date_picker_co2_prices', 'co2_dates'),
+                    key='select_co2_prices_year'
+                )
+                co2_prices = ss.all_co2_prices[
+                    ss.all_co2_prices.index.year == ss.co2_prices_year
+                    ].copy()
+
+                init_ss_widget(
+                    widget_key='prec_dates_co2_prices',
+                    ss_variable='precise_dates_co2',
+                    default_value=False
+                )
+                ss.precise_dates_co2 = col_co2.toggle(
+                    'Exakten Zeitraum wählen',
+                    key='prec_dates_co2_prices'
+                    )
+                if ss.precise_dates_co2:
+                    init_ss_widget(
+                        widget_key='date_picker_co2_prices',
+                        ss_variable='co2_dates',
+                        default_value=(
+                            dt.date(int(ss.co2_prices_year), 3, 28),
+                            dt.date(int(ss.co2_prices_year), 7, 2)
+                        )
+                    )
+                    ss.co2_dates = col_co2.date_input(
+                        'Zeitraum auswählen:',
+                        min_value=dt.date(int(ss.co2_prices_year), 1, 1),
+                        max_value=dt.date(int(ss.co2_prices_year), 12, 31),
+                        format='DD.MM.YYYY',
+                        help=ss.tt['date_picker'],
+                        key='date_picker_co2_prices'
+                        )
+                    ss.co2_dates = [
+                        dt.datetime(
+                            year=d.year, month=d.month, day=d.day
+                        ) for d in ss.co2_dates
+                    ]
+                    co2_prices = co2_prices.loc[
+                        ss.co2_dates[0]:ss.co2_dates[1], :
+                    ]
+
+                if any(heat_load):
+                    nr_steps_hl = len(heat_load.index)
+                    nr_steps_co2 = len(co2_prices.index)
+                    if nr_steps_hl != nr_steps_co2:
+                        st.error(
+                            'Die Anzahl der Zeitschritte der Wärmelastdaten '
+                            + f'({nr_steps_hl}) stimmt nicht mit denen der '
+                            + f' CO₂-Preiszeitreihe ({nr_steps_co2}) überein. '
+                            + 'Bitte die Daten angleichen.'
+                            )
+
+                init_ss_widget(
+                    widget_key='toggle_scale_co2',
+                    ss_variable='scale_co2',
+                    default_value=False
+                )
+                ss.scale_co2 = col_co2.toggle(
+                    'Daten skalieren', key='toggle_scale_co2'
+                )
+                if ss.scale_co2:
+                    init_ss_widget(
+                        widget_key='select_scale_method_co2',
+                        ss_variable='scale_method_co2',
+                        default_value='Faktor'
+                    )
+                    ss.scale_method_co2 = col_co2.selectbox(
+                        'Methode', ['Faktor', 'Erweitert'],
+                        help=ss.tt['scale_method_co2'],
+                        key='select_scale_method_co2'
+                        )
+                    if ss.scale_method_co2 == 'Faktor':
+                        init_ss_widget(
+                            widget_key='num_input_scale_factor_co2',
+                            ss_variable='scale_factor_co2',
+                            default_value=1.0
+                        )
+                        ss.scale_factor_co2 = col_co2.number_input(
+                            'Skalierungsfaktor', 
+                            step=0.1, min_value=0.0,
+                            help=ss.tt['scale_factor_co2'],
+                            key='num_input_scale_factor_co2'
+                        )
+                        co2_prices['co2_price'] *= ss.scale_factor_co2
+                    elif ss.scale_method_co2 == 'Erweitert':
+                        init_ss_widget(
+                            widget_key='num_input_scale_amp_co2',
+                            ss_variable='scale_amp_co2',
+                            default_value=1.0
+                        )
+                        ss.scale_amp_co2 = col_co2.number_input(
+                            'Stauchungsfaktor', 
+                            step=0.1,  min_value=0.0,
+                            help=ss.tt['scale_amp_co2'],
+                            key='num_input_scale_amp_co2'
+                        )
+                        init_ss_widget(
+                            widget_key='num_input_scale_off_co2',
+                            ss_variable='scale_off_co2',
+                            default_value=1.0
+                        )
+                        ss.scale_off_co2 = col_co2.number_input(
+                            'Offset', step=0.1,
+                            help=ss.tt['scale_off_co2'],
+                            key='num_input_scale_off_co2'
+                            )
+                        co2_prices_median = co2_prices['co2_price'].median()
+                        co2_prices['co2_price'] = (
+                            (co2_prices['co2_price'] - co2_prices_median)
+                            * ss.scale_amp_co2 + co2_prices_median
+                            + ss.scale_off_co2
+                            )
+
+            elif ss.select_co2 == 'Konstant':
+                co2_prices = ss.all_co2_prices.loc[heat_load['Date']]
+
+                init_ss_widget(
+                    widget_key='num_input_constant_co2_value',
+                    ss_variable='constant_co2_value',
+                    default_value=30.00
+                )
+                ss.constant_co2_value = col_co2.number_input(
+                    'CO₂-Zertifikatpreis in €/t CO₂', step=1.00,
+                    key='num_input_constant_co2_value'
+                )
+                co2_prices['co2_price'] = ss.constant_co2_value
+
+            elif ss.select_co2 == 'Eigene Daten':
+                user_file_co2 = col_co2.file_uploader(
+                    'Datensatz einlesen', type=['csv', 'xlsx'],
+                    help=ss.tt['own_data_gas'], key='own_data_co2'
+                    )
+                if user_file_co2 is None:
+                    col_co2.info(
+                        'Bitte fügen Sie eine Datei ein.'
+                        )
+                    co2_prices = pd.DataFrame({
+                            'Date': [pd.Timestamp('2025-01-01')],
+                            'co2_price': [0.0],
+                        })
+                else:
+                    filename = user_file_co2.name.lower()
+                    if filename.endswith('csv'):
+                        user_data_gas = pd.read_csv(
+                            user_file_co2, sep=';', index_col=0,
+                            parse_dates=True
+                            )
+                    elif filename.endswith('xlsx'):
+                        user_data_co2 = pd.read_excel(user_file_co2, index_col=0)
+                    co2_prices = user_data_co2[['co2_price']].copy()
+    
+            col_vis_co2.subheader('CO₂-Preise')
 
             co2_prices.reset_index(inplace=True)
-            col_vis_gas.altair_chart(
+            col_vis_co2.altair_chart(
                 alt.Chart(co2_prices).mark_line(color='#74ADC0').encode(
                     y=alt.Y(
                         'co2_price',
-                        title='CO₂-Preise in €/kg'
+                        title='CO₂-Preise in €/t'
                         ),
                     x=alt.X('Date', title='Datum')
                     ),
@@ -1352,6 +1926,44 @@ with tab_misc:
         st.page_link(
             'pages/01_Optimierung.py', label='**Zur Optimierung**',
             icon='📝', width='stretch'
+            )
+
+
+# %%: Troubleshooting
+Q_tot_max = 0
+residual_heat_demand = heat_load.copy()
+for unit, unit_params in ss.param_units.items():
+    unit_cat = unit.rstrip('0123456789')
+    if unit_params['invest_mode']:
+        if unit_cat not in ['sol', 'tes']:
+            Q_tot_max += unit_params['cap_max']
+        elif unit_cat == 'sol':
+            residual_heat_demand['heat_demand'] -= (
+                unit_params['A_max'] * solar_heat_flow['solar_heat_flow']
+                )
+        elif unit_cat == 'tes':
+            Q_tot_max += unit_params['Q_max'] * unit_params['Q_out_to_cap']
+    else:
+        if unit_cat not in ['sol', 'tes']:
+            Q_tot_max += unit_params['cap_N']
+        elif unit_cat == 'sol':
+            residual_heat_demand['heat_demand'] -= (
+                unit_params['A_N'] * solar_heat_flow['solar_heat_flow']
+                )
+        elif unit_cat == 'tes':
+            Q_tot_max += unit_params['Q_N'] * unit_params['Q_out_to_cap']
+
+if Q_tot_max != 0:
+    if residual_heat_demand['heat_demand'].max() > Q_tot_max:
+        placeholder_infeasable.error(
+            'Die gewählten Wärmeanlagen genügen nicht um den maximalen '
+            + 'Wärmebedarf zu decken. Mögliche Ansätze zur Lösung des '
+            + 'Problems könnten sein:\n\n'
+            + '- Erhöhe die installierte oder maximal zu installierende'
+            + ' Leistung der Anlagen\n\n'
+            + '- Füge andere Anlagen hinzu oder erhöhe die Anzahl der '
+            + 'vorhandenen Anlagen\n\n'
+            + '- Füge einen Wärmespeicher hinzu'
             )
 
 # %% MARK: Footer
