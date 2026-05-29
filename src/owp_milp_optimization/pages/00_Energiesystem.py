@@ -502,7 +502,6 @@ with tab_net:
         )
         ss.net_op_cost_var = col_spec_mw.number_input(
             'Spez. variable Kosten in €/MWh',
-            value=ss.param_opt['net_op_cost_var'],
             help=ss.tt['net_op_cost_var'],
             key=f'num_input_net_op_cost_var'
         )
