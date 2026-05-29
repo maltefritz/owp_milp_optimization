@@ -806,7 +806,7 @@ with tab_supply:
             init_ss_widget(
                 widget_key='select_solarthermal',
                 ss_variable='select_sol',
-                default_value='Variabel'
+                default_value='Schleswig'
             )
             ss.select_sol = col_sol.selectbox(
                 'Wähle den Ort für die solare Einstrahlung aus', 
