@@ -1235,7 +1235,7 @@ with tab_supply:
                 default_value='Variabel'
             )
             ss.select_ef_el = col_emi.selectbox(
-                'Preisvariante', 
+                'Methodik der Emissionsbilanzierung', 
                 ['Variabel', 'Konstant', 'Eigene Daten'],
                 key='select_ef_electricity'
             )
