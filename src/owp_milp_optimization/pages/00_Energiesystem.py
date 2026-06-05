@@ -1857,35 +1857,67 @@ with tab_misc:
     col_econ, col_opt = st.columns([1, 1], gap='large')
 
     col_econ.subheader('Wirtschaft')
-    ss.param_opt['capital_interest'] *= 100
-    ss.param_opt['capital_interest'] = col_econ.number_input(
-        'Kapitalzins in %', value=ss.param_opt['capital_interest'],
-        help=ss.tt['capital_interest'], key='capital_interest'
-        )
-    ss.param_opt['capital_interest'] *= 1/100
 
-    ss.param_opt['lifetime'] = col_econ.number_input(
-        'Betrachtungsdauer in Jahre', value=ss.param_opt['lifetime'],
-        help=ss.tt['lifetime'], key='lifetime'
+    init_ss_widget(
+        widget_key='num_input_capital_interest',
+        ss_variable='capital_interest',
+        default_value=ss.param_opt['capital_interest']*100
+    )
+    ss.capital_interest = col_econ.number_input(
+        'Kapitalzins in %',
+        help=ss.tt['capital_interest'],
+        key='num_input_capital_interest'
         )
+    ss.param_opt['capital_interest'] = ss.capital_interest / 100
 
-    ss.param_opt['energy_tax'] = col_econ.number_input(
-        'Energiesteuer in €/MWh', value=ss.param_opt['energy_tax'],
-        help=ss.tt['energy_tax'], key='energy_tax'
+    init_ss_widget(
+        widget_key='num_input_lifetime',
+        ss_variable='lifetime',
+        default_value=ss.param_opt['lifetime']
+    )
+    ss.lifetime = col_econ.number_input(
+        'Betrachtungsdauer in Jahre',
+        help=ss.tt['lifetime'],
+        key='num_input_lifetime'
         )
+    ss.param_opt['lifetime'] = ss.lifetime
 
-    ss.param_opt['vNNE'] = col_econ.number_input(
-        'Vermiedene Netznutzungsentgelte in €/MWh', value=ss.param_opt['vNNE'],
-        help=ss.tt['vNNE'], key='vNNE'
+    init_ss_widget(
+        widget_key='num_input_energy_tax',
+        ss_variable='energy_tax',
+        default_value=ss.param_opt['energy_tax']
+    )
+    ss.energy_tax = col_econ.number_input(
+        'Energiesteuer in €/MWh',
+        help=ss.tt['energy_tax'],
+        key='num_input_energy_tax'
         )
+    ss.param_opt['energy_tax'] = ss.energy_tax
 
+    init_ss_widget(
+        widget_key='num_input_vNNE',
+        ss_variable='vNNE',
+        default_value=ss.param_opt['vNNE']
+    )
+    ss.vNNE = col_econ.number_input(
+        'Vermiedene Netznutzungsentgelte in €/MWh',
+        help=ss.tt['vNNE'],
+        key='num_input_vNNE'
+        )
+    ss.param_opt['vNNE'] = ss.vNNE
 
     col_opt.subheader('Optimierung')
 
-    ss.param_opt['Solver'] = col_opt.selectbox(
+    init_ss_widget(
+        widget_key='select_solver',
+        ss_variable='solver',
+        default_value='Gurobi'
+    )
+    ss.solver = col_opt.selectbox(
         'Solver', options=['Gurobi', 'SCIP', 'HiGHS'], help=ss.tt['solver'],
-        key='solver'
+        key='select_solver'
         )
+    ss.param_opt['Solver'] = ss.solver
 
     if ss.param_opt['Solver'] == 'HiGHS':
         if not Highs().available():
@@ -1900,25 +1932,41 @@ with tab_misc:
                 + 'nicht verfügbar. Bitte verwenden Sie einen anderen Solver.'
                 )
 
-    ss.param_opt['MIPGap'] *= 100
-    ss.param_opt['MIPGap'] = col_opt.number_input(
-        'MIP Gap in %', value=ss.param_opt['MIPGap'], help=ss.tt['MIPGap'],
-        key='MIPGap'
+    init_ss_widget(
+        widget_key='num_input_MIPGap',
+        ss_variable='MIPGap',
+        default_value=ss.param_opt['MIPGap']*100
+    )
+    ss.MIPGap = col_opt.number_input(
+        'MIP Gap in %',
+        help=ss.tt['MIPGap'],
+        key='num_input_MIPGap'
         )
-    ss.param_opt['MIPGap'] *= 1/100
+    ss.param_opt['MIPGap'] = ss.MIPGap / 100
 
-    ss.param_opt['TimeLimit'] = None
-    timelimit = col_opt.toggle(
-        'Simulationsdauer begrenzen', help=ss.tt['ToggleTimeLimit'],
+    init_ss_widget(
+        widget_key='ToggleTimeLimit',
+        ss_variable='is_time_limited',
+        default_value=False
+    )
+    ss.is_time_limited = col_opt.toggle(
+        'Simulationsdauer begrenzen',
+        help=ss.tt['ToggleTimeLimit'],
         key='ToggleTimeLimit'
         )
-    if timelimit:
-        ss.param_opt['TimeLimit'] = col_opt.number_input(
-            'Zeitlimit in Minuten', value=ss.param_opt['TimeLimit'],
-            key='TimeLimit'
+    if ss.is_time_limited:
+        init_ss_widget(
+            widget_key='num_input_TimeLimit',
+            ss_variable='TimeLimit',
+            default_value=10
+        )
+        ss.TimeLimit = col_opt.number_input(
+            'Zeitlimit in Minuten',
+            key='num_input_TimeLimit'
             )
-        if ss.param_opt['TimeLimit'] is not None:
-            ss.param_opt['TimeLimit'] *= 60
+        ss.param_opt['TimeLimit'] = ss.TimeLimit * 60
+    else:
+        ss.param_opt['TimeLimit'] = None
 
     st.markdown('''---''')
 
@@ -1927,7 +1975,6 @@ with tab_misc:
             'pages/01_Optimierung.py', label='**Zur Optimierung**',
             icon='📝', width='stretch'
             )
-
 
 # %%: Troubleshooting
 Q_tot_max = 0
