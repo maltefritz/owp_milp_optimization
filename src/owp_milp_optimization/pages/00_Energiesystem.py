@@ -444,7 +444,7 @@ with tab_heat:
     demand_max = format_sep(heat_load['heat_demand'].max(), dec=2)
     col_max.metric('Maximalwert in MWh',demand_max,border=True)
     demand_sum = format_sep(heat_load['heat_demand'].sum(), dec=2)
-    col_sum.metric('Gesamtlast in MWh/a', demand_sum, border=True)
+    col_sum.metric('Gesamtlast in MWh', demand_sum, border=True)
     heat_load['heat_demand'].describe()
 
     col_sel.subheader('Wärmeerlöse')
@@ -497,6 +497,7 @@ with tab_net:
         )
         ss.net_distance = st.number_input(
             'Trassenlänge in km',
+            format='%0.3f',
             help=ss.tt['net_dist'],
             key='num_input_net_distance'
         )
@@ -571,7 +572,7 @@ with tab_net:
             'Gesamte variable Kosten in €/a', value=net_var_abs
         )
         col_demand_sum.metric(
-            'Aufsummierte jährliche Wärmelast MWh/a',
+            'Gesamtlast in MWh',
             value=demand_sum
         )
 
