@@ -322,7 +322,8 @@ with tab_heat:
                     default_value='Haushalte'
                 )
                 ss.scale_method_hl = col_sel.selectbox(
-                    'Methode', ['Haushalte', 'Faktor', 'Erweitert'],
+                    'Methode',
+                    ['Haushalte', 'Gesamtlast', 'Faktor', 'Erweitert'],
                     help=ss.tt['scale_method_hl'], key='select_scale_method_hl'
                     )
                 if ss.scale_method_hl == 'Haushalte':
@@ -343,6 +344,24 @@ with tab_heat:
                         key='num_input_scale_households_hl'
                         )
                     heat_load[ss.dataset_name] *= ss.scale_households_hl / base_households
+                elif ss.scale_method_hl == 'Gesamtlast':
+                    total_heat_load = (
+                        heat_load[ss.dataset_name].sum()
+                    )
+                    init_ss_widget(
+                        widget_key='num_input_scale_total_hl',
+                        ss_variable='scaled_total_heat_load',
+                        default_value=total_heat_load
+                    )
+                    ss.scaled_total_heat_load = col_sel.number_input(
+                        'Gesamtwärmelast in MWh',
+                        min_value=0.0,
+                        help=ss.tt['scale_total_hl'],
+                        key='num_input_scale_total_hl'
+                    )
+                    heat_load[ss.dataset_name] *= (
+                        ss.scaled_total_heat_load / total_heat_load
+                    )
                 elif ss.scale_method_hl == 'Faktor':
                     init_ss_widget(
                         widget_key='num_input_scale_factor_hl',
