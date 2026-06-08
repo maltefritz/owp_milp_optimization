@@ -209,6 +209,20 @@ tab_heat, tab_net, tab_system, tab_units, tab_supply, tab_misc = st.tabs(
 
 # %% MARK: Heat Load
 with tab_heat:
+    st.markdown(
+        (
+            '<small>*In diesem Tab werden die Daten für die Wärmeversorgung '
+            'definiert. Für die Städte Flensburg und Sønderborg stehen reale '
+            'Erzeugungsdaten (Wärmelast und Verluste) zur Verfügung. '
+            'Alternativ können eigene Zeitreihen in stündlicher Auflösung '
+            'verwendet werden. Bei den vorhandenen Datensätzen kann ein '
+            'exakter Zeitraum ausgewählt werden. Darüber hinaus können die '
+            'Daten zur Anpassung an individuelle Anwendungsfälle skaliert '
+            'werden.*</small>'
+        ),
+        unsafe_allow_html=True
+    )
+
     st.header('Wärmeversorgungsdaten')
 
     col_sel, col_vis = st.columns([1, 2], gap='large')
@@ -418,6 +432,16 @@ with tab_heat:
 
 # %% MARK: Network
 with tab_net:
+    st.markdown(
+        (
+            '<small>*In diesem Tab wird definiert, wie die Kosten des '
+            'Wärmenetzes berücksichtigt werden. Es kann zwischen spezifischen '
+            'Netzkosten, Gesamtnetzkosten oder keiner Berücksichtigung von '
+            'Netzkosten gewählt werden. Bei spezifischen Netzkosten sind die '
+            'Trassenlänge sowie die spezifischen Kosten anzugeben.*</small>'
+        ),
+        unsafe_allow_html=True
+    )
     st.header('Wärmenetz')
 
     init_ss_widget(
@@ -581,6 +605,15 @@ with tab_net:
 
 # %% MARK: Energy System
 with tab_system:
+    st.markdown(
+        (
+            '<small>*In diesem Tab werden die Wärmeversorgungsanlagen '
+            'ausgewählt und ihre Anzahl (Fenster neben der jeweiligen '
+            'Abbildung) ausgewählt. In dem Tab Anlagen sind diese '
+            'anschließend zu parametrisieren.*</small>'
+        ),
+        unsafe_allow_html=True
+    )
     st.header('Auswahl des Wärmeversorgungssystem')
 
     col_system, col_unit = st.columns([1, 2], gap='large')
@@ -700,6 +733,21 @@ comb_opt_params = ['cap_max', 'cap_min', 'Q_max', 'Q_min', 'A_max', 'A_min']
 disp_opt_params = ['cap_N', 'Q_N', 'A_N']
 
 with tab_units:
+    st.markdown(
+        (
+            '<small>*In diesem Tab werden die wirtschaftlichen und technischen '
+            'Parameter der zuvor gewählten Wärmeversorgungsanlagen '
+            'festgelegt. Die hinterlegten Werte basieren auf Literaturdaten '
+            'und sollten bei Bedarf für die jeweilige Simulation angepasst '
+            'werden. Für jede Anlage kann zudem entschieden werden, ob die '
+            'Kapazität optimiert werden soll. Ist diese Option aktiviert, '
+            'wird neben dem optimalen Betrieb auch die wirtschaftlich '
+            'optimale Anlagengröße bestimmt. Bleibt der Schalter deaktiviert, '
+            'ist die Kapazität vorzugeben und es wird ausschließlich der '
+            'optimale Einsatz der Anlage berechnet.*</small>'
+        ),
+        unsafe_allow_html=True
+    )
     st.header('Parametrisierung der Wärmeversorgungsanlagen')
 
     placeholder_infeasable = st.empty()
@@ -797,8 +845,30 @@ with tab_units:
 # %% MARK: Solar Thermal
 # if 'Solarthermie' in ss.units:
 with tab_supply:
+    st.markdown(
+        (
+            '<small>*In diesem Tab werden, abhängig von den zuvor getroffenen '
+            'Auswahlentscheidungen, alle erforderlichen Daten für die '
+            'jeweiligen Brennstoffe sowie die solare Einstrahlung definiert.*'
+            '</small>'
+        ),
+        unsafe_allow_html=True
+    )
     if 'Solarthermie' in ss.units:
         with st.expander('Solarthermiedaten'):
+            st.markdown(
+                (
+                    '<small>*Es kann zwischen drei vordefinierten Standorten '
+                    '(Nord: Schleswig, Zentral: Chemnitz, Süd: Stuttgart) '
+                    'sowie eigenen Datensätzen gewählt werden. Für die '
+                    'vorhandenen Datensätze kann ein exakter Zeitraum '
+                    'ausgewählt und die Daten bei Bedarf skaliert werden, um '
+                    'sie an individuelle Anwendungsfälle anzupassen. Achtung: '
+                    'Die Länge der Zeitreihe der solaren Einstrahlung muss '
+                    'der Zeitreihen der Wärmelast entsprechen.*</small>'
+                ),
+                unsafe_allow_html=True
+            )
             st.subheader('Solarthermiedaten')
             col_sol, col_vis_sol = st.columns([1, 2], gap='large')
 
@@ -955,6 +1025,22 @@ with tab_supply:
         ]
     if any(unit in ss.units for unit in el_units):
         with st.expander('Elektrizitätsversorgungsdaten'):
+            st.markdown(
+                (
+                    '<small>*Es sind sowohl Stromzeitreihen als auch zugehörige '
+                    'Emissionsfaktoren zu definieren. Für beide Größen kann '
+                    'zwischen variablen, konstanten oder eigenen Datensätzen '
+                    'gewählt werden. Bei den vordefinierten Daten kann ein '
+                    'exakter Zeitraum ausgewählt und die Zeitreihen bei '
+                    'Bedarf skaliert werden, um sie an individuelle '
+                    'Anwendungsfälle anzupassen. Zudem kann die '
+                    'Berücksichtigung zusätzlicher Strompreisbestandteile '
+                    'aktiviert werden. Achtung: Die Länge der Zeitreihe der '
+                    'Strompreise und Emissionfaktoren muss der Zeitreihen der '
+                    'Wärmelast entsprechen.*</small>'
+                ),
+                unsafe_allow_html=True
+            )
             st.subheader('Elektrizitätsversorgungsdaten')
             col_elp, col_vis_el = st.columns([1, 2], gap='large')
 
@@ -1432,6 +1518,25 @@ with tab_supply:
         ]
     if any(unit in ss.units for unit in gas_units):
         with st.expander('Gasversorgungsdaten'):
+            st.markdown(
+                (
+                    '<small>*Es sind Gaspreisdaten sowie zugehöriger '
+                    'Emissionsfaktor und CO₂-Preisdaten zu definieren. Für '
+                    'alle Größen kann zwischen variablen, konstanten oder '
+                    'eigenen Datensätzen gewählt werden. Für die '
+                    'vordefinierten Daten kann ein exakter Zeitraum '
+                    'ausgewählt und die Daten bei Bedarf skaliert werden, um '
+                    'sie an individuelle Anwendungsfälle anzupassen. Bei der '
+                    'Auswahl des Brennstoffs sind Werte für Erdgas als '
+                    'Default hinterlegt, können jedoch z.B. für Biogas '
+                    'entsprechend angepasst werden. Achtung: Die Länge der '
+                    'Zeitreihe der Gas- und CO₂-Preise muss der Zeitreihe der '
+                    'Wärmelast entsprechen.*</small>'
+                ),
+                unsafe_allow_html=True
+            )
+
+                
             st.subheader('Gasversorgungsdaten')
             col_gas, col_vis_gas = st.columns([1, 2], gap='large')
 
@@ -1852,6 +1957,16 @@ if not own_es:
 
 # %% MARK: Sonstiges
 with tab_misc:
+    st.markdown(
+        (
+            '<small>*In diesem Tab sind sonstige Parameter zu definieren. Dazu '
+            'gehören wirtschaftliche sowie optimierungsspezifische Parameter. '
+            'Für die Dauer der Optimierung ist die Wahl des Solvers und der '
+            'MIP Gap entscheidend. Zudem ist es möglich die maximale '
+            'Simulationsdauer zu begrenzen.*</small>'
+        ),
+        unsafe_allow_html=True
+    )
     st.header('Sonstige Parameter')
 
     col_econ, col_opt = st.columns([1, 1], gap='large')
