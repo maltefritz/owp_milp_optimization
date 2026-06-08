@@ -436,6 +436,17 @@ with tab_heat:
             width='stretch'
         )
 
+    col_min, col_med, col_max, col_sum = col_vis.columns([1, 1, 1, 1])
+    demand_min = format_sep(heat_load['heat_demand'].min(), dec=2)
+    col_min.metric('Minimalwert in MWh', demand_min, border=True)
+    demand_med = format_sep(heat_load['heat_demand'].mean(), dec=2)
+    col_med.metric('Mittelwert in MWh', demand_med, border=True)
+    demand_max = format_sep(heat_load['heat_demand'].max(), dec=2)
+    col_max.metric('Maximalwert in MWh',demand_max,border=True)
+    demand_sum = format_sep(heat_load['heat_demand'].sum(), dec=2)
+    col_sum.metric('Gesamtlast in MWh/a', demand_sum, border=True)
+    heat_load['heat_demand'].describe()
+
     col_sel.subheader('Wärmeerlöse')
 
     init_ss_widget(
@@ -559,7 +570,6 @@ with tab_net:
         col_var_cost.metric(
             'Gesamte variable Kosten in €/a', value=net_var_abs
         )
-        demand_sum = format_sep(heat_load['heat_demand'].sum(), dec=0)
         col_demand_sum.metric(
             'Aufsummierte jährliche Wärmelast MWh/a',
             value=demand_sum
