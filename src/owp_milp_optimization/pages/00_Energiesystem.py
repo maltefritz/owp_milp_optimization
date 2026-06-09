@@ -828,6 +828,7 @@ with tab_units:
                                 min_value=uinfo['min'],
                                 max_value=uinfo['max'],
                                 step=(uinfo['max']-uinfo['min'])/100,
+                                format=uinfo['format'],
                                 key=f'input_{unit}_{uinput}',
                                 help=ss.tt.get(f'input_{uinput}', None)
                                 )
