@@ -5,91 +5,104 @@
             "min": 0.0,
             "max": 1000.0,
             "type": "float",
-            "unit": "MW"
+            "unit": "MW",
+            "format": "%0.3f"
         },
         "cap_min": {
             "name": "Minimal installierbare Leistung",
             "min": 0.0,
             "max": 1000.0,
             "type": "float",
-            "unit": "MW"
+            "unit": "MW",
+            "format": "%0.3f"
         },
         "cap_N": {
             "name": "Installierte Leistung",
             "min": 0.0,
             "max": 1000.0,
             "type": "float",
-            "unit": "MW"
+            "unit": "MW",
+            "format": "%0.3f"
         },
         "A_max": {
             "name": "Maximal installierbare Kollektorfläche",
             "min": 0.0,
             "max": 1000000.0,
             "type": "float",
-            "unit": "m²"
+            "unit": "m²",
+            "format": "%0.2f"
         },
         "A_min": {
             "name": "Minimal installierbare Kollektorfläche",
             "min": 0.0,
             "max": 1000000.0,
             "type": "float",
-            "unit": "m²"
+            "unit": "m²",
+            "format": "%0.2f"
         },
         "A_N": {
             "name": "Installierte Kollektorfläche",
             "min": 0.0,
             "max": 1000000.0,
             "type": "float",
-            "unit": "m²"
+            "unit": "m²",
+            "format": "%0.2f"
         },
         "Q_max": {
             "name": "Maximal installierbare Speicherkapazität",
             "min": 0.0,
             "max": 1000000.0,
             "type": "float",
-            "unit": "MWh"
+            "unit": "MWh",
+            "format": "%0.3f"
         },
         "Q_min": {
             "name": "Minimal installierbare Speicherkapazität",
             "min": 0.0,
             "max": 1000000.0,
             "type": "float",
-            "unit": "MWh"
+            "unit": "MWh",
+            "format": "%0.3f"
         },
         "Q_N": {
             "name": "Installierte Speicherkapazität",
             "min": 0.0,
             "max": 1000000.0,
             "type": "float",
-            "unit": "MWh"
+            "unit": "MWh",
+            "format": "%0.3f"
         },
         "eta": {
             "name": "Wirkungsgrad",
             "min": 0.0,
             "max": 100.0,
             "type": "float",
-            "unit": "%"
+            "unit": "%",
+            "format": "%0.2f"
         },
         "eta_th": {
             "name": "Wärmeausbeute",
             "min": 0.0,
             "max": 100.0,
             "type": "float",
-            "unit": "%"
+            "unit": "%",
+            "format": "%0.2f"
         },
         "eta_el": {
             "name": "Stromausbeute",
             "min": 0.0,
             "max": 100.0,
             "type": "float",
-            "unit": "%"
+            "unit": "%",
+            "format": "%0.2f"
         },
         "eta_col": {
             "name": "Kollektorwirkungsgrad",
             "min": 0.0,
             "max": 100.0,
             "type": "float",
-            "unit": "%"
+            "unit": "%",
+            "format": "%0.2f"
         },
         "cop": {
             "name": "COP",
@@ -97,7 +110,8 @@
             "max": 10.0,
             "type": "float",
             "unit": "",
-            "tooltip": "Leistungszahl"
+            "tooltip": "Leistungszahl",
+            "format": "%0.2f"
         },
         "Q_rel_loss": {
             "name": "Relativer Oberflächenwärmeverlust",
@@ -105,21 +119,24 @@
             "max": 100.0,
             "type": "float",
             "unit": "%",
-            "tooltip": "Wärmeverlust pro Zeitschritt in Relation zum aktuellen Speicherfüllstand."
+            "tooltip": "Wärmeverlust pro Zeitschritt in Relation zum aktuellen Speicherfüllstand.",
+            "format": "%0.4f"
         },
         "Q_in_to_cap": {
             "name": "Verhältnis von Beladeleistung zur Speicherkapazität",
             "min": 0.0,
             "max": 1.0,
             "type": "float",
-            "unit": ""
+            "unit": "",
+            "format": "%0.4f"
         },
         "Q_out_to_cap": {
             "name": "Verhältnis von Entladeleistung zur Speicherkapazität",
             "min": 0.0,
             "max": 1.0,
             "type": "float",
-            "unit": ""
+            "unit": "",
+            "format": "%0.4f"
         },
         "init_storage": {
             "name": "Initialspeicherstand",
@@ -127,18 +144,21 @@
             "max": 100.0,
             "type": "float",
             "unit": "%",
-            "tooltip": "Startspeicherfüllstand. Relativer Speicherfüllstand im ersten Zeitschritt."
+            "tooltip": "Startspeicherfüllstand. Relativer Speicherfüllstand im ersten Zeitschritt.",
+            "format": "%0.2f"
         },
         "balanced": {
             "name": "Ausgeglichener Speicher über Betrachtungsperiode",
             "type": "bool",
             "unit": "",
-            "tooltip": "Wenn dies aktiviert wird, muss die Einsatzoptimierung dafür sorgen, dass der Speicher im letzten Zeitschritt den gleichen Füllstand aufweist, wie im ersten."
+            "tooltip": "Wenn dies aktiviert wird, muss die Einsatzoptimierung dafür sorgen, dass der Speicher im letzten Zeitschritt den gleichen Füllstand aufweist, wie im ersten.",
+            "format": ""
         },
         "fix": {
             "name": "Wärme muss bezogen werden",
             "type": "bool",
-            "unit": ""
+            "unit": "",
+            "format": ""
         }
     },
     "Ökonomische Parameter": {
@@ -147,35 +167,40 @@
             "min": 0.0,
             "max": 100000000.0,
             "type": "float",
-            "unit": "€/MW"
+            "unit": "€/MW",
+            "format": "%0.2f"
         },
         "inv_bonus_rel": {
             "name": "Rel. Investitionskostenförderung",
             "min": 0.0,
             "max": 100.0,
             "type": "float",
-            "unit": "%"
+            "unit": "%",
+            "format": "%0.2f"
         },
         "op_cost_var": {
             "name": "Variable Betriebskosten",
             "min": -100.0,
             "max": 100.0,
             "type": "float",
-            "unit": "€/MWh"
+            "unit": "€/MWh",
+            "format": "%0.2f"
         },
         "op_cost_fix": {
             "name": "Jährliche fixe Betriebskosten",
             "min": 0.0,
             "max": 100000.0,
             "type": "float",
-            "unit": "€/MW"
+            "unit": "€/MW",
+            "format": "%0.2f"
         },
         "op_cost_bonus_rel": {
             "name": "Rel. Betriebskostenförderung",
             "min": 0.0,
             "max": 100.0,
             "type": "float",
-            "unit": "%"
+            "unit": "%",
+            "format": "%0.2f"
         }
     }
 }

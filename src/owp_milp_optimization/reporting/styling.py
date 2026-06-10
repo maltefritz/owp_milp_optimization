@@ -159,6 +159,20 @@ REPORT_CSS = """
             page-break-inside: avoid;
         }
 
+        .chart-offline-notice {
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            border: 1px dashed #ccc;
+            border-radius: 6px;
+        }
+
+        .chart-offline-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #444;
+        }
+
         .chart-title {
             font-size: 16px;
             font-weight: 600;

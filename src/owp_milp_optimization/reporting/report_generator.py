@@ -272,18 +272,30 @@ def altair_to_vega_spec(chart: alt.Chart) -> Dict[str, Any]:
 
 def create_chart_rendering_script(charts: Dict[str, Dict[str, Any]]) -> str:
     """Create JavaScript to render Vega-Lite charts."""
-    script = ""
+    embed_calls = ""
 
     for chart_id, spec in charts.items():
         if spec:
             spec_json = json.dumps(spec)
-            script += f"""
+            embed_calls += f"""
 vegaEmbed('#{chart_id}', {spec_json}, {{"actions": false}})
     .then(result => {{}})
     .catch(console.error);
 """
 
-    return script
+    offline_notice = (
+        '<div class="chart-offline-notice">'
+        '<p class="chart-offline-title">Diagramme nicht verfügbar</p>'
+        '<p>Für die Darstellung der Diagramme ist eine Internetverbindung erforderlich,'
+        ' da die Vega-Bibliothek von einem externen Server geladen wird.</p>'
+        '</div>'
+    )
+
+    return f"""if (typeof vegaEmbed === 'undefined') {{
+    document.querySelectorAll('.chart-container').forEach(function(el) {{
+        el.innerHTML = '{offline_notice}';
+    }});
+}} else {{{embed_calls}}}"""
 
 
 def create_topology_section(

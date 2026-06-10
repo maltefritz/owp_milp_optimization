@@ -268,6 +268,19 @@ else:
 
 # %% MARK: Overview
 with tab_ov:
+    st.markdown(
+        (
+            '<small>*Es werden die Ergebnisse der Optimierung übersichtlich '
+            'dargestellt. Dazu gehören die (optimalen) Kapazitäten, die '
+            'resultierende Wärmeproduktion sowie die wirtschaftlichen und '
+            'ökologischen Kennwerte. Nach der Analyse kann entweder ein neues '
+            'Energiesystem konfiguriert werden. Sollen die Ergebnisse für '
+            'weiterführende Analysen genutzt werden, steht der Download eines '
+            'standardisierten Berichts oder alternativ die vollständigen '
+            'Ergebnisdaten und -parameter zur Verfügung.*</small>'
+        ),
+        unsafe_allow_html=True
+    )
     with st.expander('Auslegung', expanded=True):
         col_cap, col_sum = st.columns([3, 2], gap='large')
 
@@ -505,6 +518,19 @@ with tab_ov:
 
 # %% MARK: Unit Commitment
 with tab_unit:
+    st.markdown(
+        (
+            '<small>*Die Ergebnisse des Einsatzes werden in Form geordneter '
+            'Jahresdauerlinien als auch als zeitlicher Verlauf des '
+            'tatsächlichen Anlageneinsatzes über den gesamten '
+            'Betrachtungszeitraum dargstellt. Für eine vertiefte Analyse '
+            'können einzelne Anlagen nach Bedarf ausgeblendet werden. '
+            'Zusätzlich ist es möglich, den Betrachtungszeitraum anzupassen '
+            'oder die Ergebnisse auf unterschiedlichen Ebenen zu aggregieren, '
+            'um spezifische Fragestellungen gezielt auszuwerten.*</small>'
+        ),
+        unsafe_allow_html=True
+    )
     col_sel, col_unit = st.columns([1, 2], gap='large')
 
     col_unit.subheader(
@@ -670,6 +696,18 @@ with tab_unit:
 # %% MARK: Electricity Production
 if chp_used:
     with tab_el:
+        st.markdown(
+            (
+                '<small>*Es wird die Stromproduktion des Systems dargestellt. '
+                'Neben zentralen Kennzahlen werden die Netzeinspeisung sowie '
+                'die interne Nutzung des erzeugten Stroms ausgewiesen. Zur '
+                'besseren Einordnung ist zusätzlich die zugrunde liegende '
+                'Strompreiszeitreihe visualisiert. Für weiterführende '
+                'Analysen können alle dargestellten Daten flexibel aggregiert '
+                'werden.*</small>'
+            ),
+            unsafe_allow_html=True
+        )
         col_sel, col_el = st.columns([1, 2], gap='large')
 
         dates = col_sel.date_input(
@@ -811,6 +849,17 @@ if chp_used:
 # %% MARK: TES Content
 if tes_used:
     with tab_tes:
+        st.markdown(
+            (
+                '<small>*Es werden die Ergebnisse der thermischen Speicher '
+                'dargestellt. Neben zentralen Kennzahlen werden der '
+                'Speicherfüllstand sowie die Speicherbeladung (negativ) und '
+                'Entladung (positiv) im zeitlichen Verlauf visualisiert. Zur '
+                'tieferen Analyse können alle Daten flexibel aggregiert '
+                'werden.*</small>'
+            ),
+            unsafe_allow_html=True
+        )
         st.subheader('Füllstand des thermischen Energiespeichers')
 
         col_sel, col_tes = st.columns([1, 2], gap='large')
@@ -839,11 +888,16 @@ if tes_used:
         #             border=True, help=ss.tt['el_ext']
         #         )
 
+        i = 0
         for unit in ss.param_units.keys():
             ucat = unit.rstrip('0123456789')
             unr = unit[len(ucat):]
 
             if ucat == 'tes':
+                if i > 0:
+                    col_sel, col_tes = st.columns([1, 2], gap='large')
+                i += 1
+
                 tesdata = ss.energy_system.data_all.loc[
                     dates[0]:dates[1],
                     [f'storage_content_{unit}', f'Q_in_{unit}', f'Q_out_{unit}']
@@ -886,7 +940,7 @@ if tes_used:
                     width='stretch'
                     )
 
-                col_sel.write(f'Speicher {unr}')
+                col_sel.markdown(f'##### Speicher {unr}')
                 if f'Wärmespeicher {unr} (MWh)' in ss.overview_caps.columns:
                     col_sel.metric(
                         'Kapazität in MWh',
@@ -914,8 +968,18 @@ if tes_used:
                 )
 
 
+
 # %% MARK: Solver Log
 with tab_pro:
+    st.markdown(
+        (
+            '<small>*Die erweiterten Ergebnisse enthalten Informationen für '
+            'den Solverlog, der vom jeweiligen Solver automatisch generiert '
+            'wird, um optimierungsspezifische Informationen für die '
+            'Simulation zurückzugeben.*</small>'
+        ),
+        unsafe_allow_html=True
+    )
     if ss.param_opt['Solver'] == 'SCIP':
         st.text('Der SCIP Solver ermöglicht aktuell keine Solverlogs.')
     else:

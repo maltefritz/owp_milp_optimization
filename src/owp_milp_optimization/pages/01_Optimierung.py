@@ -210,7 +210,7 @@ param_overview.loc['ef_gas'] *= 1000
 param_overview.loc['capital_interest'] *= 100
 param_overview.rename(
     index={
-        'net_inv_spez': 'Spez. Investitionskosten Wärmenetz (€/MW/m)',
+        'net_inv_spez': 'Spez. Investitionskosten Wärmenetz (€/m)',
         'net_inv_total': 'Gesamte Investitionskosten Wärmenetz (€)',
         'ef_gas': 'Emissionsfaktor Gas (kg/MWh)',
         'elec_consumer_charges_grid': 'Strompreisbestandteile (Netz) (€/MWh)',

@@ -209,6 +209,20 @@ tab_heat, tab_net, tab_system, tab_units, tab_supply, tab_misc = st.tabs(
 
 # %% MARK: Heat Load
 with tab_heat:
+    st.markdown(
+        (
+            '<small>*In diesem Tab werden die Daten für die Wärmeversorgung '
+            'definiert. Für die Städte Flensburg und Sønderborg stehen reale '
+            'Erzeugungsdaten (Wärmelast und Verluste) zur Verfügung. '
+            'Alternativ können eigene Zeitreihen in stündlicher Auflösung '
+            'verwendet werden. Bei den vorhandenen Datensätzen kann ein '
+            'exakter Zeitraum ausgewählt werden. Darüber hinaus können die '
+            'Daten zur Anpassung an individuelle Anwendungsfälle skaliert '
+            'werden.*</small>'
+        ),
+        unsafe_allow_html=True
+    )
+
     st.header('Wärmeversorgungsdaten')
 
     col_sel, col_vis = st.columns([1, 2], gap='large')
@@ -322,7 +336,8 @@ with tab_heat:
                     default_value='Haushalte'
                 )
                 ss.scale_method_hl = col_sel.selectbox(
-                    'Methode', ['Haushalte', 'Faktor', 'Erweitert'],
+                    'Methode',
+                    ['Haushalte', 'Gesamtlast', 'Faktor', 'Erweitert'],
                     help=ss.tt['scale_method_hl'], key='select_scale_method_hl'
                     )
                 if ss.scale_method_hl == 'Haushalte':
@@ -343,6 +358,24 @@ with tab_heat:
                         key='num_input_scale_households_hl'
                         )
                     heat_load[ss.dataset_name] *= ss.scale_households_hl / base_households
+                elif ss.scale_method_hl == 'Gesamtlast':
+                    total_heat_load = (
+                        heat_load[ss.dataset_name].sum()
+                    )
+                    init_ss_widget(
+                        widget_key='num_input_scale_total_hl',
+                        ss_variable='scaled_total_heat_load',
+                        default_value=total_heat_load
+                    )
+                    ss.scaled_total_heat_load = col_sel.number_input(
+                        'Gesamtwärmelast in MWh',
+                        min_value=0.0,
+                        help=ss.tt['scale_total_hl'],
+                        key='num_input_scale_total_hl'
+                    )
+                    heat_load[ss.dataset_name] *= (
+                        ss.scaled_total_heat_load / total_heat_load
+                    )
                 elif ss.scale_method_hl == 'Faktor':
                     init_ss_widget(
                         widget_key='num_input_scale_factor_hl',
@@ -403,6 +436,17 @@ with tab_heat:
             width='stretch'
         )
 
+    col_min, col_med, col_max, col_sum = col_vis.columns([1, 1, 1, 1])
+    demand_min = format_sep(heat_load['heat_demand'].min(), dec=2)
+    col_min.metric('Minimalwert in MWh', demand_min, border=True)
+    demand_med = format_sep(heat_load['heat_demand'].mean(), dec=2)
+    col_med.metric('Mittelwert in MWh', demand_med, border=True)
+    demand_max = format_sep(heat_load['heat_demand'].max(), dec=2)
+    col_max.metric('Maximalwert in MWh',demand_max,border=True)
+    demand_sum = format_sep(heat_load['heat_demand'].sum(), dec=2)
+    col_sum.metric('Gesamtlast in MWh', demand_sum, border=True)
+    heat_load['heat_demand'].describe()
+
     col_sel.subheader('Wärmeerlöse')
 
     init_ss_widget(
@@ -418,6 +462,16 @@ with tab_heat:
 
 # %% MARK: Network
 with tab_net:
+    st.markdown(
+        (
+            '<small>*In diesem Tab wird definiert, wie die Kosten des '
+            'Wärmenetzes berücksichtigt werden. Es kann zwischen spezifischen '
+            'Netzkosten, Gesamtnetzkosten oder keiner Berücksichtigung von '
+            'Netzkosten gewählt werden. Bei spezifischen Netzkosten sind die '
+            'Trassenlänge sowie die spezifischen Kosten anzugeben.*</small>'
+        ),
+        unsafe_allow_html=True
+    )
     st.header('Wärmenetz')
 
     init_ss_widget(
@@ -443,6 +497,7 @@ with tab_net:
         )
         ss.net_distance = st.number_input(
             'Trassenlänge in km',
+            format='%0.3f',
             help=ss.tt['net_dist'],
             key='num_input_net_distance'
         )
@@ -516,9 +571,8 @@ with tab_net:
         col_var_cost.metric(
             'Gesamte variable Kosten in €/a', value=net_var_abs
         )
-        demand_sum = format_sep(heat_load['heat_demand'].sum(), dec=0)
         col_demand_sum.metric(
-            'Aufsummierte jährliche Wärmelast MWh/a',
+            'Gesamtlast in MWh',
             value=demand_sum
         )
 
@@ -581,6 +635,15 @@ with tab_net:
 
 # %% MARK: Energy System
 with tab_system:
+    st.markdown(
+        (
+            '<small>*In diesem Tab werden die Wärmeversorgungsanlagen '
+            'ausgewählt und ihre Anzahl (Fenster neben der jeweiligen '
+            'Abbildung) ausgewählt. In dem Tab Anlagen sind diese '
+            'anschließend zu parametrisieren.*</small>'
+        ),
+        unsafe_allow_html=True
+    )
     st.header('Auswahl des Wärmeversorgungssystem')
 
     col_system, col_unit = st.columns([1, 2], gap='large')
@@ -700,6 +763,21 @@ comb_opt_params = ['cap_max', 'cap_min', 'Q_max', 'Q_min', 'A_max', 'A_min']
 disp_opt_params = ['cap_N', 'Q_N', 'A_N']
 
 with tab_units:
+    st.markdown(
+        (
+            '<small>*In diesem Tab werden die wirtschaftlichen und technischen '
+            'Parameter der zuvor gewählten Wärmeversorgungsanlagen '
+            'festgelegt. Die hinterlegten Werte basieren auf Literaturdaten '
+            'und sollten bei Bedarf für die jeweilige Simulation angepasst '
+            'werden. Für jede Anlage kann zudem entschieden werden, ob die '
+            'Kapazität optimiert werden soll. Ist diese Option aktiviert, '
+            'wird neben dem optimalen Betrieb auch die wirtschaftlich '
+            'optimale Anlagengröße bestimmt. Bleibt der Schalter deaktiviert, '
+            'ist die Kapazität vorzugeben und es wird ausschließlich der '
+            'optimale Einsatz der Anlage berechnet.*</small>'
+        ),
+        unsafe_allow_html=True
+    )
     st.header('Parametrisierung der Wärmeversorgungsanlagen')
 
     placeholder_infeasable = st.empty()
@@ -750,6 +828,7 @@ with tab_units:
                                 min_value=uinfo['min'],
                                 max_value=uinfo['max'],
                                 step=(uinfo['max']-uinfo['min'])/100,
+                                format=uinfo['format'],
                                 key=f'input_{unit}_{uinput}',
                                 help=ss.tt.get(f'input_{uinput}', None)
                                 )
@@ -797,8 +876,30 @@ with tab_units:
 # %% MARK: Solar Thermal
 # if 'Solarthermie' in ss.units:
 with tab_supply:
+    st.markdown(
+        (
+            '<small>*In diesem Tab werden, abhängig von den zuvor getroffenen '
+            'Auswahlentscheidungen, alle erforderlichen Daten für die '
+            'jeweiligen Brennstoffe sowie die solare Einstrahlung definiert.*'
+            '</small>'
+        ),
+        unsafe_allow_html=True
+    )
     if 'Solarthermie' in ss.units:
         with st.expander('Solarthermiedaten'):
+            st.markdown(
+                (
+                    '<small>*Es kann zwischen drei vordefinierten Standorten '
+                    '(Nord: Schleswig, Zentral: Chemnitz, Süd: Stuttgart) '
+                    'sowie eigenen Datensätzen gewählt werden. Für die '
+                    'vorhandenen Datensätze kann ein exakter Zeitraum '
+                    'ausgewählt und die Daten bei Bedarf skaliert werden, um '
+                    'sie an individuelle Anwendungsfälle anzupassen. Achtung: '
+                    'Die Länge der Zeitreihe der solaren Einstrahlung muss '
+                    'der Zeitreihen der Wärmelast entsprechen.*</small>'
+                ),
+                unsafe_allow_html=True
+            )
             st.subheader('Solarthermiedaten')
             col_sol, col_vis_sol = st.columns([1, 2], gap='large')
 
@@ -955,6 +1056,22 @@ with tab_supply:
         ]
     if any(unit in ss.units for unit in el_units):
         with st.expander('Elektrizitätsversorgungsdaten'):
+            st.markdown(
+                (
+                    '<small>*Es sind sowohl Stromzeitreihen als auch zugehörige '
+                    'Emissionsfaktoren zu definieren. Für beide Größen kann '
+                    'zwischen variablen, konstanten oder eigenen Datensätzen '
+                    'gewählt werden. Bei den vordefinierten Daten kann ein '
+                    'exakter Zeitraum ausgewählt und die Zeitreihen bei '
+                    'Bedarf skaliert werden, um sie an individuelle '
+                    'Anwendungsfälle anzupassen. Zudem kann die '
+                    'Berücksichtigung zusätzlicher Strompreisbestandteile '
+                    'aktiviert werden. Achtung: Die Länge der Zeitreihe der '
+                    'Strompreise und Emissionfaktoren muss der Zeitreihen der '
+                    'Wärmelast entsprechen.*</small>'
+                ),
+                unsafe_allow_html=True
+            )
             st.subheader('Elektrizitätsversorgungsdaten')
             col_elp, col_vis_el = st.columns([1, 2], gap='large')
 
@@ -1235,7 +1352,7 @@ with tab_supply:
                 default_value='Variabel'
             )
             ss.select_ef_el = col_emi.selectbox(
-                'Preisvariante', 
+                'Methodik der Emissionsbilanzierung', 
                 ['Variabel', 'Konstant', 'Eigene Daten'],
                 key='select_ef_electricity'
             )
@@ -1432,6 +1549,25 @@ with tab_supply:
         ]
     if any(unit in ss.units for unit in gas_units):
         with st.expander('Gasversorgungsdaten'):
+            st.markdown(
+                (
+                    '<small>*Es sind Gaspreisdaten sowie zugehöriger '
+                    'Emissionsfaktor und CO₂-Preisdaten zu definieren. Für '
+                    'alle Größen kann zwischen variablen, konstanten oder '
+                    'eigenen Datensätzen gewählt werden. Für die '
+                    'vordefinierten Daten kann ein exakter Zeitraum '
+                    'ausgewählt und die Daten bei Bedarf skaliert werden, um '
+                    'sie an individuelle Anwendungsfälle anzupassen. Bei der '
+                    'Auswahl des Brennstoffs sind Werte für Erdgas als '
+                    'Default hinterlegt, können jedoch z.B. für Biogas '
+                    'entsprechend angepasst werden. Achtung: Die Länge der '
+                    'Zeitreihe der Gas- und CO₂-Preise muss der Zeitreihe der '
+                    'Wärmelast entsprechen.*</small>'
+                ),
+                unsafe_allow_html=True
+            )
+
+                
             st.subheader('Gasversorgungsdaten')
             col_gas, col_vis_gas = st.columns([1, 2], gap='large')
 
@@ -1852,33 +1988,69 @@ if not own_es:
 
 # %% MARK: Sonstiges
 with tab_misc:
+    st.markdown(
+        (
+            '<small>*In diesem Tab sind sonstige Parameter zu definieren. Dazu '
+            'gehören wirtschaftliche sowie optimierungsspezifische Parameter. '
+            'Für die Dauer der Optimierung ist die Wahl des Solvers und der '
+            'MIP Gap entscheidend. Zudem ist es möglich die maximale '
+            'Simulationsdauer zu begrenzen.*</small>'
+        ),
+        unsafe_allow_html=True
+    )
     st.header('Sonstige Parameter')
 
     col_econ, col_opt = st.columns([1, 1], gap='large')
 
     col_econ.subheader('Wirtschaft')
-    ss.param_opt['capital_interest'] *= 100
-    ss.param_opt['capital_interest'] = col_econ.number_input(
-        'Kapitalzins in %', value=ss.param_opt['capital_interest'],
-        help=ss.tt['capital_interest'], key='capital_interest'
-        )
-    ss.param_opt['capital_interest'] *= 1/100
 
-    ss.param_opt['lifetime'] = col_econ.number_input(
-        'Betrachtungsdauer in Jahre', value=ss.param_opt['lifetime'],
-        help=ss.tt['lifetime'], key='lifetime'
+    init_ss_widget(
+        widget_key='num_input_capital_interest',
+        ss_variable='capital_interest',
+        default_value=ss.param_opt['capital_interest']*100
+    )
+    ss.capital_interest = col_econ.number_input(
+        'Kapitalzins in %',
+        help=ss.tt['capital_interest'],
+        key='num_input_capital_interest'
         )
+    ss.param_opt['capital_interest'] = ss.capital_interest / 100
 
-    ss.param_opt['energy_tax'] = col_econ.number_input(
-        'Energiesteuer in €/MWh', value=ss.param_opt['energy_tax'],
-        help=ss.tt['energy_tax'], key='energy_tax'
+    init_ss_widget(
+        widget_key='num_input_lifetime',
+        ss_variable='lifetime',
+        default_value=ss.param_opt['lifetime']
+    )
+    ss.lifetime = col_econ.number_input(
+        'Betrachtungsdauer in Jahre',
+        help=ss.tt['lifetime'],
+        key='num_input_lifetime'
         )
+    ss.param_opt['lifetime'] = ss.lifetime
 
-    ss.param_opt['vNNE'] = col_econ.number_input(
-        'Vermiedene Netznutzungsentgelte in €/MWh', value=ss.param_opt['vNNE'],
-        help=ss.tt['vNNE'], key='vNNE'
+    init_ss_widget(
+        widget_key='num_input_energy_tax',
+        ss_variable='energy_tax',
+        default_value=ss.param_opt['energy_tax']
+    )
+    ss.energy_tax = col_econ.number_input(
+        'Energiesteuer in €/MWh',
+        help=ss.tt['energy_tax'],
+        key='num_input_energy_tax'
         )
+    ss.param_opt['energy_tax'] = ss.energy_tax
 
+    init_ss_widget(
+        widget_key='num_input_vNNE',
+        ss_variable='vNNE',
+        default_value=ss.param_opt['vNNE']
+    )
+    ss.vNNE = col_econ.number_input(
+        'Vermiedene Netznutzungsentgelte in €/MWh',
+        help=ss.tt['vNNE'],
+        key='num_input_vNNE'
+        )
+    ss.param_opt['vNNE'] = ss.vNNE
 
     col_opt.subheader('Optimierung')
 
@@ -1886,6 +2058,7 @@ with tab_misc:
         'Solver', options=['HiGHS'], help=ss.tt['solver'],
         key='solver'
         )
+    ss.param_opt['Solver'] = ss.solver
 
     if ss.param_opt['Solver'] == 'HiGHS':
         if not Highs().available():
@@ -1900,25 +2073,41 @@ with tab_misc:
                 + 'nicht verfügbar. Bitte verwenden Sie einen anderen Solver.'
                 )
 
-    ss.param_opt['MIPGap'] *= 100
-    ss.param_opt['MIPGap'] = col_opt.number_input(
-        'MIP Gap in %', value=ss.param_opt['MIPGap'], help=ss.tt['MIPGap'],
-        key='MIPGap'
+    init_ss_widget(
+        widget_key='num_input_MIPGap',
+        ss_variable='MIPGap',
+        default_value=ss.param_opt['MIPGap']*100
+    )
+    ss.MIPGap = col_opt.number_input(
+        'MIP Gap in %',
+        help=ss.tt['MIPGap'],
+        key='num_input_MIPGap'
         )
-    ss.param_opt['MIPGap'] *= 1/100
+    ss.param_opt['MIPGap'] = ss.MIPGap / 100
 
-    ss.param_opt['TimeLimit'] = None
-    timelimit = col_opt.toggle(
-        'Simulationsdauer begrenzen', help=ss.tt['ToggleTimeLimit'],
+    init_ss_widget(
+        widget_key='ToggleTimeLimit',
+        ss_variable='is_time_limited',
+        default_value=False
+    )
+    ss.is_time_limited = col_opt.toggle(
+        'Simulationsdauer begrenzen',
+        help=ss.tt['ToggleTimeLimit'],
         key='ToggleTimeLimit'
         )
-    if timelimit:
-        ss.param_opt['TimeLimit'] = col_opt.number_input(
-            'Zeitlimit in Minuten', value=ss.param_opt['TimeLimit'],
-            key='TimeLimit'
+    if ss.is_time_limited:
+        init_ss_widget(
+            widget_key='num_input_TimeLimit',
+            ss_variable='TimeLimit',
+            default_value=10
+        )
+        ss.TimeLimit = col_opt.number_input(
+            'Zeitlimit in Minuten',
+            key='num_input_TimeLimit'
             )
-        if ss.param_opt['TimeLimit'] is not None:
-            ss.param_opt['TimeLimit'] *= 60
+        ss.param_opt['TimeLimit'] = ss.TimeLimit * 60
+    else:
+        ss.param_opt['TimeLimit'] = None
 
     st.markdown('''---''')
 
@@ -1927,7 +2116,6 @@ with tab_misc:
             'pages/01_Optimierung.py', label='**Zur Optimierung**',
             icon='📝', width='stretch'
             )
-
 
 # %%: Troubleshooting
 Q_tot_max = 0
