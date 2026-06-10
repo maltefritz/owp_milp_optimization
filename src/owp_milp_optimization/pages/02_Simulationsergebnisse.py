@@ -888,11 +888,16 @@ if tes_used:
         #             border=True, help=ss.tt['el_ext']
         #         )
 
+        i = 0
         for unit in ss.param_units.keys():
             ucat = unit.rstrip('0123456789')
             unr = unit[len(ucat):]
 
             if ucat == 'tes':
+                if i > 0:
+                    col_sel, col_tes = st.columns([1, 2], gap='large')
+                i += 1
+
                 tesdata = ss.energy_system.data_all.loc[
                     dates[0]:dates[1],
                     [f'storage_content_{unit}', f'Q_in_{unit}', f'Q_out_{unit}']
@@ -935,7 +940,7 @@ if tes_used:
                     width='stretch'
                     )
 
-                col_sel.write(f'Speicher {unr}')
+                col_sel.markdown(f'##### Speicher {unr}')
                 if f'Wärmespeicher {unr} (MWh)' in ss.overview_caps.columns:
                     col_sel.metric(
                         'Kapazität in MWh',
@@ -961,6 +966,7 @@ if tes_used:
                     format_sep(losses, 1),
                     border=True
                 )
+
 
 
 # %% MARK: Solver Log
