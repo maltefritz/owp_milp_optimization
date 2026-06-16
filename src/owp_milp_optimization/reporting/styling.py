@@ -237,16 +237,25 @@ REPORT_CSS = """
             body {
                 background: white;
             }
-            
+
             .container {
                 padding: 20px;
                 max-width: 100%;
             }
-            
+
             .section {
-                page-break-inside: avoid;
+                page-break-inside: auto;
+                break-inside: auto;
             }
-            
+
+            .grid-2 {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .grid-2 > * {
+                break-inside: avoid;
+            }
+
             a {
                 text-decoration: none;
                 color: #00395B;
