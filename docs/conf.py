@@ -39,14 +39,14 @@ mathjax3_config = {
 # master_doc = 'contents'
 # names, years, etc
 project = 'owp_milp_optimization'
-year = '2025'
+year = '2024-2026'
 author = 'Malte Fritz & Jonas Freißmann'
 copyright = '{0}, {1}'.format(year, author)
 
 # The short X.Y version.
-version = '0.0.1'
+version = 'v0.0.6'
 # The full version, including alpha/beta/rc tags.
-release = '0.0.1'
+release = 'v0.0.6'
 
 # The suffix of source filenames.
 source_suffix = '.rst'
