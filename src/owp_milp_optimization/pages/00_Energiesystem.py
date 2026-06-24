@@ -15,6 +15,10 @@ from pyomo.contrib.appsi.solvers import Highs
 from pyomo.opt import check_available_solvers
 from streamlit import session_state as ss
 
+st.set_page_config(
+    layout='wide',
+    page_icon=os.path.join(os.path.dirname(__file__), '..', 'img',  'page_icon_ZNES.png')
+    )
 
 # %% MARK: Read Input Data
 @st.cache_data

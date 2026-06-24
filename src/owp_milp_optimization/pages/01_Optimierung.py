@@ -9,6 +9,10 @@ from helpers import footer, load_icon_base64s
 from model import EnergySystem
 from streamlit import session_state as ss
 
+st.set_page_config(
+    layout='wide',
+    page_icon=os.path.join(os.path.dirname(__file__), '..', 'img',  'page_icon_ZNES.png')
+    )
 
 @st.dialog('Energiesystem lokal speichern')
 def download_energy_system():
