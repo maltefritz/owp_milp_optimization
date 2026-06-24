@@ -2,6 +2,44 @@
 What's New
 ~~~~~~~~~~
 
+v0.0.6 (Jun 24, 2026)
+=====================
+
+New Features
+------------
+
+- Add more locations for solar thermal heat flow data
+- Add datepicker and scale method for solar thermal heat flow
+- Add short instructions for energy system and results
+- Separate data in electricity supply expander
+- Separate data in gas supply expander
+
+Improvements
+------------
+
+- Extend statefulness to the entire tool
+- Improve robustness of result processing
+- Add further information about the user selected heat load
+- Rename peak load boiler to gas boiler
+- Adjust subheader and title labeling of constant and own electricty price data
+- Add new and improve old tooltips
+- Remove user survey qr code and link in the sidebar
+- Remove unused TEHG Bonus
+
+Fixes
+-----
+
+- Fix postprocessing calculation bug of net costs
+- Fix typos
+
+Contributors
+------------
+
+- `@maltefritz <https://github.com/maltefritz>`__
+- `@jfreissmann <https://github.com/jfreissmann>`__
+- `@Coelopsychis <https://github.com/Coelopsychis>`__
+
+
 v0.0.5 (Apr 29, 2026)
 =====================
 
