@@ -2,8 +2,8 @@
 What's New
 ~~~~~~~~~~
 
-v0.0.6 (Jun 24, 2026)
-=====================
+v0.0.6 -- Maximum Memorization (Jun 24, 2026)
+=============================================
 
 New Features
 ------------
@@ -40,8 +40,8 @@ Contributors
 - `@Coelopsychis <https://github.com/Coelopsychis>`__
 
 
-v0.0.5 (Apr 29, 2026)
-=====================
+v0.0.5 -- Rapid Report (Apr 29, 2026)
+=====================================
 
 New Features
 ------------
@@ -77,8 +77,8 @@ Contributors
 - `@jfreissmann <https://github.com/jfreissmann>`__
 
 
-v0.0.4 (Nov 03, 2025)
-=====================
+v0.0.4 -- Furious Facts (Nov 03, 2025)
+======================================
 
 New Features
 ------------
@@ -108,8 +108,8 @@ Contributors
 - `@jfreissmann <https://github.com/jfreissmann>`__
 
 
-v0.0.3 (May 14, 2025)
-=====================
+v0.0.3 -- Subtle Support (May 14, 2025)
+=======================================
 
 New Features
 ------------
@@ -140,8 +140,8 @@ Contributors
 - `@jfreissmann <https://github.com/jfreissmann>`__
 
 
-v0.0.2 (Dec 03, 2024)
-=====================
+v0.0.2 -- First Inspiration (Dec 03, 2024)
+==========================================
 
 New Features
 ------------
@@ -174,8 +174,8 @@ Contributors
 - `@p-snft <https://github.com/p-snft>`__
 
 
-v0.0.1 (May 17, 2024)
-=====================
+v0.0.1 -- Initial Inspiration (May 17, 2024)
+============================================
 
 New Features
 ------------
