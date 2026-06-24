@@ -153,25 +153,6 @@ with st.sidebar:
         )
     st.image(logo, width='stretch')
 
-    st.divider()
-
-    st.subheader('Befragung und Feedback')
-
-    col_qr, _ = st.columns([2, 1])
-    link_url = 'https://app.edkimo.com/feedback/sotneblun?utm_source=pwa&utm_medium=fbc-copy'
-    image_path = os.path.join(os.path.dirname(__file__), '..', 'img', 'Edkimo_Befragung.png')
-
-    with open(image_path, 'rb') as f:
-        data = f.read()
-    img_base64 = base64.b64encode(data).decode()
-
-    col_qr.markdown(
-        f'<a href="{link_url}" target="_blank">'
-        f'<img src="data:image/png;base64,{img_base64}" alt="Edkimo Befragung">'
-        f'</a>',
-        unsafe_allow_html=True
-    )
-    col_qr.write('Scannen oder anklicken')
     st.markdown('''---''')
 
     st.subheader('Assoziierte Projektpartner')
@@ -438,11 +419,11 @@ with tab_heat:
 
     col_min, col_med, col_max, col_sum = col_vis.columns([1, 1, 1, 1])
     demand_min = format_sep(heat_load['heat_demand'].min(), dec=2)
-    col_min.metric('Minimalwert in MWh', demand_min, border=True)
+    col_min.metric('Minimum in MWh', demand_min, border=True)
     demand_med = format_sep(heat_load['heat_demand'].mean(), dec=2)
     col_med.metric('Mittelwert in MWh', demand_med, border=True)
     demand_max = format_sep(heat_load['heat_demand'].max(), dec=2)
-    col_max.metric('Maximalwert in MWh',demand_max,border=True)
+    col_max.metric('Maximum in MWh',demand_max,border=True)
     demand_sum = format_sep(heat_load['heat_demand'].sum(), dec=2)
     col_sum.metric('Gesamtlast in MWh', demand_sum, border=True)
     heat_load['heat_demand'].describe()
