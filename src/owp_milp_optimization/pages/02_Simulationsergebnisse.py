@@ -336,7 +336,7 @@ with tab_ov:
 
         col_sum.altair_chart(
             alt.Chart(qsum).mark_bar(color='#B54036').encode(
-                y=alt.Y('unit', title=None),
+                y=alt.Y('unit', title=None, axis=alt.Axis(labelLimit=300)),
                 x=alt.X('qsum', title='Gesamtwärmebereitstellung in MWh')
                 ),
             width='stretch'
