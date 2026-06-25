@@ -202,6 +202,7 @@ param_overview.rename(
         'net_dist': 'Wärmenetzlänge (km)'
         }, inplace=True
     )
+param_overview['Wert'] = param_overview['Wert'].astype(str)
 col_over.dataframe(param_overview, width='stretch')
 
 # %% MARK: Save Data
