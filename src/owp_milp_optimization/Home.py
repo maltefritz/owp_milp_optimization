@@ -3,12 +3,12 @@ import os
 
 import pandas as pd
 import streamlit as st
-from helpers import footer, load_icon_base64s
+from helpers import footer, load_icon_base64s, txt
 from streamlit import session_state as ss
 
 st.set_page_config(
     layout='wide',
-    page_title='OWP MILP Optimierung',
+    page_title=txt('app.page_title', _language='de'),
     page_icon=os.path.join(os.path.dirname(__file__), 'img',  'page_icon_ZNES.png')
     )
 
@@ -44,7 +44,7 @@ if 'eco_data' not in ss:
 
 # %% Sidebar
 with st.sidebar:
-    st.subheader('Offene Wärmespeicherplanung')
+    st.subheader(txt('app.sidebar_title'))
 
     logo_inno = os.path.join(
         os.path.dirname(__file__), 'img', 'Logo_InnoNord_OWP.png'
@@ -64,40 +64,16 @@ col_inno.image(logo, width='stretch')
 logo_foederer = os.path.join(os.path.dirname(__file__), 'img',  'Logos_Förderer_ohnePTJ_BMFTR.png')
 col_foerder.image(logo_foederer, width='stretch')
 
-st.write(
-    """
-    Willkommen in dem Optimierungsdashboard des Projektes "Offene Wärmespeicherplanung"
-    (OWP) der Initiative Inno!Nord. 
-
-    Mit diesem Dashboard lassen sich multivalente Wärmeversorgungssysteme und
-    die darin eingesetzten Versorgungsanlagen simulieren. Dazu kann aus einer
-    Reihe von Anlagentypen gewählt werden, die Ihr individuelles Wärmesystem
-    bilden. Diese Anlagen werden anschließend parametrisiert, die
-    energiewirtschaftlichen und -politischen Rahmenbedingungen festgelegt und
-    eine kombinierte Auslegungs- und Einsatzoptimierung durchgeführt. Dazu wird
-    die Methode der gemischt ganzzahlig linearen Optimierung (kurz MILP, aus dem
-    Englischen: Mixed Integer Linear Programming) verwendet.
-
-    ### Key Features
-
-    - Kombiniert Auslegungs- und Einsatzoptimierung basierend auf [oemof.solph](https://github.com/oemof/oemof-solph)
-    - Parametrisierung and Ergebnisvisualisierung mithilfe eines [Streamlit](https://github.com/streamlit/streamlit) Dashboards
-    - Breite Auswahl typischer Wärmeversorgungsanlagen
-    - Umfangreiche Datenbank von Lastdaten, Preiszeitreihen und Emissionsfaktoren
-    """
-    )
+st.write(txt('home.intro'))
 
 with st.container(border=True):
     st.page_link(
-        'pages/00_Energiesystem.py', label='**Energiesystem konfigurieren**',
+        'pages/00_Energiesystem.py',
+        label=f"**{txt('home.configure_energy_system')}**",
         icon='📝', width='stretch',
         )
 
-st.write(
-    """
-    ### Assoziierte Projektpartner
-    """
-    )
+st.write(txt('home.associated_project_partners'))
 
 # _, col_partner, _ = st.columns([0.1 ,0.8, 0.1])
 logo_partner = os.path.join(
@@ -108,81 +84,23 @@ st.image(logo_partner, width='stretch')
 
 st.markdown('''---''')
 
-with st.expander('Verwendete Software'):
-    st.info(
-        """
-        #### Verwendete Software:
+with st.expander(txt('home.expander.used_software')):
+    st.info(txt('home.used_software_text'))
 
-        Zur Modellerstellung und Simulationen wird die
-        Open Source Software oemof.solph verwendet. Des Weiteren werden
-        eine Reihe weiterer Pythonpakete zur Datenverarbeitung,
-        -aufbereitung und -visualisierung genutzt.
+with st.expander(txt('home.expander.publications')):
+    st.success(txt('home.publications_text'))
 
-        ---
+with st.expander(txt('home.expander.disclaimer')):
+    st.warning(txt('home.disclaimer_text'))
 
-        #### oemof.solph:
-
-        Das Softwarepaket oemof.solpf als Teil des Open Energy Modelling
-        Framework ist ein leistungsfähiges Simulationswerkzeug für
-        Energiesysteme. Mit dem Paket ist es möglich, den Anlageneinsatz zu
-        optimieren und die Kapazität dieser auszulegen. Die komponentenbasierte
-        Struktur in Kombination mit den generischen Anlagenklassen bieten eine
-        sehr hohe Flexibilität hinsichtlich der Systemtopologie und der
-        Parametrisierung. Weitere Informationen zu oemof.solph sind in dessen
-        [Onlinedokumentation](https://oemof-solph.readthedocs.io) in
-        englischer Sprache zu finden.
-
-        #### Weitere Pakete:
-
-        - [Streamlit](https://docs.streamlit.io) (Graphische Oberfläche)
-        - [NumPy](https://numpy.org) (Datenverarbeitung)
-        - [pandas](https://pandas.pydata.org) (Datenverarbeitung)
-        - [Matplotlib](https://matplotlib.org) (Datenvisualisierung)
-        """
-        )
-
-with st.expander('Publikationen'):
-    st.success(
-        """
-        [1] Malte Fritz, Jonas Freißmann & Ilja Tuschy. Open Source Web 
-        Dashboard zur Unterstützung der Konzeption von 
-        Wärmeversorgungssystemen. 
-        Tagungsband zur 3. Konferenz der Norddeutschen Wärmeforschung, 
-        S. 31-36. Hochschule Bremen, 2026. 
-        [doi:10.26092/elib/5016](https://doi.org/10.26092/elib/5016).
-
-        [2] Jonas Freißmann, Malte Fritz & Ilja Tuschy. 
-        Hochtemperaturwärmepumpen in der Nah- und Fernwärmeversorgung - 
-        Technologieperspektive für den kurz- und mittelfristigen Einsatz 
-        in multivalenten Systemen. Abschlussbericht, Zentrum für 
-        nachhaltige Energiesysteme, 2024. 
-        [doi:10.5281/zenodo.13311533](https://doi.org/10.5281/zenodo.13311533).
-        """
-        )
-
-with st.expander('Disclaimer'):
-    st.warning(
-        """
-        #### Simulationsergebnisse:
-
-        Numerische Simulationen sind Berechnungen mittels geeigneter
-        Iterationsverfahren in Bezug auf die vorgegebenen und gesetzten
-        Randbedingungen und Parameter. Eine Berücksichtigung aller
-        möglichen Einflüsse ist in Einzelfällen nicht möglich, so dass
-        Abweichungen zu Erfahrungswerten aus Praxisanwendungen
-        entstehen können und bei der Bewertung berücksichtigt werden
-        müssen. Entsprechend sind alle Angaben und Ergebnisse ohne Gewähr.
-        """
-        )
-
-with st.expander('Copyright'):
+with st.expander(txt('home.expander.copyright')):
     licpath = os.path.abspath(os.path.join(
         os.path.dirname(__file__), '..', '..', 'LICENSE'
         ))
     with open(licpath, 'r', encoding='utf-8') as file:
         lictext = file.read()
 
-    st.success('#### Softwarelizenz\n' + lictext.replace('(c)', '©'))
+    st.success(txt('home.software_license_heading') + lictext.replace('(c)', '©'))
 
 # %% MARK: Footer
 icon_path = os.path.join(os.path.dirname(__file__), 'img', 'icons')

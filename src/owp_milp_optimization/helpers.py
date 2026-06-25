@@ -3,6 +3,44 @@ import os
 
 import streamlit as st
 
+import json
+from functools import lru_cache
+
+DEFAULT_LANGUAGE = 'de'
+LOCALES_DIR = os.path.join(os.path.dirname(__file__), 'locales')
+
+#@lru_cache(maxsize=1)
+def load_translations():
+    translations = {}
+
+    if not os.path.isdir(LOCALES_DIR):
+        return translations
+    
+    for filename in os.listdir(LOCALES_DIR):
+        if not filename.endswith('.json'):
+            continue
+
+        lang = os.path.splitext(filename)[0]
+        path = os.path.join(LOCALES_DIR, filename)
+
+        with open(path, 'r', encoding='utf-8') as file:
+            translations[lang] = json.load(file)
+
+    return translations
+
+def get_language() -> str:
+    return st.session_state.get('language', DEFAULT_LANGUAGE)
+
+def txt(key, **kwargs):
+    translations = load_translations()
+    lang = get_language()
+
+    text = translations.get(lang, {}).get(key)
+
+    if text is None:
+        text = translations.get(DEFAULT_LANGUAGE, {}).get(key, key)
+
+    return text.format(**kwargs)
 
 def img_to_base64(image_path):
     with open(image_path, 'rb') as f:
