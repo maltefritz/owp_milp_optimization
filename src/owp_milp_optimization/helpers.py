@@ -9,7 +9,7 @@ from functools import lru_cache
 DEFAULT_LANGUAGE = 'de'
 LOCALES_DIR = os.path.join(os.path.dirname(__file__), 'locales')
 
-#@lru_cache(maxsize=1)
+@lru_cache(maxsize=1)
 def load_translations():
     translations = {}
 

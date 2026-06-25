@@ -571,64 +571,104 @@ with tab_unit:
     heatprod = heatprod.loc[dates[0]:dates[1], :]
 
     agg_results = col_sel.toggle(
-            txt('results.aggregation.toggle'), help=ss.tt['toggle_agg_results'],
-            key='toggle_agg_results'
-        )
+        txt('results.aggregation.toggle'),
+        help=ss.tt['toggle_agg_results'],
+        key='toggle_agg_results'
+    )
+
+    agg_period_options = {
+        'hourly': {
+            'label': txt('results.aggregation.period.hourly'),
+            'chart_label': txt('results.aggregation.period_label.hourly'),
+            'freq': 'h',
+        },
+        'daily': {
+            'label': txt('results.aggregation.period.daily'),
+            'chart_label': txt('results.aggregation.period_label.daily'),
+            'freq': 'd',
+        },
+        'weekly': {
+            'label': txt('results.aggregation.period.weekly'),
+            'chart_label': txt('results.aggregation.period_label.weekly'),
+            'freq': 'W',
+        },
+        'monthly': {
+            'label': txt('results.aggregation.period.monthly'),
+            'chart_label': txt('results.aggregation.period_label.monthly'),
+            'freq': 'ME',
+        },
+        'quarterly': {
+            'label': txt('results.aggregation.period.quarterly'),
+            'chart_label': txt('results.aggregation.period_label.quarterly'),
+            'freq': 'QE',
+        },
+    }
+
     if agg_results:
-        agg_periods = {
-            txt('results.aggregation.period.hourly'): 'h',
-            txt('results.aggregation.period.daily'): 'd',
-            txt('results.aggregation.period.weekly'): 'W',
-            txt('results.aggregation.period.monthly'): 'ME',
-            txt('results.aggregation.period.quarterly'): 'QE'
+        agg_period_key = col_sel.selectbox(
+            txt('results.aggregation.period.label'),
+            options=list(agg_period_options.keys()),
+            format_func=lambda key: agg_period_options[key]['label'],
+            key='select_agg_time_span_dispatch'
+        )
+
+        agg_period = agg_period_options[agg_period_key]['freq']
+        agg_period_label = agg_period_options[agg_period_key]['chart_label']
+
+        agg_method_options = {
+            'mean': txt('common.statistics.mean'),
+            'sum': txt('common.sum'),
         }
-        agg_period_name = col_sel.selectbox(
-            txt('results.aggregation.period.label'), options=list(agg_periods.keys()),
-                key='select_agg_time_span_dispatch'
-        )
-        agg_period = agg_periods[agg_period_name]
 
-        agg_method = col_sel.selectbox(
-            txt('results.aggregation.method.label'), options=[txt('common.statistics.mean'), txt('common.sum')],
-            help=ss.tt['agg_method'], key='agg_method_dispatch'
+        agg_method_key = col_sel.selectbox(
+            txt('results.aggregation.method.label'),
+            options=list(agg_method_options.keys()),
+            format_func=lambda key: agg_method_options[key],
+            help=ss.tt['agg_method'],
+            key='agg_method_dispatch'
         )
-    else:
-        agg_period_name = txt('results.aggregation.period.hourly')
 
-    if agg_results:
-        if agg_method == txt('common.statistics.mean'):
+        if agg_method_key == 'mean':
             heatprod = heatprod.resample(agg_period).mean()
-        elif agg_method == txt('common.sum'):
+        elif agg_method_key == 'sum':
             heatprod = heatprod.resample(agg_period).sum()
 
+    else:
+        agg_period = 'h'
+        agg_period_label = agg_period_options['hourly']['chart_label']
+
+    duration_col = 'duration_rank'
+    supply_unit_col = 'supply_unit'
+
     heatprod_sorted = pd.DataFrame(
-        np.sort(heatprod.values, axis=0)[::-1], columns=heatprod.columns
-        )
-    heatprod_sorted.index.names = ['Stunde']
+        np.sort(heatprod.values, axis=0)[::-1],
+        columns=heatprod.columns
+    )
+    heatprod_sorted.index.names = [duration_col]
     heatprod_sorted.reset_index(inplace=True)
 
-    hprod_sorted_melt = heatprod_sorted[['Stunde'] + selection].melt('Stunde')
+    hprod_sorted_melt = heatprod_sorted[[duration_col] + selection].melt(duration_col)
     hprod_sorted_melt.rename(
-        columns={'variable': txt('results.common.supply_unit')}, inplace=True
-        )
+        columns={'variable': supply_unit_col},
+        inplace=True
+    )
 
-    ylabel = (
-        f'{agg_period_name}e'
-        if agg_period_name[-1] != 'e'
-        else agg_period_name
+    ylabel = txt(
+        'results.chart.heat_production_mwh',
+        period=agg_period_label
     )
 
     col_unit.altair_chart(
         alt.Chart(hprod_sorted_melt).mark_line().encode(
-            y=alt.Y('value', title=txt('results.chart.heat_production_mwh', period=ylabel)),
-            x=alt.X('Stunde', title=txt('results.chart.count_axis')),
-            color=alt.Color(txt('results.common.supply_unit')).scale(
+            y=alt.Y('value', title=ylabel),
+            x=alt.X(duration_col, title=txt('results.chart.count_axis')),
+            color=alt.Color(supply_unit_col).scale(
                 domain=selection,
                 range=[colors[re.sub(r'\s\d', '', s)] for s in selection]
-                )
-            ),
+            )
+        ),
         width='stretch'
-        )
+    )
 
     col_unit.subheader(txt('results.unit_commitment.actual_dispatch.subheader'), help=ss.tt['adl'])
 
@@ -645,21 +685,22 @@ with tab_unit:
 
     hprod_melt = heatprod[['Date'] + selection].melt('Date')
     hprod_melt.rename(
-        columns={'variable': txt('results.common.supply_unit')}, inplace=True
-        )
+        columns={'variable': supply_unit_col},
+        inplace=True
+    )
 
     if not agg_results:
         col_unit.altair_chart(
             alt.Chart(hprod_melt).mark_line().encode(
-                y=alt.Y('value', title=txt('results.chart.heat_production_mwh', period=ylabel)),
+                y=alt.Y('value', title=ylabel),
                 x=alt.X('Date', title=txt('common.date')),
-                color=alt.Color(txt('results.common.supply_unit')).scale(
+                color=alt.Color(supply_unit_col).scale(
                     domain=selection,
                     range=[colors[re.sub(r'\s\d', '', s)] for s in selection]
-                    )
-                ),
+                )
+            ),
             width='stretch'
-            )
+        )
     else:
         time_units = {
             'h': 'yearmonthdatehours(Date):O',
@@ -670,15 +711,15 @@ with tab_unit:
         }
         col_unit.altair_chart(
             alt.Chart(hprod_melt).mark_bar().encode(
-                y=alt.Y('value', title=txt('results.chart.heat_production_mwh', period=ylabel)),
+                y=alt.Y('value', title=ylabel),
                 x=alt.X(time_units[agg_period], title=txt('common.date')),
-                color=alt.Color(txt('results.common.supply_unit')).scale(
+                color=alt.Color(supply_unit_col).scale(
                     domain=selection,
                     range=[colors[re.sub(r'\s\d', '', s)] for s in selection]
-                    )
-                ),
+                )
+            ),
             width='stretch'
-            )
+        )
 
 # %% MARK: Electricity Production
 if chp_used:
