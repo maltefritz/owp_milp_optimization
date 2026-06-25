@@ -10,19 +10,20 @@ import altair as alt
 import numpy as np
 import pandas as pd
 import streamlit as st
-from helpers import footer, format_sep, load_icon_base64s
+from helpers import footer, format_sep, load_icon_base64s, txt
 from reporting import generate_html_report
 from streamlit import session_state as ss
 
 st.set_page_config(
     layout='wide',
+    page_title=txt('results.page_title'),
     page_icon=os.path.join(os.path.dirname(__file__), '..', 'img',  'page_icon_ZNES.png')
     )
 
-@st.dialog('Ergebnisse lokal speichern')
+@st.dialog(txt('results.dialog.save_results'))
 def save_results():
     """Temporarely save results and zip them, then let user download it."""
-    with st.spinner('Daten werden verarbeitet...'):
+    with st.spinner(txt('optimization.spinner.processing_data')):
         tmppath = os.path.abspath(
             os.path.join(
                 os.path.dirname(__file__), '..', '_tmp'
@@ -35,56 +36,56 @@ def save_results():
         if not os.path.exists(zippath):
             os.mkdir(zippath)
 
-        tspath = os.path.join(zippath, 'Ergebnisse_Zeitreihen.csv')
+        tspath = os.path.join(zippath, txt('results.export.filename.timeseries'))
         ss.energy_system.data_all.to_csv(tspath, sep=';')
 
-        cappath = os.path.join(zippath, 'Ergebnisse_Kapazitäten.csv')
+        cappath = os.path.join(zippath, txt('results.export.filename.capacities'))
         ss.overview_caps.to_csv(cappath, sep=';', encoding='utf-8-sig')
 
         kpdf = pd.DataFrame.from_dict(
             {k: [v] for k, v in ss.energy_system.key_params.items()}
         )
         kprename = {
-            'op_cost_total': 'Betriebskosten',
-            'invest_total': 'Investitionskosten',
-            'cost_gas': 'Gaskosten',
-            'cost_el_grid': 'Elektrizitätskosten (Netz)',
-            'cost_el_internal': 'Elektrizitätskosten (Intern)',
-            'cost_el': 'Elektrizitätskosten (Gesamt)',
-            'cost_total': 'Gesamtkosten',
-            'revenues_spotmarket': 'Stromerlöse',
-            'revenues_heat': 'Wärmeerlöse',
-            'revenues_total': 'Gesamterlöse',
-            'balance_total': 'Gesamtbilanz',
-            'LCOH': 'Wärmegestehungskosten',
-            'total_heat_demand': 'Gesamtwärmebedarf',
-            'Emissions OM (Gas)': 'Emissionen (Gasbezug)',
-            'Emissions OM (Electricity)': 'Emissionen (Elektrizitätsbezug)',
-            'Emissions OM (Spotmarket)': 'Emissionsgutschriften (Elektrizitätseinspeisung)',
-            'Total Emissions OM': 'Gesamtemissionen'
+            'op_cost_total': txt('results.export.operating_costs'),
+            'invest_total': txt('results.export.investment_costs'),
+            'cost_gas': txt('results.export.gas_costs'),
+            'cost_el_grid': txt('results.export.electricity_costs_grid'),
+            'cost_el_internal': txt('results.export.electricity_costs_internal'),
+            'cost_el': txt('results.export.electricity_costs_total'),
+            'cost_total': txt('results.export.total_costs'),
+            'revenues_spotmarket': txt('results.export.electricity_revenues'),
+            'revenues_heat': txt('results.export.heat_revenues'),
+            'revenues_total': txt('results.export.total_revenues'),
+            'balance_total': txt('results.export.total_balance'),
+            'LCOH': txt('results.export.lcoh'),
+            'total_heat_demand': txt('results.export.total_heat_demand'),
+            'Emissions OM (Gas)': txt('results.export.emissions_gas'),
+            'Emissions OM (Electricity)': txt('results.export.emissions_electricity'),
+            'Emissions OM (Spotmarket)': txt('results.export.emission_credits_electricity_feed_in'),
+            'Total Emissions OM': txt('results.export.total_emissions')
         }
         kpdf.rename(columns=kprename, inplace=True)
 
-        kppath = os.path.join(zippath, 'Ergebnisse_Allgemein.csv')
+        kppath = os.path.join(zippath, txt('results.export.filename.general'))
         kpdf.to_csv(kppath, sep=';', encoding='utf-8-sig', index=False)
 
         shutil.make_archive(zippath, 'zip', zippath)
 
     with open(f'{zippath}.zip', 'rb') as file:
         btn = st.download_button(
-            label='Speichere deine Ergebnisse',
+            label=txt('results.download.save_results'),
             data=file,
-            file_name='Ergebnisse',
+            file_name=txt('results.download.results_file_name'),
             mime='application/zip'
         )
 
     shutil.rmtree(tmppath)
 
 
-@st.dialog('Bericht herunterladen')
+@st.dialog(txt('results.dialog.download_report', _language='de'))
 def download_report():
     """Generate and download HTML report."""
-    with st.spinner('Bericht wird generiert...'):
+    with st.spinner(txt('results.spinner.generating_report')):
         try:
             # Get image path
             img_path = os.path.abspath(
@@ -103,52 +104,57 @@ def download_report():
             # Create download button
             timestamp = dt.datetime.now().strftime('%Y%m%d_%H%M%S')
             st.download_button(
-                label='📥 Bericht herunterladen',
+                label=txt('results.download.report'),
                 data=html_content.encode('utf-8'),
-                file_name=f'Bericht_OWP_{timestamp}.html',
+                file_name=f'{txt("results.download.report_file_prefix")}{timestamp}.html',
                 mime='text/html',
                 key='report_download_btn'
             )
             
-            st.success('Bericht erfolgreich generiert!')
+            st.success(txt('results.success.report_generated'))
             
         except Exception as e:
-            st.error(f'Fehler bei der Berichtsgenerierung: {str(e)}')
+            st.error(txt('results.error.report_generation', error=str(e)))
 
 
 # %% MARK: Parameters
+UNIT_LABEL_KEYS = {
+    'hp': 'energy_system.unit.heat_pump',
+    'ccet': 'energy_system.unit.combined_cycle',
+    'ice': 'energy_system.unit.chp',
+    'sol': 'energy_system.unit.solar_thermal',
+    'gb': 'energy_system.unit.gas_boiler',
+    'eb': 'energy_system.unit.electrode_boiler',
+    'exhs': 'energy_system.unit.external_heat_source',
+    'tes': 'energy_system.unit.thermal_storage',
+}
+
 shortnames = {
-    'Wärmepumpe': 'hp',
-    'Gas- und Dampfkraftwerk': 'ccet',
-    'Blockheizkraftwerk': 'ice',
-    'Solarthermie': 'sol',
-    'Gaskessel': 'gb',
-    'Elektrodenheizkessel': 'eb',
-    'Externe Wärmequelle': 'exhs',
-    'Wärmespeicher': 'tes'
+    txt(UNIT_LABEL_KEYS['hp']): 'hp',
+    txt(UNIT_LABEL_KEYS['ccet']): 'ccet',
+    txt(UNIT_LABEL_KEYS['ice']): 'ice',
+    txt(UNIT_LABEL_KEYS['sol']): 'sol',
+    txt(UNIT_LABEL_KEYS['gb']): 'gb',
+    txt(UNIT_LABEL_KEYS['eb']): 'eb',
+    txt(UNIT_LABEL_KEYS['exhs']): 'exhs',
+    txt(UNIT_LABEL_KEYS['tes']): 'tes',
 }
 longnames = {
-    'hp': 'Wärmepumpe',
-    'ccet': 'Gas- und Dampfkraftwerk',
-    'ice': 'Blockheizkraftwerk',
-    'sol': 'Solarthermie',
-    'gb': 'Gaskessel',
-    'eb': 'Elektrodenheizkessel',
-    'exhs': 'Externe Wärmequelle',
-    'tes': 'Wärmespeicher'
+    code: txt(key)
+    for code, key in UNIT_LABEL_KEYS.items()
 }
 
 colors = {
-    'Wärmepumpe': '#B54036',
-    'Gas- und Dampfkraftwerk': '#00395B',
-    'Blockheizkraftwerk': '#00395B',
-    'Gaskessel': '#EC6707',
-    'Solarthermie': '#EC6707',
-    'Wärmespeicher Ein': 'slategrey',
-    'Wärmespeicher Aus': 'dimgrey',
-    'Wärmebedarf': '#31333f',
-    'Elektrodenheizkessel': '#EC6707',
-    'Externe Wärmequelle': '#74ADC0'
+    txt(UNIT_LABEL_KEYS['hp']): '#B54036',
+    txt(UNIT_LABEL_KEYS['ccet']): '#00395B',
+    txt(UNIT_LABEL_KEYS['ice']): '#00395B',
+    txt(UNIT_LABEL_KEYS['gb']): '#EC6707',
+    txt(UNIT_LABEL_KEYS['sol']): '#EC6707',
+    txt('results.storage.flow_in'): 'slategrey',
+    txt('results.storage.flow_out'): 'dimgrey',
+    txt('results.common.heat_demand'): '#31333f',
+    txt(UNIT_LABEL_KEYS['eb']): '#EC6707',
+    txt(UNIT_LABEL_KEYS['exhs']): '#74ADC0'
 }
 
 tooltippath = os.path.abspath(
@@ -159,7 +165,7 @@ with open(tooltippath, 'r', encoding='utf-8') as file:
 
 # %% MARK: Sidebar
 with st.sidebar:
-    st.subheader('Offene Wärmespeicherplanung')
+    st.subheader(txt('app.sidebar_title'))
 
     logo_inno = os.path.join(
         os.path.dirname(__file__), '..', 'img', 'Logo_InnoNord_OWP.png'
@@ -173,7 +179,7 @@ with st.sidebar:
 
     st.markdown("""---""")
 
-    st.subheader('Assoziierte Projektpartner')
+    st.subheader(txt('app.associated_project_partners'))
     logo_bo = os.path.join(
         os.path.dirname(__file__), '..', 'img', 'Logo_Boben_Op.svg'
         )
@@ -203,12 +209,12 @@ with st.sidebar:
 
 # %% MARK: Main Window
 if 'energy_system' not in ss:
-    st.header('Simulationsergebnisse')
-    st.error('**Error:** Es sind noch keine Ergebnisse vorhanden. Sie müssen zuerst eine Optimierung auf der dafür vorgesehenen Seite durchführen.')
+    st.header(txt('results.page_title'))
+    st.error(txt('results.error.no_results'))
 
     with st.container(border=True):
         st.page_link(
-            'pages/01_Optimierung.py', label='**Zur Optimierung**',
+            'pages/01_Optimierung.py', label=txt('energy_system.navigation.to_optimization'),
             icon='📝', width='stretch'
             )
 
@@ -230,44 +236,52 @@ chp_used = (
 if chp_used:
     if tes_used:
         tab_ov, tab_unit, tab_el, tab_tes, tab_pro = st.tabs([
-            'Überblick', 'Anlageneinsatz', 'Stromproduktion', 'Speicherstand',
-            'Erweitert'
+            txt('results.tabs.overview'),
+            txt('results.tabs.unit_commitment'),
+            txt('results.tabs.electricity_production'),
+            txt('results.tabs.storage_content'),
+            txt('results.tabs.advanced')
             ]
             )
     else:
         tab_ov, tab_unit, tab_el, tab_pro = st.tabs(
-            ['Überblick', 'Anlageneinsatz', 'Stromproduktion', 'Erweitert']
+            [
+                txt('results.tabs.overview'),
+                txt('results.tabs.unit_commitment'),
+                txt('results.tabs.electricity_production'),
+                txt('results.tabs.advanced')
+            ]
             )
 else:
     if tes_used:
         tab_ov, tab_unit, tab_tes, tab_pro = st.tabs(
-            ['Überblick', 'Anlageneinsatz', 'Speicherstand', 'Erweitert']
+            [
+                txt('results.tabs.overview'),
+                txt('results.tabs.unit_commitment'),
+                txt('results.tabs.storage_content'),
+                txt('results.tabs.advanced')
+            ]
             )
     else:
         tab_ov, tab_unit, tab_pro = st.tabs(
-            ['Überblick', 'Anlageneinsatz', 'Erweitert']
+            [
+                txt('results.tabs.overview'),
+                txt('results.tabs.unit_commitment'),
+                txt('results.tabs.advanced')
+            ]
             )
 
 # %% MARK: Overview
 with tab_ov:
     st.markdown(
-        (
-            '<small>*Es werden die Ergebnisse der Optimierung übersichtlich '
-            'dargestellt. Dazu gehören die (optimalen) Kapazitäten, die '
-            'resultierende Wärmeproduktion sowie die wirtschaftlichen und '
-            'ökologischen Kennwerte. Nach der Analyse kann entweder ein neues '
-            'Energiesystem konfiguriert werden. Sollen die Ergebnisse für '
-            'weiterführende Analysen genutzt werden, steht der Download eines '
-            'standardisierten Berichts oder alternativ die vollständigen '
-            'Ergebnisdaten und -parameter zur Verfügung.*</small>'
-        ),
+        txt('results.overview.description'),
         unsafe_allow_html=True
     )
-    with st.expander('Auslegung', expanded=True):
+    with st.expander(txt('results.overview.design.expander'), expanded=True):
         col_cap, col_sum = st.columns([3, 2], gap='large')
 
         col_cap.subheader(
-            'Optimierte Anlagenkapazitäten', help=ss.tt['results_design']
+            txt('results.overview.optimized_capacities.subheader'), help=ss.tt['results_design']
             )
         col_cap1, col_cap2 = col_cap.columns([2, 3], gap='large')
 
@@ -305,13 +319,13 @@ with tab_ov:
                 renamedict[col] = f'{longnames[ucat]} {unr} (MW)'
 
         ss.overview_caps.rename(columns=renamedict, inplace=True)
-        ss.overview_caps.rename(index={0: 'Kapazität'}, inplace=True)
+        ss.overview_caps.rename(index={0: txt('results.overview.capacity.row_label')}, inplace=True)
         ss.overview_caps = ss.overview_caps.apply(lambda x: round(x, 1))
 
         col_cap2.dataframe(ss.overview_caps.T, width='stretch')
 
         col_sum.subheader(
-            'Wärmeproduktion', help=ss.tt['results_heat_production']
+            txt('results.overview.heat_production.subheader'), help=ss.tt['results_heat_production']
             )
         qsum = pd.DataFrame(columns=['unit', 'qsum'])
         idx = 0
@@ -319,7 +333,7 @@ with tab_ov:
             ucat = unit.rstrip('0123456789')
             unr = unit[len(ucat):]
             if ucat == 'tes':
-                tl = {'in': 'Ein', 'out': 'Aus'}
+                tl = {'in': txt('results.storage.charge_label'), 'out': txt('results.storage.discharge_label')}
                 for var in ['in', 'out']:
                     unit_col = f'Q_{var}_{unit}'
                     qsum.loc[idx, 'unit'] = (
@@ -341,54 +355,54 @@ with tab_ov:
         col_sum.altair_chart(
             alt.Chart(qsum).mark_bar(color='#B54036').encode(
                 y=alt.Y('unit', title=None, axis=alt.Axis(labelLimit=300)),
-                x=alt.X('qsum', title='Gesamtwärmebereitstellung in MWh')
+                x=alt.X('qsum', title=txt('results.chart.total_heat_supply_mwh'))
                 ),
             width='stretch'
             )
 
-    with st.expander('Wirtschaftliche Kennzahlen'):
-        st.subheader('Wirtschaftliche Kennzahlen')
+    with st.expander(txt('results.overview.economic.expander')):
+        st.subheader(txt('results.overview.economic.subheader'))
 
         col1, col2, col3, col4 = st.columns(4)
         col1.metric(
-            'LCOH (Erzeugung) in €/MWh',
+            txt('results.metric.lcoh_generation'),
             format_sep(ss.energy_system.key_params['LCOH']),
             border=True, help=ss.tt['lcoh_heat']
             )
         col1.metric(
-            'LCOH (inkl. Wärmenetz) in €/MWh',
+            txt('results.metric.lcoh_including_network'),
             format_sep(ss.energy_system.key_params['LCOH_incl_net']),
             border=True, help=ss.tt['lcoh_incl_net']
             )
         col2.metric(
-            'Wärmeerlöse in €',
+            txt('results.metric.heat_revenues_eur'),
             format_sep(ss.energy_system.key_params['revenues_heat']),
             border=True, help=ss.tt['rev_heat']
             )
         col2.metric(
-            'Stromerlöse in €',
+            txt('results.metric.electricity_revenues_eur'),
             format_sep(ss.energy_system.key_params['revenues_spotmarket']),
             border=True, help=ss.tt['rev_el']
             )
         col3.metric(
-            'Stromkosten in €',
+            txt('results.metric.electricity_costs_eur'),
             format_sep(ss.energy_system.key_params['cost_el']),
             border=True, help=ss.tt['cost_el']
             )
         col3.metric(
-            'Gaskosten in €',
+            txt('results.metric.gas_costs_eur'),
             format_sep(ss.energy_system.key_params['cost_gas']),
             border=True, help=ss.tt['cost_gas']
             )
         col4.metric(
-            'Anlagenkosten (gesamt)',
+            txt('results.metric.unit_costs_total'),
             format_sep(ss.energy_system.cost_df.loc[[
                 'invest', 'op_cost_fix', 'op_cost_var'
             ]].sum().sum()),
             border=True, help=ss.tt['cost_units']
             )
         col4.metric(
-            'Wärmenetzkosten (gesamt)',
+            txt('results.metric.network_costs_total'),
             format_sep(
                 ss.energy_system.key_params['invest_net_total']
                 + ss.energy_system.key_params['cost_net_fix_total']
@@ -398,16 +412,16 @@ with tab_ov:
             )
 
         unit_cost = ss.energy_system.cost_df.copy()
-        unit_cost.loc['invest', 'Wärmenetz'] = (
+        unit_cost.loc['invest', txt('energy_system.network.header')] = (
             ss.energy_system.key_params['invest_net_total']
         )
-        unit_cost.loc['op_cost_fix', 'Wärmenetz'] = (
+        unit_cost.loc['op_cost_fix', txt('energy_system.network.header')] = (
             ss.energy_system.key_params['cost_net_fix_total']
         )
-        unit_cost.loc['op_cost_var', 'Wärmenetz'] = (
+        unit_cost.loc['op_cost_var', txt('energy_system.network.header')] = (
             ss.energy_system.key_params['cost_net_var_total']
         )
-        unit_cost.loc['op_cost', 'Wärmenetz'] = (
+        unit_cost.loc['op_cost', txt('energy_system.network.header')] = (
             ss.energy_system.key_params['cost_net_fix_total']
             + ss.energy_system.key_params['cost_net_var_total']
         )
@@ -420,40 +434,40 @@ with tab_ov:
         unit_cost.rename(columns=renamedict, inplace=True)
         unit_cost.rename(
             index={
-                'invest': 'Investitionskosten (€)',
-                'op_cost_var': 'Variable Betriebskosten (€)',
-                'op_cost_fix': 'Fixe Betriebskosten (€)',
-                'op_cost': 'Gesamtbetriebskosten (€)'
+                'invest': txt('results.costs.investment'),
+                'op_cost_var': txt('results.costs.variable_operating'),
+                'op_cost_fix': txt('results.costs.fixed_operating'),
+                'op_cost': txt('results.costs.total_operating')
                 },
             inplace=True
             )
 
-        unit_cost.drop('Gesamtbetriebskosten (€)', axis=0, inplace=True)
+        unit_cost.drop(txt('results.costs.total_operating'), axis=0, inplace=True)
         unit_cost = unit_cost.map(format_sep)
 
         st.dataframe(unit_cost, width='stretch')
 
-    with st.expander('Ökologische Kennzahlen'):
+    with st.expander(txt('results.overview.ecological.expander')):
     # st.subheader('Ökologische Kennzahlen', help=ss.tt['results_ecol'])
         met1, met2, met3, met4= st.columns([1, 1, 1, 1])
         met1.metric(
-            'Gesamtemissionen in t',
+            txt('results.metric.total_emissions_t'),
             format_sep(ss.energy_system.key_params['Total Emissions OM']/1e3, 1),
             border=True, help=ss.tt['em_ges']
             )
         met2.metric(
-            'Emissionen durch Gasbezug in t',
+            txt('results.metric.gas_emissions_t'),
             format_sep(ss.energy_system.key_params['Emissions OM (Gas)']/1e3, 1),
             border=True, help=ss.tt['em_gas']
             )
         met3.metric(
-            'Emissionen durch Strombezug in t',
+            txt('results.metric.electricity_emissions_t'),
             format_sep(ss.energy_system.key_params['Emissions OM (Electricity)']/1e3, 1),
             border=True, help=ss.tt['em_el']
             )
 
         met4.metric(
-            'Emissionsgutschriften durch Stromproduktion in t',
+            txt('results.metric.electricity_credit_emissions_t'),
             format_sep(ss.energy_system.key_params['Emissions OM (Spotmarket)']/1e3, 1),
             border=True, help=ss.tt['em_spot']
             )
@@ -462,7 +476,7 @@ with tab_ov:
 
         col_left, col_mid, col_right = st.columns([1, 1, 1])
         reset_es = col_left.button(
-            label='📝 **Neues Energiesystem konfigurieren**',
+            label=txt('results.button.reset_energy_system'),
             key='reset_button_results',
             width='stretch'
             )
@@ -484,7 +498,7 @@ with tab_ov:
             st.switch_page('pages/00_Energiesystem.py')
 
         report_btn = col_mid.button(
-            label='📊 **Bericht herunterladen**',
+            label=txt('results.button.download_report'),
             key='report_download_button',
             width='stretch'
             )
@@ -492,7 +506,7 @@ with tab_ov:
             download_report()
 
         save_results_btn = col_right.button(
-            label='💾 **Daten exportieren**',
+            label=txt('results.button.export_data'),
             width='stretch'
             )
         if save_results_btn:
@@ -501,22 +515,13 @@ with tab_ov:
 # %% MARK: Unit Commitment
 with tab_unit:
     st.markdown(
-        (
-            '<small>*Die Ergebnisse des Einsatzes werden in Form geordneter '
-            'Jahresdauerlinien als auch als zeitlicher Verlauf des '
-            'tatsächlichen Anlageneinsatzes über den gesamten '
-            'Betrachtungszeitraum dargstellt. Für eine vertiefte Analyse '
-            'können einzelne Anlagen nach Bedarf ausgeblendet werden. '
-            'Zusätzlich ist es möglich, den Betrachtungszeitraum anzupassen '
-            'oder die Ergebnisse auf unterschiedlichen Ebenen zu aggregieren, '
-            'um spezifische Fragestellungen gezielt auszuwerten.*</small>'
-        ),
+        txt('results.unit_commitment.description'),
         unsafe_allow_html=True
     )
     col_sel, col_unit = st.columns([1, 2], gap='large')
 
     col_unit.subheader(
-        'Geordnete Jahresdauerlinien des Anlageneinsatzes', help=ss.tt['oadl']
+        txt('results.unit_commitment.sorted_duration_curves.subheader'), help=ss.tt['oadl']
         )
 
     heatprod = pd.DataFrame()
@@ -529,25 +534,25 @@ with tab_unit:
                     this_unit_cat = this_unit.rstrip('0123456789')
                     this_unit_nr = this_unit[len(this_unit_cat):]
             if this_unit is None:
-                collabel = 'Wärmebedarf'
+                collabel = txt('results.common.heat_demand')
             elif this_unit.rstrip('0123456789') == 'tes':
                 if '_in' in col:
-                    collabel = f'{longnames[this_unit_cat]} {this_unit_nr} Ein'
+                    collabel = f"{longnames[this_unit_cat]} {this_unit_nr} {txt('results.storage.charge_label')}"
                 elif '_out' in col:
-                    collabel = f'{longnames[this_unit_cat]} {this_unit_nr} Aus'
+                    collabel = f"{longnames[this_unit_cat]} {this_unit_nr} {txt('results.storage.discharge_label')}"
             else:
                 collabel = f'{longnames[this_unit_cat]} {this_unit_nr}'
             heatprod[collabel] = ss.energy_system.data_all[col].copy()
 
     selection = col_sel.multiselect(
-        'Wähle die Wärmeversorgungsanlagen aus:',
+        txt('results.unit_commitment.select_units.label'),
         list(heatprod.columns),
         default=list(heatprod.columns),
-        placeholder='Wärmeversorgungsanlagen'
+        placeholder=txt('energy_system.system.units.placeholder')
         )
 
     dates = col_sel.date_input(
-        'Zeitraum auswählen:',
+        txt('common.select_period'),
         value=(
             ss.energy_system.data_all.index[0],
             ss.energy_system.data_all.index[-1]
@@ -566,34 +571,34 @@ with tab_unit:
     heatprod = heatprod.loc[dates[0]:dates[1], :]
 
     agg_results = col_sel.toggle(
-            'Ergebnisse aggregieren', help=ss.tt['toggle_agg_results'],
+            txt('results.aggregation.toggle'), help=ss.tt['toggle_agg_results'],
             key='toggle_agg_results'
         )
     if agg_results:
         agg_periods = {
-            'Stündlich': 'h',
-            'Täglich': 'd',
-            'Wöchentlich': 'W',
-            'Monatlich': 'ME',
-            'Quartalsweise': 'QE'
+            txt('results.aggregation.period.hourly'): 'h',
+            txt('results.aggregation.period.daily'): 'd',
+            txt('results.aggregation.period.weekly'): 'W',
+            txt('results.aggregation.period.monthly'): 'ME',
+            txt('results.aggregation.period.quarterly'): 'QE'
         }
         agg_period_name = col_sel.selectbox(
-            'Aggregationszeitraum wählen:', options=list(agg_periods.keys()),
+            txt('results.aggregation.period.label'), options=list(agg_periods.keys()),
                 key='select_agg_time_span_dispatch'
         )
         agg_period = agg_periods[agg_period_name]
 
         agg_method = col_sel.selectbox(
-            'Aggregationsmethode wählen:', options=['Mittelwert', 'Summe'],
+            txt('results.aggregation.method.label'), options=[txt('common.statistics.mean'), txt('common.sum')],
             help=ss.tt['agg_method'], key='agg_method_dispatch'
         )
     else:
-        agg_period_name = 'Stündlich'
+        agg_period_name = txt('results.aggregation.period.hourly')
 
     if agg_results:
-        if agg_method == 'Mittelwert':
+        if agg_method == txt('common.statistics.mean'):
             heatprod = heatprod.resample(agg_period).mean()
-        elif agg_method == 'Summe':
+        elif agg_method == txt('common.sum'):
             heatprod = heatprod.resample(agg_period).sum()
 
     heatprod_sorted = pd.DataFrame(
@@ -604,7 +609,7 @@ with tab_unit:
 
     hprod_sorted_melt = heatprod_sorted[['Stunde'] + selection].melt('Stunde')
     hprod_sorted_melt.rename(
-        columns={'variable': 'Versorgungsanlage'}, inplace=True
+        columns={'variable': txt('results.common.supply_unit')}, inplace=True
         )
 
     ylabel = (
@@ -615,9 +620,9 @@ with tab_unit:
 
     col_unit.altair_chart(
         alt.Chart(hprod_sorted_melt).mark_line().encode(
-            y=alt.Y('value', title=f'{ylabel} Wärmeproduktion in MWh'),
-            x=alt.X('Stunde', title='Anzahl'),
-            color=alt.Color('Versorgungsanlage').scale(
+            y=alt.Y('value', title=txt('results.chart.heat_production_mwh', period=ylabel)),
+            x=alt.X('Stunde', title=txt('results.chart.count_axis')),
+            color=alt.Color(txt('results.common.supply_unit')).scale(
                 domain=selection,
                 range=[colors[re.sub(r'\s\d', '', s)] for s in selection]
                 )
@@ -625,30 +630,30 @@ with tab_unit:
         width='stretch'
         )
 
-    col_unit.subheader('Tatsächlicher Anlageneinsatz', help=ss.tt['adl'])
+    col_unit.subheader(txt('results.unit_commitment.actual_dispatch.subheader'), help=ss.tt['adl'])
 
     if tes_used:
         for col in heatprod.columns:
-            if 'Wärmespeicher' in col and 'Ein' in col:
+            if txt('energy_system.unit.thermal_storage') in col and txt('results.storage.charge_label') in col:
                 heatprod[col] *= -1
     # heatprod.drop('Wärmebedarf', axis=1, inplace=True)
     heatprod.index.names = ['Date']
     heatprod.reset_index(inplace=True)
 
-    if agg_results and 'Wärmebedarf' in selection:
-        selection.remove('Wärmebedarf')
+    if agg_results and txt('results.common.heat_demand') in selection:
+        selection.remove(txt('results.common.heat_demand'))
 
     hprod_melt = heatprod[['Date'] + selection].melt('Date')
     hprod_melt.rename(
-        columns={'variable': 'Versorgungsanlage'}, inplace=True
+        columns={'variable': txt('results.common.supply_unit')}, inplace=True
         )
 
     if not agg_results:
         col_unit.altair_chart(
             alt.Chart(hprod_melt).mark_line().encode(
-                y=alt.Y('value', title=f'{ylabel} Wärmeproduktion in MWh'),
-                x=alt.X('Date', title='Datum'),
-                color=alt.Color('Versorgungsanlage').scale(
+                y=alt.Y('value', title=txt('results.chart.heat_production_mwh', period=ylabel)),
+                x=alt.X('Date', title=txt('common.date')),
+                color=alt.Color(txt('results.common.supply_unit')).scale(
                     domain=selection,
                     range=[colors[re.sub(r'\s\d', '', s)] for s in selection]
                     )
@@ -665,9 +670,9 @@ with tab_unit:
         }
         col_unit.altair_chart(
             alt.Chart(hprod_melt).mark_bar().encode(
-                y=alt.Y('value', title=f'{ylabel} Wärmeproduktion in MWh'),
-                x=alt.X(time_units[agg_period], title='Datum'),
-                color=alt.Color('Versorgungsanlage').scale(
+                y=alt.Y('value', title=txt('results.chart.heat_production_mwh', period=ylabel)),
+                x=alt.X(time_units[agg_period], title=txt('common.date')),
+                color=alt.Color(txt('results.common.supply_unit')).scale(
                     domain=selection,
                     range=[colors[re.sub(r'\s\d', '', s)] for s in selection]
                     )
@@ -679,21 +684,13 @@ with tab_unit:
 if chp_used:
     with tab_el:
         st.markdown(
-            (
-                '<small>*Es wird die Stromproduktion des Systems dargestellt. '
-                'Neben zentralen Kennzahlen werden die Netzeinspeisung sowie '
-                'die interne Nutzung des erzeugten Stroms ausgewiesen. Zur '
-                'besseren Einordnung ist zusätzlich die zugrunde liegende '
-                'Strompreiszeitreihe visualisiert. Für weiterführende '
-                'Analysen können alle dargestellten Daten flexibel aggregiert '
-                'werden.*</small>'
-            ),
+            txt('results.electricity_production.description'),
             unsafe_allow_html=True
         )
         col_sel, col_el = st.columns([1, 2], gap='large')
 
         dates = col_sel.date_input(
-            'Zeitraum auswählen:',
+            txt('common.select_period'),
             value=(
                 ss.energy_system.data_all.index[0],
                 ss.energy_system.data_all.index[-1]
@@ -725,36 +722,36 @@ if chp_used:
         elprod.reset_index(inplace=True)
 
         agg_results = col_sel.toggle(
-                'Ergebnisse aggregieren', help=ss.tt['toggle_agg_results'],
+                txt('results.aggregation.toggle'), help=ss.tt['toggle_agg_results'],
                 key='toggle_agg_results_el'
             )
         if agg_results:
             agg_periods = {
-                'Stündlich': 'h',
-                'Täglich': 'd',
-                'Wöchentlich': 'W',
-                'Monatlich': 'ME',
-                'Quartalsweise': 'QE'
+                txt('results.aggregation.period.hourly'): 'h',
+                txt('results.aggregation.period.daily'): 'd',
+                txt('results.aggregation.period.weekly'): 'W',
+                txt('results.aggregation.period.monthly'): 'ME',
+                txt('results.aggregation.period.quarterly'): 'QE'
             }
             agg_period_name = col_sel.selectbox(
-                'Aggregationszeitraum wählen:',
+                txt('results.aggregation.period.label'),
                 options=list(agg_periods.keys()),
                 key='select_agg_time_span_el'
             )
             agg_period = agg_periods[agg_period_name]
 
             agg_method = col_sel.selectbox(
-                'Aggregationsmethode wählen:', options=['Mittelwert', 'Summe'],
+                txt('results.aggregation.method.label'), options=[txt('common.statistics.mean'), txt('common.sum')],
                 help=ss.tt['agg_method'], key='agg_method_el'
             )
         else:
-            agg_period_name = 'Stündlich'
+            agg_period_name = txt('results.aggregation.period.hourly')
 
         if agg_results:
             elprod.set_index('Date', inplace=True)
-            if agg_method == 'Mittelwert':
+            if agg_method == txt('common.statistics.mean'):
                 elprod = elprod.resample(agg_period).mean().reset_index()
-            elif agg_method == 'Summe':
+            elif agg_method == txt('common.sum'):
                 elprod = elprod.resample(agg_period).sum().reset_index()
 
         elprod_sorted = pd.DataFrame(
@@ -763,67 +760,67 @@ if chp_used:
         elprod_sorted.index.names = ['Stunde']
         elprod_sorted.reset_index(inplace=True)
 
-        col_sel.subheader('Kennzahlen')
+        col_sel.subheader(txt('results.common.metrics'))
         col_sel.metric(
-            'Stromerlöse in €',
+            txt('results.metric.electricity_revenues_eur'),
             format_sep(ss.energy_system.key_params['revenues_spotmarket'], 2),
             border=True, help=ss.tt['rev_el']
         )
         col_sel.metric(
-            'Stromkosten in €',
+            txt('results.metric.electricity_costs_eur'),
             format_sep(ss.energy_system.key_params['cost_el'], 2),
             border=True, help=ss.tt['cost_el']
         )
         col_sel.metric(
-            'Stromkosten in € (Netz)',
+            txt('results.metric.electricity_costs_grid_eur'),
             format_sep(ss.energy_system.key_params['cost_el_grid'], 2),
             border=True, help=ss.tt['cost_el_int']
         )
         col_sel.metric(
-            'Stromkosten in € (intern)',
+            txt('results.metric.electricity_costs_internal_eur'),
             format_sep(ss.energy_system.key_params['cost_el_internal'], 2),
             border=True, help=ss.tt['cost_el_ext']
         )
         col_sel.metric(
-            'Stromproduktion in MWh (Spotmarkt)',
+            txt('results.metric.electricity_production_spotmarket_mwh'),
             format_sep(elprod['P_spotmarket'].sum(), 1),
             border=True, help=ss.tt['el_ext']
         )
         col_sel.metric(
-            'Stromproduktion in MWh (intern)',
+            txt('results.metric.electricity_production_internal_mwh'),
             format_sep(elprod['P_internal'].sum(), 1),
             border=True, help=ss.tt['el_int']
         )
 
-        col_el.subheader('Stromproduktion - Netzeinspeisung')
+        col_el.subheader(txt('results.electricity_production.feed_in.subheader'))
         col_el.altair_chart(
             alt.Chart(elprod).mark_line(color='#00395B').encode(
                 y=alt.Y(
                     'P_spotmarket',
-                    title='Ins Netz eingespeiste Elektrizität in MWh'
+                    title=txt('results.electricity_production.feed_in.chart_title')
                     ),
-                x=alt.X('Date', title='Datum')
+                x=alt.X('Date', title=txt('common.date'))
             ),
             width='stretch'
             )
 
-        col_el.subheader('Stromproduktion - interne Nutzung')
+        col_el.subheader(txt('results.electricity_production.internal_use.subheader'))
         col_el.altair_chart(
             alt.Chart(elprod).mark_line(color='#74ADC0').encode(
                 y=alt.Y(
                     'P_internal',
-                    title='Intern genutze Elektrizität in MWh'
+                    title=txt('results.electricity_production.internal_use.chart_title')
                     ),
-                x=alt.X('Date', title='Datum')
+                x=alt.X('Date', title=txt('common.date'))
             ),
             width='stretch'
             )
 
-        col_el.subheader('Spotmarktpreise')
+        col_el.subheader(txt('results.electricity_production.spot_prices.subheader'))
         col_el.altair_chart(
             alt.Chart(elprod).mark_line(color='#00395B').encode(
-                y=alt.Y('el_spot_price', title='Spotmarkt Strompreis in €/MWh'),
-                x=alt.X('Date', title='Datum')
+                y=alt.Y('el_spot_price', title=txt('results.electricity_production.spot_prices.chart_title')),
+                x=alt.X('Date', title=txt('common.date'))
             ),
             width='stretch'
             )
@@ -832,22 +829,15 @@ if chp_used:
 if tes_used:
     with tab_tes:
         st.markdown(
-            (
-                '<small>*Es werden die Ergebnisse der thermischen Speicher '
-                'dargestellt. Neben zentralen Kennzahlen werden der '
-                'Speicherfüllstand sowie die Speicherbeladung (negativ) und '
-                'Entladung (positiv) im zeitlichen Verlauf visualisiert. Zur '
-                'tieferen Analyse können alle Daten flexibel aggregiert '
-                'werden.*</small>'
-            ),
+            txt('results.storage.description'),
             unsafe_allow_html=True
         )
-        st.subheader('Füllstand des thermischen Energiespeichers')
+        st.subheader(txt('results.storage.content.subheader'))
 
         col_sel, col_tes = st.columns([1, 2], gap='large')
 
         dates = col_sel.date_input(
-            'Zeitraum auswählen:',
+            txt('common.select_period'),
             value=(
                 ss.energy_system.data_all.index[0],
                 ss.energy_system.data_all.index[-1]
@@ -887,33 +877,33 @@ if tes_used:
                 tesdata[f'Q_in_{unit}'] *= -1
                 tesdata.rename(
                     columns={
-                        f'Q_in_{unit}': f'Wärmespeicher {unr} Ein',
-                        f'Q_out_{unit}': f'Wärmespeicher {unr} Aus'},
+                        f'Q_in_{unit}': txt('results.storage.unit_flow_in', unit=unr),
+                        f'Q_out_{unit}': txt('results.storage.unit_flow_out', unit=unr)},
                     inplace=True
                     )
                 tesdata.index.names = ['Date']
                 tesdata.reset_index(inplace=True)
 
-                col_tes.subheader(f'Wärmespeicher {unr}')
+                col_tes.subheader(txt('results.storage.unit_label', unit=unr))
 
                 col_tes.altair_chart(
                     alt.Chart(tesdata).mark_line(color='#EC6707').encode(
                         y=alt.Y(
                             f'storage_content_{unit}',
-                            title='Speicherstand in MWh'
+                            title=txt('results.storage.chart.content_mwh')
                             ),
-                        x=alt.X('Date', title='Datum'),
+                        x=alt.X('Date', title=txt('common.date')),
                         ),
                     width='stretch'
                     )
 
                 domain = [
-                    f'Wärmespeicher {unr} Aus', f'Wärmespeicher {unr} Ein'
+                    txt('results.storage.unit_flow_out', unit=unr), txt('results.storage.unit_flow_in', unit=unr)
                     ]
                 col_tes.altair_chart(
                     alt.Chart(tesdata[['Date', *domain]].melt('Date')).mark_bar(size=0.5).encode(
-                        y=alt.Y('value', title='Speicherbe- & -entladung in MWh'),
-                        x=alt.X('Date', title='Datum'),
+                        y=alt.Y('value', title=txt('results.storage.chart.charge_discharge_mwh')),
+                        x=alt.X('Date', title=txt('common.date')),
                         color=alt.Color('variable').scale(
                             domain=domain,
                             range=[colors[re.sub(r'\s\d', '', d)] for d in domain]
@@ -922,29 +912,29 @@ if tes_used:
                     width='stretch'
                     )
 
-                col_sel.markdown(f'##### Speicher {unr}')
-                if f'Wärmespeicher {unr} (MWh)' in ss.overview_caps.columns:
+                col_sel.markdown(txt('results.storage.unit_heading', unit=unr))
+                if txt('results.storage.unit_capacity_column', unit=unr) in ss.overview_caps.columns:
                     col_sel.metric(
-                        'Kapazität in MWh',
-                        format_sep(ss.overview_caps[f'Wärmespeicher {unr} (MWh)'].iloc[0], 1),
+                        txt('results.storage.metric.capacity_mwh'),
+                        format_sep(ss.overview_caps[txt('results.storage.unit_capacity_column', unit=unr)].iloc[0], 1),
                         border=True
                     )
                 col_sel.metric(
-                    'Summe der Speicherntladung in MWh',
-                    format_sep(tesdata[f'Wärmespeicher {unr} Aus'].sum(), 1),
+                    txt('results.storage.metric.total_discharge_mwh'),
+                    format_sep(tesdata[txt('results.storage.unit_flow_out', unit=unr)].sum(), 1),
                     border=True
                 )
                 col_sel.metric(
-                    'Summe der Speicherbeladung in MWh',
-                    format_sep(abs(tesdata[f'Wärmespeicher {unr} Ein'].sum()), 1),
+                    txt('results.storage.metric.total_charge_mwh'),
+                    format_sep(abs(tesdata[txt('results.storage.unit_flow_in', unit=unr)].sum()), 1),
                     border=True
                 )
                 losses = (
-                    abs(tesdata[f'Wärmespeicher {unr} Ein'].sum())
-                    - tesdata[f'Wärmespeicher {unr} Aus'].sum()
+                    abs(tesdata[txt('results.storage.unit_flow_in', unit=unr)].sum())
+                    - tesdata[txt('results.storage.unit_flow_out', unit=unr)].sum()
                     )
                 col_sel.metric(
-                    'Speicherverluste in MWh',
+                    txt('results.storage.metric.losses_mwh'),
                     format_sep(losses, 1),
                     border=True
                 )
@@ -954,18 +944,13 @@ if tes_used:
 # %% MARK: Solver Log
 with tab_pro:
     st.markdown(
-        (
-            '<small>*Die erweiterten Ergebnisse enthalten Informationen für '
-            'den Solverlog, der vom jeweiligen Solver automatisch generiert '
-            'wird, um optimierungsspezifische Informationen für die '
-            'Simulation zurückzugeben.*</small>'
-        ),
+        txt('results.advanced.description'),
         unsafe_allow_html=True
     )
     if ss.param_opt['Solver'] == 'SCIP':
-        st.text('Der SCIP Solver ermöglicht aktuell keine Solverlogs.')
+        st.text(txt('results.advanced.scip_no_solverlogs'))
     else:
-        with tab_pro.expander('Solver Log'):
+        with tab_pro.expander(txt('results.advanced.solver_log.expander')):
             logpath = os.path.abspath(
                 os.path.join(
                     os.path.dirname(__file__), '..', 'solverlogs',

@@ -8,7 +8,7 @@ from streamlit import session_state as ss
 
 st.set_page_config(
     layout='wide',
-    page_title=txt('app.page_title', _language='de'),
+    page_title=txt('app.page_title'),
     page_icon=os.path.join(os.path.dirname(__file__), 'img',  'page_icon_ZNES.png')
     )
 
