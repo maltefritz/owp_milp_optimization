@@ -14,6 +14,10 @@ from helpers import footer, format_sep, load_icon_base64s
 from reporting import generate_html_report
 from streamlit import session_state as ss
 
+st.set_page_config(
+    layout='wide',
+    page_icon=os.path.join(os.path.dirname(__file__), '..', 'img',  'page_icon_ZNES.png')
+    )
 
 @st.dialog('Ergebnisse lokal speichern')
 def save_results():
