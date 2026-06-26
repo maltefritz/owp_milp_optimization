@@ -5,11 +5,13 @@ import datetime as dt
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import altair as alt
 import pandas as pd
 from jinja2 import Template
+
+from owp_milp_optimization.helpers import get_language, txt
 
 from owp_milp_optimization.charts import (create_dispatch_timeseries_chart,
                                           create_el_prod_grid_chart,
@@ -23,26 +25,21 @@ from .templates import (get_chart_section_template, get_kpi_card_template,
                         get_report_template)
 
 # %% MARK: Parameters
-shortnames = {
-    'Wärmepumpe': 'hp',
-    'Gas- und Dampfkraftwerk': 'ccet',
-    'Blockheizkraftwerk': 'ice',
-    'Solarthermie': 'sol',
-    'Spitzenlastkessel': 'plb',
-    'Elektrodenheizkessel': 'eb',
-    'Externe Wärmequelle': 'exhs',
-    'Wärmespeicher': 'tes'
+unit_name_keys = {
+    'hp': 'energy_system.unit.heat_pump',
+    'ccet': 'energy_system.unit.combined_cycle',
+    'ice': 'energy_system.unit.chp',
+    'sol': 'energy_system.unit.solar_thermal',
+    'plb': 'report.unit.peak_load_boiler',
+    'eb': 'energy_system.unit.electrode_boiler',
+    'exhs': 'energy_system.unit.external_heat_source',
+    'tes': 'energy_system.unit.thermal_storage'
 }
-longnames = {
-    'hp': 'Wärmepumpe',
-    'ccet': 'Gas- und Dampfkraftwerk',
-    'ice': 'Blockheizkraftwerk',
-    'sol': 'Solarthermie',
-    'plb': 'Spitzenlastkessel',
-    'eb': 'Elektrodenheizkessel',
-    'exhs': 'Externe Wärmequelle',
-    'tes': 'Wärmespeicher'
-}
+
+
+def get_unit_name(unit_cat: str) -> str:
+    """Return translated display name for an energy system unit category."""
+    return txt(unit_name_keys.get(unit_cat, unit_cat))
 
 # Configure Altair to handle large datasets (up to 8760+ for yearly hourly data)
 alt.data_transformers.enable('default', max_rows=None)
@@ -70,11 +67,13 @@ def encode_image_to_base64(image_path: str) -> str:
 
 
 def format_number(value: float, decimals: int = 1) -> str:
-    """Format number with thousand separators."""
+    """Format number with thousand separators according to the UI language."""
     if pd.isna(value):
         return '-'
 
-    formatted = f'{value:,.{decimals}f}'.replace(',', 'X').replace('.', ',').replace('X', '.')
+    formatted = f'{value:,.{decimals}f}'
+    if get_language() == 'de':
+        formatted = formatted.replace(',', 'X').replace('.', ',').replace('X', '.')
     return formatted
 
 
@@ -82,26 +81,27 @@ def create_kpi_cards(key_params: Dict[str, Any]) -> str:
     """Create HTML for KPI cards."""
     kpi_template = Template(get_kpi_card_template())
 
-    kpi_labels = {
-        'LCOH': 'Wärmegestehungskosten (€/MWh)',
-        'LCOH_incl_net': 'LCOH inkl. Netz (€/MWh)',
-        'cost_total': 'Gesamtkosten (€)',
-        'invest_total': 'Investitionskosten (€)',
-        'op_cost_total': 'Gesamtbetriebskosten (€)',
-        'revenues_total': 'Gesamterlöse (€)',
-        'total_heat_demand': 'Gesamtwärmebedarf (MWh)',
-        'Total Emissions OM': 'Gesamtemissionen (t)',
+    kpi_label_keys = {
+        'LCOH': 'report.kpi.lcoh',
+        'LCOH_incl_net': 'report.kpi.lcoh_including_network',
+        'cost_total': 'report.kpi.total_costs',
+        'invest_total': 'results.costs.investment',
+        'op_cost_total': 'results.costs.total_operating',
+        'revenues_total': 'report.kpi.total_revenues',
+        'total_heat_demand': 'report.kpi.total_heat_demand',
+        'Total Emissions OM': 'report.kpi.total_emissions',
     }
 
     cards_html = []
-    for key, label in kpi_labels.items():
+    for key, label_key in kpi_label_keys.items():
         if key in key_params:
+            label = txt(label_key)
             value = key_params[key]
 
-            # Format based on unit
-            if 'emission' in label.lower():
+            # Format based on result type
+            if key == 'Total Emissions OM':
                 value = format_number(value / 1e3, 0)
-            elif '€/MWh' in label:
+            elif key in {'LCOH', 'LCOH_incl_net'}:
                 value = format_number(value, 2)
             else:
                 value = format_number(value, 0)
@@ -118,7 +118,10 @@ def create_capacities_table(overview_caps: pd.DataFrame) -> str:
     df = df.map(lambda x: format_number(x, 1) if isinstance(x, (int, float)) else x)
 
     html = '<table>'
-    html += '<tr><th>Anlage</th><th class="text-right">Kapazität</th></tr>'
+    html += (
+        f'<tr><th>{txt("report.table.unit")}</th>'
+        f'<th class="text-right">{txt("results.overview.capacity.row_label")}</th></tr>'
+    )
 
     for idx, row in df.iterrows():
         html += f'<tr><td>{idx}</td><td class="text-right">{row.iloc[0]}</td></tr>'
@@ -132,25 +135,25 @@ def create_costs_table(cost_df: pd.DataFrame, key_params: Dict[str, Any]) -> str
     unit_cost = cost_df.copy()
 
     # Add network costs
-    unit_cost.loc['invest', 'Wärmenetz'] = key_params.get('invest_net_total', 0)
-    unit_cost.loc['op_cost_fix', 'Wärmenetz'] = key_params.get('cost_net_fix_total', 0)
-    unit_cost.loc['op_cost_var', 'Wärmenetz'] = key_params.get('cost_net_var_total', 0)
-    unit_cost.loc['op_cost', 'Wärmenetz'] = (
+    network_label = txt('report.table.network')
+    unit_cost.loc['invest', network_label] = key_params.get('invest_net_total', 0)
+    unit_cost.loc['op_cost_fix', network_label] = key_params.get('cost_net_fix_total', 0)
+    unit_cost.loc['op_cost_var', network_label] = key_params.get('cost_net_var_total', 0)
+    unit_cost.loc['op_cost', network_label] = (
         key_params.get('cost_net_fix_total', 0) + key_params.get('cost_net_var_total', 0)
     )
+
+    unit_cost.drop('op_cost', axis=0, inplace=True)
 
     # Rename index
     unit_cost.rename(
         index={
-            'invest': 'Investitionskosten (€)',
-            'op_cost_var': 'Variable Betriebskosten (€)',
-            'op_cost_fix': 'Fixe Betriebskosten (€)',
-            'op_cost': 'Gesamtbetriebskosten (€)'
+            'invest': txt('results.costs.investment'),
+            'op_cost_var': txt('results.costs.variable_operating'),
+            'op_cost_fix': txt('results.costs.fixed_operating'),
         },
         inplace=True
     )
-
-    unit_cost.drop('Gesamtbetriebskosten (€)', axis=0, inplace=True)
 
     # Format values
     unit_cost = unit_cost.map(
@@ -164,8 +167,8 @@ def create_costs_table(cost_df: pd.DataFrame, key_params: Dict[str, Any]) -> str
     for unit in unit_cost.columns:
         ucat = unit.rstrip('0123456789')
         unr = unit[len(ucat):]
-        if ucat in longnames.keys():
-            unit = f'{longnames[ucat]} {unr}'
+        if ucat in unit_name_keys.keys():
+            unit = f'{get_unit_name(ucat)} {unr}'
         html += f'<th class="text-right">{unit}</th>'
     html += '</tr>'
 
@@ -183,18 +186,18 @@ def create_emission_cards(key_params: Dict[str, Any]) -> str:
     """Create HTML for emission KPI cards."""
     kpi_template = Template(get_kpi_card_template())
 
-    emission_labels = {
-        'Total Emissions OM': 'Gesamtemissionen (t)',
-        'Emissions OM (Gas)': 'Durch Gasbezug (t)',
-        'Emissions OM (Electricity)': 'Durch Strombezug (t)',
-        'Emissions OM (Spotmarket)': 'Gutschriften (t)',
+    emission_label_keys = {
+        'Total Emissions OM': 'report.emissions.total',
+        'Emissions OM (Gas)': 'report.emissions.gas_supply',
+        'Emissions OM (Electricity)': 'report.emissions.electricity_supply',
+        'Emissions OM (Spotmarket)': 'report.emissions.credits',
     }
 
     cards_html = []
-    for key, label in emission_labels.items():
+    for key, label_key in emission_label_keys.items():
         if key in key_params:
             value = format_number(key_params[key] / 1e3, 0)
-            card_html = kpi_template.render(label=label, value=value)
+            card_html = kpi_template.render(label=txt(label_key), value=value)
             cards_html.append(card_html)
 
     return '\n'.join(cards_html)
@@ -202,17 +205,20 @@ def create_emission_cards(key_params: Dict[str, Any]) -> str:
 
 def create_parameters_table(param_opt: Dict[str, Any]) -> str:
     """Create HTML table for optimization parameters."""
-    param_labels = {
-        'Solver': 'Optimierungsalgorithmus',
-        'capital_interest': 'Kapitalzinssatz (%)',
-        'lifetime': 'Anlagenlebensdauer (Jahre)',
-        'ef_gas': 'Emissionsfaktor Gas (kg CO2/MWh)',
+    param_label_keys = {
+        'Solver': 'report.parameters.solver',
+        'capital_interest': 'report.parameters.capital_interest',
+        'lifetime': 'report.parameters.lifetime',
+        'ef_gas': 'report.parameters.gas_emission_factor',
     }
 
     html = '<table>'
-    html += '<tr><th>Parameter</th><th class="text-right">Wert</th></tr>'
+    html += (
+        f'<tr><th>{txt("common.parameter")}</th>'
+        f'<th class="text-right">{txt("common.value")}</th></tr>'
+    )
 
-    for key, label in param_labels.items():
+    for key, label_key in param_label_keys.items():
         if key in param_opt:
             value = param_opt[key]
             if key == 'capital_interest':
@@ -220,7 +226,7 @@ def create_parameters_table(param_opt: Dict[str, Any]) -> str:
                 value = format_number(value, 0)
             elif key == 'ef_gas':
                 value = format_number(value, 3)
-            html += f'<tr><td>{label}</td><td class="text-right">{value}</td></tr>'
+            html += f'<tr><td>{txt(label_key)}</td><td class="text-right">{value}</td></tr>'
 
     html += '</table>'
     return html
@@ -232,15 +238,17 @@ def create_overview_table(energy_system):
     data_overview.drop(index=['count', 'std', '25%', '75%'], inplace=True)
     data_overview.rename(
         index={
-            'mean': 'Mittelwert', 'min': 'Minimalwert',
-            '50%': 'Median', 'max': 'Maximalwert'
+            'mean': txt('common.statistics.mean'),
+            'min': txt('common.statistics.minimum'),
+            '50%': txt('common.statistics.median'),
+            'max': txt('common.statistics.maximum')
             },
         columns={
-            'heat_demand': 'Wärmelast (MWh)',
-            'el_spot_price': 'Spotmarkt Strompreis (€/MWh)',
-            'ef_om': 'Emissionsfaktor Strommix (kg/MWh)',
-            'gas_price': 'Gaspreis (€/MWh)',
-            'co2_price': 'CO₂-Preis (€/MWh)'
+            'heat_demand': txt('optimization.overview.timeseries.heat_demand'),
+            'el_spot_price': txt('optimization.overview.timeseries.electricity_spot_price'),
+            'ef_om': txt('optimization.overview.timeseries.electricity_emission_factor'),
+            'gas_price': txt('optimization.overview.timeseries.gas_price'),
+            'co2_price': txt('optimization.overview.timeseries.co2_price')
             }, inplace=True
         )
 
@@ -251,7 +259,7 @@ def create_overview_table(energy_system):
     if sol_used:
         data_overview['solar_heat_flow'] *= 1e6
         data_overview.rename(columns={
-            'solar_heat_flow': 'Spez. solare Einstrahlung (Wh/m²)'
+            'solar_heat_flow': txt('optimization.overview.timeseries.solar_heat_flow')
             }, inplace=True
         )
 
@@ -285,15 +293,15 @@ vegaEmbed('#{chart_id}', {spec_json}, {{"actions": false}})
 
     offline_notice = (
         '<div class="chart-offline-notice">'
-        '<p class="chart-offline-title">Diagramme nicht verfügbar</p>'
-        '<p>Für die Darstellung der Diagramme ist eine Internetverbindung erforderlich,'
-        ' da die Vega-Bibliothek von einem externen Server geladen wird.</p>'
+        f'<p class="chart-offline-title">{txt("report.charts.offline.title")}</p>'
+        f'<p>{txt("report.charts.offline.text")}</p>'
         '</div>'
     )
+    offline_notice_json = json.dumps(offline_notice)
 
     return f"""if (typeof vegaEmbed === 'undefined') {{
     document.querySelectorAll('.chart-container').forEach(function(el) {{
-        el.innerHTML = '{offline_notice}';
+        el.innerHTML = {offline_notice_json};
     }});
 }} else {{{embed_calls}}}"""
 
@@ -431,22 +439,27 @@ def generate_html_report(
     chart_rendering_script = create_chart_rendering_script(chart_specs)
 
     # Prepare timestamp
-    timestamp = dt.datetime.now().strftime('%d.%m.%Y %H:%M:%S')
+    date_format = '%d.%m.%Y %H:%M:%S' if get_language() == 'de' else '%Y-%m-%d %H:%M:%S'
+    timestamp = dt.datetime.now().strftime(date_format)
 
     # Get solver status
-    solver_status = 'Optimal' if hasattr(energy_system, 'status') else 'Completed'
+    solver_status = (
+        txt('report.status.optimal')
+        if hasattr(energy_system, 'status')
+        else txt('report.status.completed')
+    )
 
     # Prepare chart sections HTML
-    chart_sections_html = """
+    chart_sections_html = f"""
     <div class="section">
-        <div class="section-title">Anlageneinsatz</div>
+        <div class="section-title">{txt('results.tabs.unit_commitment')}</div>
 
-        <div class="subsection-title">Geordnete Jahresdauerlinien</div>
+        <div class="subsection-title">{txt('report.charts.duration_lines')}</div>
         <div class="chart-container">
             <div id="duration-line-chart"></div>
         </div>
 
-        <div class="subsection-title">Zeitreihe</div>
+        <div class="subsection-title">{txt('report.charts.timeseries')}</div>
         <div class="chart-container">
             <div id="dispatch-timeseries-chart"></div>
         </div>
@@ -454,16 +467,16 @@ def generate_html_report(
     """
 
     if energy_system.chp_used:
-        chart_sections_html += """
+        chart_sections_html += f"""
             <div class="section">
-                <div class="section-title">Stromproduktion</div>
+                <div class="section-title">{txt('results.tabs.electricity_production')}</div>
 
-                <div class="subsection-title">Netzeinspeisung</div>
+                <div class="subsection-title">{txt('report.charts.grid_feed_in')}</div>
                 <div class="chart-container">
                     <div id="el-prod-grid-chart"></div>
                 </div>
 
-                <div class="subsection-title">Interne Nutzung</div>
+                <div class="subsection-title">{txt('report.charts.internal_use')}</div>
                 <div class="chart-container">
                     <div id="el-prod-internal-chart"></div>
                 </div>
@@ -471,9 +484,9 @@ def generate_html_report(
         """
 
     if energy_system.tes_used:
-        chart_sections_html += """
+        chart_sections_html += f"""
             <div class="section">
-                <div class="section-title">Speicherstand</div>
+                <div class="section-title">{txt('results.tabs.storage_content')}</div>
 
         """
 
@@ -484,7 +497,7 @@ def generate_html_report(
                 continue
 
             chart_sections_html += f"""
-                    <div class="subsection-title">Wärmespeicher {unit_nr}</div>
+                    <div class="subsection-title">{txt('results.storage.unit_label', unit=unit_nr)}</div>
                     <div class="chart-container">
                         <div id="{unit}-content-chart"></div>
                     </div>
@@ -495,9 +508,9 @@ def generate_html_report(
     main_template = Template(get_report_template())
 
     report_content = main_template.render(
-        title='Optimierungsbericht Offene Wärmespeicherplanung',
+        title=txt('report.title'),
         timestamp=timestamp,
-        solver=param_opt.get('Solver', 'Unbekannt'),
+        solver=param_opt.get('Solver', txt('report.status.unknown')),
         status=solver_status,
         kpi_cards=kpi_cards,
         capacities_table=capacities_table,

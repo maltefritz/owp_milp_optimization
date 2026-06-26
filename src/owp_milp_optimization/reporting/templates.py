@@ -1,47 +1,49 @@
 """HTML template components for reports."""
 
+from owp_milp_optimization.helpers import txt
+
 def get_report_template():
     """Get the main HTML report template."""
-    return """
+    return f"""
 <div class="container">
     <!-- Header -->
     <div class="header">
-        <div class="header-title">{{ title }}</div>
+        <div class="header-title">{{{{ title }}}}</div>
         <div class="header-meta">
             <div class="meta-item">
-                <span class="meta-label">Generiert:</span>
-                <span>{{ timestamp }}</span>
+                <span class="meta-label">{txt('report.template.generated_label')}</span>
+                <span>{{{{ timestamp }}}}</span>
             </div>
             <div class="meta-item">
-                <span class="meta-label">Solver:</span>
-                <span>{{ solver }}</span>
+                <span class="meta-label">{txt('report.template.solver_label')}</span>
+                <span>{{{{ solver }}}}</span>
             </div>
             <div class="meta-item">
-                <span class="meta-label">Status:</span>
-                <span>{{ status }}</span>
+                <span class="meta-label">{txt('report.template.status_label')}</span>
+                <span>{{{{ status }}}}</span>
             </div>
         </div>
     </div>
 
     <!-- Key Performance Indicators -->
     <div class="section">
-        <div class="section-title">Kennzahlen</div>
+        <div class="section-title">{txt('report.template.kpis')}</div>
         <div class="kpi-grid">
-            {{ kpi_cards }}
+            {{{{ kpi_cards }}}}
         </div>
     </div>
 
     <!-- System Configuration -->
     <div class="section">
-        <div class="section-title">Systemkonfiguration</div>
+        <div class="section-title">{txt('report.template.system_configuration')}</div>
 
-        <div class="subsection-title">Optimierte Anlagenkapazitäten</div>
+        <div class="subsection-title">{txt('report.template.optimized_capacities')}</div>
         <div class="grid-2">
             <div class="image-container">
-                {{ topology_image }}
+                {{{{ topology_image }}}}
             </div>
             <div>
-                {{ capacities_table }}
+                {{{{ capacities_table }}}}
             </div>
         </div>
 
@@ -49,12 +51,12 @@ def get_report_template():
 
     <!-- Economic Analysis -->
     <div class="section">
-        <div class="section-title">Wirtschaftliche Kennzahlen</div>
+        <div class="section-title">{txt('report.template.economic_indicators')}</div>
         
-        <div class="subsection-title">Kostenaufschlüsselung</div>
-        {{ costs_table }}
+        <div class="subsection-title">{txt('report.template.cost_breakdown')}</div>
+        {{{{ costs_table }}}}
 
-        <div class="subsection-title">Wärmeproduktion nach Anlage</div>
+        <div class="subsection-title">{txt('report.template.heat_production_by_unit')}</div>
         <div class="chart-container">
             <div id="heat-production-chart"></div>
         </div>
@@ -62,36 +64,36 @@ def get_report_template():
 
     <!-- Ecological Analysis -->
     <div class="section">
-        <div class="section-title">Ökologische Kennzahlen</div>
+        <div class="section-title">{txt('report.template.ecological_indicators')}</div>
 
         <div class="kpi-grid">
-            {{ emission_cards }}
+            {{{{ emission_cards }}}}
         </div>
     </div>
 
     <!-- Results Charts -->
-    {{ chart_sections }}
+    {{{{ chart_sections }}}}
 
     <!-- Input parameter -->
     <div class="section">
-        <div class="section-title">Input</div>
+        <div class="section-title">{txt('report.template.input')}</div>
 
-        <div class="subsection-title">Zeitreihen</div>
-        {{ overview_table }}
+        <div class="subsection-title">{txt('report.template.timeseries')}</div>
+        {{{{ overview_table }}}}
 
-        <div class="subsection-title">Parameter</div>
-        {{ parameters_table }}
+        <div class="subsection-title">{txt('report.template.parameters')}</div>
+        {{{{ parameters_table }}}}
     </div>
 
     <!-- Footer -->
     <div class="footer">
-        <p>Dieser Bericht wurde automatisch von der OWP MILP Optimierungssoftware generiert.</p>
+        <p>{txt('report.template.footer')}</p>
     </div>
 </div>
 
 <!-- Chart rendering scripts -->
 <script>
-{{ chart_specs }}
+{{{{ chart_specs }}}}
 </script>
 </body>
 </html>
