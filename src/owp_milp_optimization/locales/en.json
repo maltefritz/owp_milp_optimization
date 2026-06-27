@@ -310,6 +310,7 @@
   "results.download.report_file_prefix": "Report_OWP_",
   "common.parameter": "Parameter",
   "report.title": "Optimization Report: Open Heat Storage Planning",
+  "report.title_html_head": "Optimization Report",
   "report.unit.peak_load_boiler": "Peak-load boiler",
   "report.table.unit": "Unit",
   "report.table.network": "Heat network",

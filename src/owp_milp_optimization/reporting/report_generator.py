@@ -524,6 +524,7 @@ def generate_html_report(
     )
 
     # Combine CSS and content
-    html = REPORT_CSS + report_content
+    css = REPORT_CSS.replace('report.title_html_head', txt('report.title_html_head'))
+    html = css + report_content
 
     return html

@@ -315,6 +315,7 @@
   "results.download.report_file_prefix": "Bericht_OWP_",
   "common.parameter": "Parameter",
   "report.title": "Optimierungsbericht Offene Wärmespeicherplanung",
+  "report.title_html_head": "Optimierungsbericht",
   "report.unit.peak_load_boiler": "Spitzenlastkessel",
   "report.table.unit": "Anlage",
   "report.table.network": "Wärmenetz",
