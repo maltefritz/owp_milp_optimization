@@ -1,35 +1,118 @@
 """Chart generation utilities for both Streamlit and reporting."""
 
-import re
-from typing import Dict
+from typing import Dict, Tuple
 
 import altair as alt
 import numpy as np
 import pandas as pd
 
-COLORS = {
-    'Wärmepumpe': '#B54036',
-    'Gas- und Dampfkraftwerk': '#00395B',
-    'Blockheizkraftwerk': '#00395B',
-    'Spitzenlastkessel': '#EC6707',
-    'Solarthermie': '#EC6707',
-    'Wärmespeicher Ein': 'slategrey',
-    'Wärmespeicher Aus': 'dimgrey',
-    'Wärmebedarf': '#31333f',
-    'Elektrodenheizkessel': '#EC6707',
-    'Externe Wärmequelle': '#74ADC0'
+from helpers import txt
+
+COLORS_BY_UNIT_CAT = {
+    'hp': '#B54036',
+    'ccet': '#00395B',
+    'ice': '#00395B',
+    'plb': '#EC6707',
+    'gb': '#EC6707',
+    'sol': '#EC6707',
+    'eb': '#EC6707',
+    'exhs': '#74ADC0',
+    'tes_in': 'slategrey',
+    'tes_out': 'dimgrey',
+    'heat_demand': '#31333f',
 }
 
-LONGNAMES = {
-    'hp': 'Wärmepumpe',
-    'ccet': 'Gas- und Dampfkraftwerk',
-    'ice': 'Blockheizkraftwerk',
-    'sol': 'Solarthermie',
-    'gb': 'Gaskessel',
-    'eb': 'Elektrodenheizkessel',
-    'exhs': 'Externe Wärmequelle',
-    'tes': 'Wärmespeicher'
+UNIT_NAME_KEYS = {
+    'hp': 'energy_system.unit.heat_pump',
+    'ccet': 'energy_system.unit.combined_cycle',
+    'ice': 'energy_system.unit.chp',
+    'sol': 'energy_system.unit.solar_thermal',
+    'gb': 'energy_system.unit.gas_boiler',
+    'plb': 'report.unit.peak_load_boiler',
+    'eb': 'energy_system.unit.electrode_boiler',
+    'exhs': 'energy_system.unit.external_heat_source',
+    'tes': 'energy_system.unit.thermal_storage',
 }
+
+
+# Configure Altair to handle large datasets (up to 8760+ for yearly hourly data)
+alt.data_transformers.enable('default', max_rows=None)
+
+
+def get_unit_name(unit_cat: str) -> str:
+    """Return translated display name for an energy system unit category."""
+    return txt(UNIT_NAME_KEYS.get(unit_cat, unit_cat))
+
+
+def get_unit_label(unit: str) -> str:
+    """Return translated display label for a concrete unit such as hp1."""
+    unit_cat = unit.rstrip('0123456789')
+    unit_nr = unit[len(unit_cat):]
+    return f'{get_unit_name(unit_cat)} {unit_nr}'.strip()
+
+
+def get_storage_flow_label(unit: str, flow: str) -> str:
+    """Return translated display label for thermal storage charge/discharge."""
+    unit_cat = unit.rstrip('0123456789')
+    unit_nr = unit[len(unit_cat):]
+    flow_label_key = (
+        'results.storage.charge_label'
+        if flow == 'in'
+        else 'results.storage.discharge_label'
+    )
+    return f'{get_unit_name(unit_cat)} {unit_nr} {txt(flow_label_key)}'.strip()
+
+
+def create_heat_production_dataframe(
+    energy_system,
+    param_units: Dict,
+) -> Tuple[pd.DataFrame, Dict[str, str], set[str], str]:
+    """Create translated heat production dataframe and matching color metadata."""
+    heatprod = pd.DataFrame()
+    label_colors = {}
+    storage_charge_labels = set()
+    demand_label = txt('results.common.heat_demand')
+
+    for col in energy_system.data_all.columns:
+        if 'Q_' not in col or energy_system.data_all[col].sum() <= 0:
+            continue
+
+        this_unit = None
+        for unit in param_units.keys():
+            if unit in col:
+                this_unit = unit
+                break
+
+        if this_unit is None:
+            collabel = demand_label
+            label_colors[collabel] = COLORS_BY_UNIT_CAT['heat_demand']
+        else:
+            this_unit_cat = this_unit.rstrip('0123456789')
+
+            if this_unit_cat == 'tes':
+                if '_in' in col:
+                    collabel = get_storage_flow_label(this_unit, 'in')
+                    label_colors[collabel] = COLORS_BY_UNIT_CAT['tes_in']
+                    storage_charge_labels.add(collabel)
+                elif '_out' in col:
+                    collabel = get_storage_flow_label(this_unit, 'out')
+                    label_colors[collabel] = COLORS_BY_UNIT_CAT['tes_out']
+                else:
+                    collabel = get_unit_label(this_unit)
+                    label_colors[collabel] = COLORS_BY_UNIT_CAT.get(
+                        this_unit_cat,
+                        '#999999',
+                    )
+            else:
+                collabel = get_unit_label(this_unit)
+                label_colors[collabel] = COLORS_BY_UNIT_CAT.get(
+                    this_unit_cat,
+                    '#999999',
+                )
+
+        heatprod[collabel] = energy_system.data_all[col].copy()
+
+    return heatprod, label_colors, storage_charge_labels, demand_label
 
 
 def create_heat_production_chart(
@@ -56,24 +139,22 @@ def create_heat_production_chart(
 
     for unit in param_units.keys():
         ucat = unit.rstrip('0123456789')
-        unr = unit[len(ucat):]
 
         if ucat == 'tes':
-            tl = {'in': 'Ein', 'out': 'Aus'}
-            for var in ['in', 'out']:
-                unit_col = f'Q_{var}_{unit}'
-                qsum.loc[idx, 'unit'] = f'{LONGNAMES[ucat]} {unr} {tl[var]}'
+            for flow in ['in', 'out']:
+                unit_col = f'Q_{flow}_{unit}'
+                qsum.loc[idx, 'unit'] = get_storage_flow_label(unit, flow)
                 qsum.loc[idx, 'qsum'] = energy_system.data_all[unit_col].sum()
                 idx += 1
         else:
             unit_col = f'Q_out_{unit}' if ucat in ['hp', 'tes'] else f'Q_{unit}'
-            qsum.loc[idx, 'unit'] = f'{LONGNAMES[ucat]} {unr}'
+            qsum.loc[idx, 'unit'] = get_unit_label(unit)
             qsum.loc[idx, 'qsum'] = energy_system.data_all[unit_col].sum()
             idx += 1
 
     return alt.Chart(qsum).mark_bar(color='#B54036').encode(
         y=alt.Y('unit', title=None),
-        x=alt.X('qsum', title='Gesamtwärmebereitstellung in MWh')
+        x=alt.X('qsum', title=txt('results.chart.total_heat_supply_mwh'))
     ).properties(width=800)
 
 
@@ -96,46 +177,37 @@ def create_ordered_duration_line_chart(
     alt.Chart
         Altair line chart
     """
-    heatprod = pd.DataFrame()
-    for col in energy_system.data_all.columns:
-        if 'Q_' in col and energy_system.data_all[col].sum() > 0:
-            this_unit = None
-            for unit in param_units.keys():
-                if unit in col:
-                    this_unit = unit
-                    this_unit_cat = this_unit.rstrip('0123456789')
-                    this_unit_nr = this_unit[len(this_unit_cat):]
+    heatprod, label_colors, _, _ = create_heat_production_dataframe(
+        energy_system,
+        param_units,
+    )
 
-            if this_unit is None:
-                collabel = 'Wärmebedarf'
-            elif this_unit.rstrip('0123456789') == 'tes':
-                if '_in' in col:
-                    collabel = f'{LONGNAMES[this_unit_cat]} {this_unit_nr} Ein'
-                elif '_out' in col:
-                    collabel = f'{LONGNAMES[this_unit_cat]} {this_unit_nr} Aus'
-                else:
-                    collabel = f'{LONGNAMES[this_unit_cat]} {this_unit_nr}'
-            else:
-                collabel = f'{LONGNAMES[this_unit_cat]} {this_unit_nr}'
-
-            heatprod[collabel] = energy_system.data_all[col].copy()
+    duration_col = 'duration_rank'
+    supply_unit_col = 'supply_unit'
+    hourly_label = txt('results.aggregation.period_label.hourly')
 
     heatprod_sorted = pd.DataFrame(
         np.sort(heatprod.values, axis=0)[::-1], columns=heatprod.columns
     )
-    heatprod_sorted.index.names = ['Stunde']
+    heatprod_sorted.index.names = [duration_col]
     heatprod_sorted.reset_index(inplace=True)
 
-    hprod_sorted_melt = heatprod_sorted.melt('Stunde')
-    hprod_sorted_melt.rename(columns={'variable': 'Versorgungsanlage'}, inplace=True)
+    hprod_sorted_melt = heatprod_sorted.melt(duration_col)
+    hprod_sorted_melt.rename(
+        columns={'variable': supply_unit_col},
+        inplace=True,
+    )
 
-    units = list(hprod_sorted_melt['Versorgungsanlage'].unique())
+    units = list(hprod_sorted_melt[supply_unit_col].unique())
     return alt.Chart(hprod_sorted_melt).mark_line().encode(
-        y=alt.Y('value', title='Stündliche Wärmeproduktion in MWh'),
-        x=alt.X('Stunde', title='Anzahl'),
-        color=alt.Color('Versorgungsanlage').scale(
+        y=alt.Y(
+            'value',
+            title=txt('results.chart.heat_production_mwh', period=hourly_label),
+        ),
+        x=alt.X(duration_col, title=txt('results.chart.count_axis')),
+        color=alt.Color(supply_unit_col, title=txt('results.common.supply_unit')).scale(
             domain=units,
-            range=[COLORS.get(re.sub(r'\s\d', '', s), '#999999') for s in units]
+            range=[label_colors.get(unit, '#999999') for unit in units]
         )
     ).properties(width=600)
 
@@ -165,29 +237,9 @@ def create_dispatch_timeseries_chart(
     alt.Chart
         Altair line chart
     """
-    heatprod = pd.DataFrame()
-    for col in energy_system.data_all.columns:
-        if 'Q_' in col and energy_system.data_all[col].sum() > 0:
-            this_unit = None
-            for unit in param_units.keys():
-                if unit in col:
-                    this_unit = unit
-                    this_unit_cat = this_unit.rstrip('0123456789')
-                    this_unit_nr = this_unit[len(this_unit_cat):]
-
-            if this_unit is None:
-                collabel = 'Wärmebedarf'
-            elif this_unit.rstrip('0123456789') == 'tes':
-                if '_in' in col:
-                    collabel = f'{LONGNAMES[this_unit_cat]} {this_unit_nr} Ein'
-                elif '_out' in col:
-                    collabel = f'{LONGNAMES[this_unit_cat]} {this_unit_nr} Aus'
-                else:
-                    collabel = f'{LONGNAMES[this_unit_cat]} {this_unit_nr}'
-            else:
-                collabel = f'{LONGNAMES[this_unit_cat]} {this_unit_nr}'
-
-            heatprod[collabel] = energy_system.data_all[col].copy()
+    heatprod, label_colors, storage_charge_labels, demand_label = (
+        create_heat_production_dataframe(energy_system, param_units)
+    )
 
     if start_date is None:
         start_date = heatprod.index[0]
@@ -196,32 +248,34 @@ def create_dispatch_timeseries_chart(
 
     heatprod = heatprod.loc[start_date:end_date, :]
 
-    tes_used = any([u.rstrip('0123456789') == 'tes' for u in param_units.keys()])
-    if tes_used:
-        for col in heatprod.columns:
-            if 'Wärmespeicher' in col and 'Ein' in col:
-                heatprod[col] *= -1
+    for col in heatprod.columns:
+        if col in storage_charge_labels:
+            heatprod[col] *= -1
 
-    heatprod = heatprod.drop(columns=['Wärmebedarf'])
+    if demand_label in heatprod.columns:
+        heatprod = heatprod.drop(columns=[demand_label])
 
     heatprod = heatprod.resample('ME').sum()
 
     heatprod.index.names = ['Date']
     heatprod.reset_index(inplace=True)
 
-    hprod_melt = heatprod.melt('Date')
-    hprod_melt.rename(columns={'variable': 'Versorgungsanlage'}, inplace=True)
+    supply_unit_col = 'supply_unit'
+    monthly_label = txt('results.aggregation.period_label.monthly')
 
-    units = list(hprod_melt['Versorgungsanlage'].unique())
+    hprod_melt = heatprod.melt('Date')
+    hprod_melt.rename(columns={'variable': supply_unit_col}, inplace=True)
+
+    units = list(hprod_melt[supply_unit_col].unique())
     return alt.Chart(hprod_melt).mark_bar().encode(
         y=alt.Y(
             'value',
-            title='Monatliche Wärmeproduktion in MWh'
+            title=txt('results.chart.heat_production_mwh', period=monthly_label)
         ),
-        x=alt.X('yearmonth(Date):O', title='Datum'),
-        color=alt.Color('Versorgungsanlage').scale(
+        x=alt.X('yearmonth(Date):O', title=txt('common.date')),
+        color=alt.Color(supply_unit_col, title=txt('results.common.supply_unit')).scale(
             domain=units,
-            range=[COLORS.get(re.sub(r'\s\d', '', s), '#999999') for s in units]
+            range=[label_colors.get(unit, '#999999') for unit in units]
         )
     ).properties(width=600)
 
@@ -255,11 +309,11 @@ def create_el_prod_grid_chart(
 
     elprod = pd.DataFrame(
         columns=['P_spotmarket']
-        )
+    )
 
     elprod['P_spotmarket'] = energy_system.data_all.loc[
         start_date:end_date, 'P_spotmarket'
-        ]
+    ]
 
     elprod = elprod.resample('W').sum()
 
@@ -274,10 +328,10 @@ def create_el_prod_grid_chart(
     return alt.Chart(elprod).mark_bar(color='#00395B').encode(
         y=alt.Y(
             'P_spotmarket',
-            title='Wöchentlich ins Netz eingespeiste Elektrizität in MWh',
+            title=txt('charts.axis.weekly_grid_feed_in_mwh'),
             scale=alt.Scale(domain=[0, ymax])
-            ),
-        x=alt.X('yearweek(Date):O', title='Datum')
+        ),
+        x=alt.X('yearweek(Date):O', title=txt('common.date'))
     ).properties(width=600)
 
 
@@ -310,11 +364,11 @@ def create_el_prod_internal_chart(
 
     elprod = pd.DataFrame(
         columns=['P_internal']
-        )
+    )
 
     elprod['P_internal'] = energy_system.data_all.loc[
         start_date:end_date, 'P_internal'
-        ]
+    ]
 
     elprod = elprod.resample('W').sum()
 
@@ -329,10 +383,10 @@ def create_el_prod_internal_chart(
     return alt.Chart(elprod).mark_bar(color='#74ADC0').encode(
         y=alt.Y(
             'P_internal',
-            title='Wöchentlich intern genutze Elektrizität in MWh',
+            title=txt('charts.axis.weekly_internal_electricity_mwh'),
             scale=alt.Scale(domain=[0, ymax])
-            ),
-        x=alt.X('yearweek(Date):O', title='Datum')
+        ),
+        x=alt.X('yearweek(Date):O', title=txt('common.date'))
     ).properties(width=600)
 
 
@@ -377,7 +431,7 @@ def create_tes_content_chart(
     return alt.Chart(tesdata).mark_line(color='#EC6707').encode(
         y=alt.Y(
             f'storage_content_{unit}',
-            title='Speicherstand in MWh'
+            title=txt('results.storage.chart.content_mwh')
         ),
-        x=alt.X('Date', title='Datum')
+        x=alt.X('Date', title=txt('common.date'))
     ).properties(width=600)
