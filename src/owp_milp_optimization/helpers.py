@@ -28,6 +28,24 @@ def load_translations():
 
     return translations
 
+def load_tooltips():
+    translations = load_translations()
+    lang = get_language()
+
+    tooltips = {}
+
+    # Fallback: load default language first
+    for key, value in translations.get(DEFAULT_LANGUAGE, {}).items():
+        if key.startswith('tooltips.'):
+            tooltips[key.removeprefix('tooltips.')] = value
+
+    # Then replace with selected language if available
+    for key, value in translations.get(lang, {}).items():
+        if key.startswith('tooltips.'):
+            tooltips[key.removeprefix('tooltips.')] = value
+
+    return tooltips
+
 def get_language() -> str:
     return st.session_state.get('language', DEFAULT_LANGUAGE)
 

@@ -10,7 +10,7 @@ import altair as alt
 import pandas as pd
 import pyomo.environ as pyo
 import streamlit as st
-from helpers import footer, format_sep, get_language, load_icon_base64s, txt
+from helpers import footer, format_sep, get_language, load_icon_base64s, load_tooltips, txt
 from pyomo.contrib.appsi.solvers import Highs
 from pyomo.opt import check_available_solvers
 from streamlit import session_state as ss
@@ -159,11 +159,7 @@ boundinputpath = os.path.abspath(
 with open(boundinputpath, 'r', encoding='utf-8') as file:
     ss.bound_inputs = json.load(file)
 
-tooltippath = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..', 'input', 'tooltips.json')
-    )
-with open(tooltippath, 'r', encoding='utf-8') as file:
-    ss.tt = json.load(file)
+ss.tt = load_tooltips()
 
 # %% MARK: Sidebar
 with st.sidebar:

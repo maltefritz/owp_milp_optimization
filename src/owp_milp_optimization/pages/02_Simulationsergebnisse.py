@@ -10,7 +10,7 @@ import altair as alt
 import numpy as np
 import pandas as pd
 import streamlit as st
-from helpers import footer, format_sep, get_language, load_icon_base64s, txt
+from helpers import footer, format_sep, get_language, load_icon_base64s, load_tooltips, txt
 from reporting import generate_html_report
 from streamlit import session_state as ss
 
@@ -157,11 +157,7 @@ colors = {
     txt(UNIT_LABEL_KEYS['exhs']): '#74ADC0'
 }
 
-tooltippath = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..', 'input', 'tooltips.json')
-    )
-with open(tooltippath, 'r', encoding='utf-8') as file:
-    ss.tt = json.load(file)
+ss.tt = load_tooltips()
 
 # %% MARK: Sidebar
 with st.sidebar:
