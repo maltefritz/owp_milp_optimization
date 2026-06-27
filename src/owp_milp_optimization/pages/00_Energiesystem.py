@@ -78,6 +78,20 @@ def reset_ss_vars(*args):
         if arg in ss:
             ss.pop(arg)
 
+def txt_fallback(key, fallback, **kwargs):
+    value = txt(key, **kwargs)
+    return fallback if value == key else value
+
+def unit_input_name(uinput, uinfo):
+    return txt_fallback(
+        f'unit_inputs.{uinput}.name',
+        uinfo.get('name', uinput)
+    )
+
+def label_with_unit(label, unit):
+    if unit == '':
+        return label
+    return txt('common.label_with_unit', label=label, unit=unit)
 
 # %% MARK: Parameters
 ELP_COLUMN_LABEL_KEYS = {
@@ -743,78 +757,77 @@ with tab_units:
                 key=f'toggle_{unit}_invest_mode',
                 help=ss.tt.get(f'toggle_invest', None)
             )
-            for uinput, uinfo in ss.unit_inputs['Technische Parameter'].items():
+            for uinput, uinfo in ss.unit_inputs['technical_parameters'].items():
                 if uinput in unit_params:
                     if unit_params['invest_mode'] and uinput in disp_opt_params:
                         continue
                     if not unit_params['invest_mode'] and uinput in comb_opt_params:
                         continue
 
+                    name = unit_input_name(uinput, uinfo)
+                    tooltip = ss.tt.get(f'input_{uinput}', None)
+
                     if uinfo['type'] == 'bool':
                         unit_params[uinput] = col_tech.toggle(
-                            uinfo['name'],
+                            name,
                             value=unit_params[uinput],
                             key=f'toggle_{unit}_{uinput}',
-                            help=ss.tt.get(f'toggle_{uinput}', None)
+                            help=ss.tt.get(f'toggle_{uinput}', tooltip)
                         )
                     else:
                         if uinfo['unit'] == '%':
                             unit_params[uinput] *= 100
-                        if uinfo['unit'] == '':
-                            label = uinfo['name']
-                        else:
-                            label = f"{uinfo['name']} in {uinfo['unit']}"
-                        unit_params[uinput] = (
-                            col_tech.number_input(
-                                label,
-                                value=float(
-                                    unit_params[uinput]
-                                    ),
-                                min_value=uinfo['min'],
-                                max_value=uinfo['max'],
-                                step=(uinfo['max']-uinfo['min'])/100,
-                                format=uinfo['format'],
-                                key=f'input_{unit}_{uinput}',
-                                help=ss.tt.get(f'input_{uinput}', None)
-                                )
-                            )
+
+                        label = label_with_unit(name, uinfo['unit'])
+
+                        unit_params[uinput] = col_tech.number_input(
+                            label,
+                            value=float(unit_params[uinput]),
+                            min_value=uinfo['min'],
+                            max_value=uinfo['max'],
+                            step=(uinfo['max'] - uinfo['min']) / 100,
+                            format=uinfo['format'],
+                            key=f'input_{unit}_{uinput}',
+                            help=tooltip
+                        )
+
                         if uinfo['unit'] == '%':
                             unit_params[uinput] /= 100
 
             col_econ.subheader(txt('energy_system.units.economic_parameters'))
-            for uinput, uinfo in ss.unit_inputs['Ökonomische Parameter'].items():
+            for uinput, uinfo in ss.unit_inputs['economic_parameters'].items():
                 if uinput in unit_params:
+                    name = unit_input_name(uinput, uinfo)
+
+                    display_unit = uinfo['unit']
+
                     if unit_cat == 'sol':
                         if uinput == 'inv_spez':
-                            label = f"{uinfo['name']} in €/m²"
+                            display_unit = '€/m²'
                         elif uinput == 'op_cost_fix':
-                            label = f"{uinfo['name']} in €/MWh"
-                        else:
-                            label = f"{uinfo['name']} in {uinfo['unit']}"
-                    elif (unit_cat == 'tes') and (uinfo['unit'] != '%'):
-                        label = f"{uinfo['name']} in €/MWh"
-                    else:
-                        label = f"{uinfo['name']} in {uinfo['unit']}"
+                            display_unit = '€/MWh'
+                    elif unit_cat == 'tes' and uinfo['unit'] != '%':
+                        display_unit = '€/MWh'
+
+                    label = label_with_unit(name, display_unit)
 
                     tooltip = ss.tt.get(f'input_{uinput}', None)
                     if unit_cat == 'sol' and uinput == 'op_cost_var':
-                        tooltip = ss.tt.get(f'input_{uinput}_{unit_cat}', None)
+                        tooltip = ss.tt.get(f'input_{uinput}_{unit_cat}', tooltip)
 
                     if uinfo['unit'] == '%':
                         unit_params[uinput] *= 100
-                    unit_params[uinput] = (
-                        col_econ.number_input(
-                            label,
-                            value=float(
-                                unit_params[uinput]
-                                ),
-                            min_value=uinfo['min'],
-                            max_value=uinfo['max'],
-                            step=(uinfo['max']-uinfo['min'])/100,
-                            key=f'input_{unit}_{uinput}',
-                            help=tooltip
-                            )
-                        )
+
+                    unit_params[uinput] = col_econ.number_input(
+                        label,
+                        value=float(unit_params[uinput]),
+                        min_value=uinfo['min'],
+                        max_value=uinfo['max'],
+                        step=(uinfo['max'] - uinfo['min']) / 100,
+                        key=f'input_{unit}_{uinput}',
+                        help=tooltip
+                    )
+
                     if uinfo['unit'] == '%':
                         unit_params[uinput] /= 100
 

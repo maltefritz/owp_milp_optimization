@@ -1,5 +1,5 @@
 {
-    "Technische Parameter": {
+    "technical_parameters": {
         "cap_max": {
             "name": "Maximal installierbare Leistung",
             "min": 0.0,
@@ -110,7 +110,6 @@
             "max": 10.0,
             "type": "float",
             "unit": "",
-            "tooltip": "Leistungszahl",
             "format": "%0.2f"
         },
         "Q_rel_loss": {
@@ -119,7 +118,6 @@
             "max": 100.0,
             "type": "float",
             "unit": "%",
-            "tooltip": "Wärmeverlust pro Zeitschritt in Relation zum aktuellen Speicherfüllstand.",
             "format": "%0.4f"
         },
         "Q_in_to_cap": {
@@ -144,14 +142,12 @@
             "max": 100.0,
             "type": "float",
             "unit": "%",
-            "tooltip": "Startspeicherfüllstand. Relativer Speicherfüllstand im ersten Zeitschritt.",
             "format": "%0.2f"
         },
         "balanced": {
             "name": "Ausgeglichener Speicher über Betrachtungsperiode",
             "type": "bool",
             "unit": "",
-            "tooltip": "Wenn dies aktiviert wird, muss die Einsatzoptimierung dafür sorgen, dass der Speicher im letzten Zeitschritt den gleichen Füllstand aufweist, wie im ersten.",
             "format": ""
         },
         "fix": {
@@ -161,7 +157,7 @@
             "format": ""
         }
     },
-    "Ökonomische Parameter": {
+    "economic_parameters": {
         "inv_spez": {
             "name": "Spezifische Investitionskosten",
             "min": 0.0,
