@@ -356,5 +356,16 @@
   "report.template.input": "Input",
   "report.template.timeseries": "Time series",
   "report.template.parameters": "Parameters",
-  "report.template.footer": "This report was generated automatically by the OWP MILP optimization software."
+  "report.template.footer": "This report was generated automatically by the OWP MILP optimization software.",
+  "energy_system.supply.electricity.price_components.component": "Component",
+  "energy_system.supply.electricity.price_components.grid_purchase": "Grid purchase",
+  "energy_system.supply.electricity.price_components.self_consumption": "Self-consumption",
+  "energy_system.supply.electricity.price_components.eeg_levy": "EEG levy",
+  "energy_system.supply.electricity.price_components.network_charges": "Grid charges",
+  "energy_system.supply.electricity.price_components.kwkg_levy": "CHP levy",
+  "energy_system.supply.electricity.price_components.offshore_liability_levy": "Offshore liability levy",
+  "energy_system.supply.electricity.price_components.ablav_levy": "Interruptible loads levy",
+  "energy_system.supply.electricity.price_components.stromnev_levy": "StromNEV levy",
+  "energy_system.supply.electricity.price_components.concession_fee": "Concession fee",
+  "energy_system.supply.electricity.price_components.electricity_tax": "Electricity tax"
 }

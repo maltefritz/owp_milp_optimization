@@ -80,6 +80,22 @@ def reset_ss_vars(*args):
 
 
 # %% MARK: Parameters
+ELP_COLUMN_LABEL_KEYS = {
+    'Netzbezug': 'energy_system.supply.electricity.price_components.grid_purchase',
+    'Eigennutzung': 'energy_system.supply.electricity.price_components.self_consumption',
+}
+
+ELP_ROW_LABEL_KEYS = {
+    'EEG-Umlage': 'energy_system.supply.electricity.price_components.eeg_levy',
+    'Netzentgelte': 'energy_system.supply.electricity.price_components.network_charges',
+    'KWKG-Umlage': 'energy_system.supply.electricity.price_components.kwkg_levy',
+    'Offshore Haftungsumlage': 'energy_system.supply.electricity.price_components.offshore_liability_levy',
+    'AbLaV-Umlage': 'energy_system.supply.electricity.price_components.ablav_levy',
+    'StromNEV-Umlage': 'energy_system.supply.electricity.price_components.stromnev_levy',
+    'Konzessionsabgabe': 'energy_system.supply.electricity.price_components.concession_fee',
+    'Stromsteuer': 'energy_system.supply.electricity.price_components.electricity_tax',
+}
+
 UNIT_LABEL_KEYS = {
     'hp': 'energy_system.unit.heat_pump',
     'ccet': 'energy_system.unit.combined_cycle',
@@ -1207,6 +1223,7 @@ with tab_supply:
                     default_el_price_comp_year = ss.heat_load_year
                 else:
                     default_el_price_comp_year = 2024
+
                 init_ss_widget(
                     widget_key='select_el_prices_comp_year',
                     ss_variable='el_price_comp_year',
@@ -1219,34 +1236,68 @@ with tab_supply:
                     key='select_el_prices_comp_year'
                 )
 
-                st.session_state['edited_elp'] = {
-                    k: v for k, v in ss.bound_inputs[
-                            str(ss.el_price_comp_year)
-                        ].items()
-                }
+                elp_raw = ss.bound_inputs[str(ss.el_price_comp_year)]
+                elp_df = pd.DataFrame(elp_raw)
 
-                st.session_state['edited_elp'] = col_elp.data_editor(
-                    st.session_state['edited_elp'],
-                    width='stretch',
-                    disabled=['index', 0],
-                    key='el_elements'
+                component_col = txt(
+                    'energy_system.supply.electricity.price_components.component'
                 )
 
+                canonical_to_display_cols = {
+                    key: txt(label_key)
+                    for key, label_key in ELP_COLUMN_LABEL_KEYS.items()
+                }
+
+                display_to_canonical_cols = {
+                    display: canonical
+                    for canonical, display in canonical_to_display_cols.items()
+                }
+
+                elp_display = elp_df.rename(columns=canonical_to_display_cols).copy()
+                elp_display.insert(
+                    0,
+                    component_col,
+                    [
+                        txt(ELP_ROW_LABEL_KEYS.get(idx, idx))
+                        for idx in elp_display.index
+                    ]
+                )
+                elp_display.reset_index(drop=True, inplace=True)
+
+                edited_elp_display = col_elp.data_editor(
+                    elp_display,
+                    width='stretch',
+                    hide_index=True,
+                    disabled=[component_col],
+                    key=f"el_elements_{ss.get('language', 'de')}"
+                )
+
+                edited_elp_canonical = (
+                    edited_elp_display
+                    .drop(columns=[component_col])
+                    .rename(columns=display_to_canonical_cols)
+                )
+                edited_elp_canonical.index = elp_df.index
+
+                st.session_state['edited_elp'] = edited_elp_canonical
+
                 elp_sum = col_elp.dataframe(
-                    pd.DataFrame(
-                        st.session_state['edited_elp']
-                    ).sum().to_frame(name=txt('common.sum')).T,
+                    edited_elp_canonical
+                    .rename(columns=canonical_to_display_cols)
+                    .sum()
+                    .to_frame(name=txt('common.sum'))
+                    .T,
                     width='stretch',
                     key='elp_sum'
                 )
 
-                edited_elp = st.session_state['edited_elp']
-
                 ss.param_opt['elec_consumer_charges_grid'] = round(
-                    sum(val * 10 for val in edited_elp['Netzbezug'].values()), 2
+                    edited_elp_canonical['Netzbezug'].sum() * 10,
+                    2
                 )
                 ss.param_opt['elec_consumer_charges_self'] = round(
-                    sum(val * 10 for val in edited_elp['Eigennutzung'].values()), 2
+                    edited_elp_canonical['Eigennutzung'].sum() * 10,
+                    2
                 )
 
 

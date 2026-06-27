@@ -356,5 +356,16 @@
   "report.template.input": "Input",
   "report.template.timeseries": "Zeitreihen",
   "report.template.parameters": "Parameter",
-  "report.template.footer": "Dieser Bericht wurde automatisch von der OWP MILP Optimierungssoftware generiert."
+  "report.template.footer": "Dieser Bericht wurde automatisch von der OWP MILP Optimierungssoftware generiert.",
+  "energy_system.supply.electricity.price_components.component": "Bestandteil",
+  "energy_system.supply.electricity.price_components.grid_purchase": "Netzbezug",
+  "energy_system.supply.electricity.price_components.self_consumption": "Eigennutzung",
+  "energy_system.supply.electricity.price_components.eeg_levy": "EEG-Umlage",
+  "energy_system.supply.electricity.price_components.network_charges": "Netzentgelte",
+  "energy_system.supply.electricity.price_components.kwkg_levy": "KWKG-Umlage",
+  "energy_system.supply.electricity.price_components.offshore_liability_levy": "Offshore-Haftungsumlage",
+  "energy_system.supply.electricity.price_components.ablav_levy": "AbLaV-Umlage",
+  "energy_system.supply.electricity.price_components.stromnev_levy": "StromNEV-Umlage",
+  "energy_system.supply.electricity.price_components.concession_fee": "Konzessionsabgabe",
+  "energy_system.supply.electricity.price_components.electricity_tax": "Stromsteuer"
 }
