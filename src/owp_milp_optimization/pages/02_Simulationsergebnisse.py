@@ -10,7 +10,7 @@ import altair as alt
 import numpy as np
 import pandas as pd
 import streamlit as st
-from helpers import footer, format_sep, load_icon_base64s, txt
+from helpers import footer, format_sep, get_language, load_icon_base64s, txt
 from reporting import generate_html_report
 from streamlit import session_state as ss
 
@@ -89,7 +89,7 @@ def download_report():
         try:
             # Get image path
             img_path = os.path.abspath(
-                os.path.join(os.path.dirname(__file__), '..', 'img')
+                os.path.join(os.path.dirname(__file__), '..', 'img', get_language())
             )
             
             # Generate HTML report
@@ -287,7 +287,7 @@ with tab_ov:
 
         topopath = os.path.abspath(
             os.path.join(
-                os.path.dirname(__file__), '..', 'img', 'es_topology_'
+                os.path.dirname(__file__), '..', 'img', get_language(), 'es_topology_'
                 )
             )
         col_cap1.image(f'{topopath}header.png', width='stretch')

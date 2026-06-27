@@ -5,7 +5,7 @@ import shutil
 
 import pandas as pd
 import streamlit as st
-from helpers import footer, load_icon_base64s, txt
+from helpers import footer, get_language, load_icon_base64s, txt
 from model import EnergySystem
 from streamlit import session_state as ss
 
@@ -148,7 +148,7 @@ col_es, col_over = st.columns([1, 4], gap='large')
 col_es.subheader(txt('optimization.overview.energy_system.subheader'))
 
 topopath = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..', 'img', 'es_topology_')
+    os.path.join(os.path.dirname(__file__), '..', 'img', get_language(), 'es_topology_')
     )
 
 col_es.image(f'{topopath}header.png', width='stretch')

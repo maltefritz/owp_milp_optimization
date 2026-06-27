@@ -10,7 +10,7 @@ import altair as alt
 import pandas as pd
 import pyomo.environ as pyo
 import streamlit as st
-from helpers import footer, format_sep, load_icon_base64s, txt
+from helpers import footer, format_sep, get_language, load_icon_base64s, txt
 from pyomo.contrib.appsi.solvers import Highs
 from pyomo.opt import check_available_solvers
 from streamlit import session_state as ss
@@ -618,7 +618,7 @@ with tab_system:
     col_vis_unit, col_nr_unit = col_system.columns([0.8, 0.2])
 
     topopath = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'img', 'es_topology_')
+        os.path.join(os.path.dirname(__file__), '..', 'img', get_language(), 'es_topology_')
         )
     col_vis_unit.image(f'{topopath}header.png', width='stretch')
     if 'nr_units' not in ss:
