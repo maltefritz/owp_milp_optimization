@@ -81,6 +81,9 @@ def get_report_template():
 
         <div class="subsection-title">Parameter</div>
         {{ parameters_table }}
+
+        <div class="subsection-title">Anlagenparameter</div>
+        {{ unit_parameters }}
     </div>
 
     <!-- Footer -->
