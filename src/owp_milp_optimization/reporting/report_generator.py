@@ -4,6 +4,7 @@ import base64
 import datetime as dt
 import json
 import os
+import re
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -28,7 +29,7 @@ shortnames = {
     'Gas- und Dampfkraftwerk': 'ccet',
     'Blockheizkraftwerk': 'ice',
     'Solarthermie': 'sol',
-    'Spitzenlastkessel': 'plb',
+    'Gaskessel': 'gb',
     'Elektrodenheizkessel': 'eb',
     'Externe Wärmequelle': 'exhs',
     'Wärmespeicher': 'tes'
@@ -38,7 +39,7 @@ longnames = {
     'ccet': 'Gas- und Dampfkraftwerk',
     'ice': 'Blockheizkraftwerk',
     'sol': 'Solarthermie',
-    'plb': 'Spitzenlastkessel',
+    'gb': 'Gaskessel',
     'eb': 'Elektrodenheizkessel',
     'exhs': 'Externe Wärmequelle',
     'tes': 'Wärmespeicher'
@@ -76,6 +77,113 @@ def format_number(value: float, decimals: int = 1) -> str:
 
     formatted = f'{value:,.{decimals}f}'.replace(',', 'X').replace('.', ',').replace('X', '.')
     return formatted
+
+
+# Capacity fields shown only when the capacity is fixed vs. optimized,
+# mirroring the config page (00_Energiesystem.py).
+DISP_OPT_PARAMS = ['cap_N', 'Q_N', 'A_N']
+COMB_OPT_PARAMS = ['cap_max', 'cap_min', 'Q_max', 'Q_min', 'A_max', 'A_min']
+
+
+def _param_decimals(fmt: str) -> int:
+    """Parse decimal count from a format string like '%0.3f' (default 2)."""
+    match = re.search(r'\.(\d+)f', fmt or '')
+    return int(match.group(1)) if match else 2
+
+
+def _format_unit_param(value: Any, uinfo: Dict[str, Any]) -> str:
+    """Format a single unit parameter value, mirroring the config page."""
+    if uinfo.get('type') == 'bool':
+        return 'Ja' if value else 'Nein'
+
+    display = value * 100 if uinfo.get('unit') == '%' else value
+    return format_number(display, _param_decimals(uinfo.get('format', '')))
+
+
+def _unit_param_label(uinput: str, uinfo: Dict[str, Any], unit_cat: str) -> str:
+    """Build a parameter label with unit, mirroring the config page logic."""
+    name = uinfo['name']
+    unit = uinfo.get('unit', '')
+
+    # Economic parameters carry unit-category specific units
+    if unit_cat == 'sol':
+        if uinput == 'inv_spez':
+            return f'{name} in €/m²'
+        if uinput == 'op_cost_fix':
+            return f'{name} in €/MWh'
+    elif unit_cat == 'tes' and uinput in ('inv_spez', 'op_cost_fix') and unit != '%':
+        return f'{name} in €/MWh'
+
+    if unit == '':
+        return name
+    return f'{name} in {unit}'
+
+
+def _param_rows_html(
+    unit_params: Dict[str, Any],
+    group_inputs: Dict[str, Any],
+    unit_cat: str,
+    skip: Optional[list] = None,
+) -> str:
+    """Build table rows for a group of unit parameters."""
+    skip = skip or []
+    rows = ''
+    for uinput, uinfo in group_inputs.items():
+        if uinput not in unit_params or uinput in skip:
+            continue
+        label = _unit_param_label(uinput, uinfo, unit_cat)
+        value = _format_unit_param(unit_params[uinput], uinfo)
+        rows += (
+            f'<tr><td>{label}</td>'
+            f'<td class="text-right">{value}</td></tr>'
+        )
+    return rows
+
+
+def create_unit_parameters_section(
+    param_units: Dict[str, Any],
+    unit_inputs: Dict[str, Any],
+) -> str:
+    """Create HTML for the per-unit technical/economic parameter tables."""
+    tech_inputs = unit_inputs.get('Technische Parameter', {})
+    econ_inputs = unit_inputs.get('Ökonomische Parameter', {})
+
+    html = ''
+    for unit, unit_params in sorted(param_units.items()):
+        unit_cat = unit.rstrip('0123456789')
+        unit_nr = unit[len(unit_cat):]
+        title = f'{longnames.get(unit_cat, unit_cat)} {unit_nr}'.strip()
+
+        invest_mode = unit_params.get('invest_mode', False)
+        skip = DISP_OPT_PARAMS if invest_mode else COMB_OPT_PARAMS
+
+        tech_rows = (
+            '<tr><td>Kapazität optimieren</td>'
+            f'<td class="text-right">{"Ja" if invest_mode else "Nein"}</td></tr>'
+        )
+        tech_rows += _param_rows_html(unit_params, tech_inputs, unit_cat, skip)
+        econ_rows = _param_rows_html(unit_params, econ_inputs, unit_cat)
+
+        html += f"""<div class="unit-param-block">
+    <div class="subsection-title">{title}</div>
+    <div class="grid-2">
+        <div>
+            <table>
+                <tr><th>Technische Parameter</th><th class="text-right">Wert</th></tr>
+                {tech_rows}
+            </table>
+        </div>
+        <div>
+            <table>
+                <tr><th>Ökonomische Parameter</th><th class="text-right">Wert</th></tr>
+                {econ_rows}
+            </table>
+        </div>
+    </div>
+</div>
+"""
+
+    return html
 
 
 def create_kpi_cards(key_params: Dict[str, Any]) -> str:
@@ -348,6 +456,7 @@ def generate_html_report(
     overview_caps: pd.DataFrame,
     param_units: Dict[str, Any],
     param_opt: Dict[str, Any],
+    unit_inputs: Dict[str, Any],
     img_path: str,
 ) -> str:
     """
@@ -363,6 +472,8 @@ def generate_html_report(
         Unit parameters
     param_opt : Dict
         Optimization parameters
+    unit_inputs : Dict
+        Unit parameter infos
     img_path : str
         Path to image directory
 
@@ -391,6 +502,9 @@ def generate_html_report(
 
     # Generate parameters table
     parameters_table = create_parameters_table(param_opt)
+
+    # Generate per-unit parameters section
+    unit_parameters = create_unit_parameters_section(param_units, unit_inputs)
 
     # Encode topology image
     topology_path = os.path.join(img_path, 'es_topology_header.png')
@@ -502,6 +616,7 @@ def generate_html_report(
         kpi_cards=kpi_cards,
         capacities_table=capacities_table,
         parameters_table=parameters_table,
+        unit_parameters=unit_parameters,
         overview_table=overview_table,
         costs_table=costs_table,
         topology_image=topology_html,
