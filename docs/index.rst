@@ -25,8 +25,8 @@
 
     Dokumentation/Handbuch
     Dokumentation/Optimierung
-    Dokumentation/whats_new
     z_Literatur
+    Dokumentation/whats_new
 
 ..  toctree::
     :maxdepth: 2
