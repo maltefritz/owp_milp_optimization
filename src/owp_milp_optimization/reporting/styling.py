@@ -200,6 +200,12 @@ REPORT_CSS = """
             font-style: italic;
         }
 
+        /* Unit parameter blocks */
+        .unit-param-block {
+            page-break-inside: avoid;
+            margin-bottom: 20px;
+        }
+
         /* Grid layouts */
         .grid-2 {
             display: grid;

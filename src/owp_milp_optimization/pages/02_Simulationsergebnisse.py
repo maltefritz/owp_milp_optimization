@@ -97,6 +97,7 @@ def download_report():
                 overview_caps=ss.overview_caps,
                 param_units=ss.param_units,
                 param_opt=ss.param_opt,
+                unit_inputs=ss.unit_inputs,
                 img_path=img_path,
             )
             
