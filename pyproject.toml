@@ -44,3 +44,6 @@ Homepage = "https://github.com/maltefritz/owp_milp_optimization"
 exclude = [
     "docs/_build"
 ]
+
+[tool.esbonio.sphinx]
+pythonCommand = "${venv:.venv}"
