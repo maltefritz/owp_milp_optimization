@@ -204,8 +204,8 @@ Es sollte die installierte Streamlit-Version angezeigt werden.
 .. note::
    Der Solver HiGHS wird zusammen mit den Python-Abhängigkeiten installiert. Für die
    Standardnutzung des OWP-Tools ist daher keine separate Solver-Installation
-   notwendig. Weitere Informationen zu Solvern und deren Installation finden sich in der Dokumentation unter
-   :doc:`Erste_Schritte/Solver`.
+   notwendig. Weitere Informationen zu Solvern und deren Installation befinden sich in der Dokumentation unter
+   :doc:`Solver`.
 
 Anwendung starten
 =================
