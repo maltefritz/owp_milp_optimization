@@ -14,7 +14,6 @@
     :hidden:
 
     Erste_Schritte/Installation
-    Erste_Schritte/Solver
     Erste_Schritte/Toolaufbau
     Erste_Schritte/Erstes_Energiesystem
     Erste_Schritte/Tutorials
@@ -26,6 +25,7 @@
 
     Dokumentation/Handbuch
     Dokumentation/Optimierung
+    Dokumentation/Solver
     z_Literatur
     Dokumentation/whats_new
 
