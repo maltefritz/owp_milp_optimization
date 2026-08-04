@@ -5,7 +5,6 @@ Installation
 Das Tool kann lokal unter Windows, macOS und Linux ausgeführt werden.
 Die Installation erfolgt direkt aus dem GitHub-Repository. Für die
 Python-Abhängigkeiten wird eine virtuelle Umgebung mit :mod:`venv` verwendet.
-Conda ist dafür nicht erforderlich.
 
 .. note::
 
@@ -23,7 +22,7 @@ Für die lokale Installation werden benötigt:
 * eine Internetverbindung zur Installation der Python-Pakete und
 * ein aktueller Webbrowser.
 
-Python sollte von der offiziellen `Python-Webseite <https://www.python.org/downloads/>`__
+Python sollte von der offiziellen `Python-Webseite <https://www.python.org/downloads/release/python-3119/>`__
 oder über die Paketverwaltung des jeweiligen Betriebssystems installiert
 werden.
 
@@ -41,8 +40,8 @@ Das Repository wird mit folgendem Befehl heruntergeladen:
    cd owp_milp_optimization
 
 Alle weiteren Befehle werden zunächst im Hauptverzeichnis des Repositorys
-ausgeführt. In diesem Verzeichnis befindet sich unter anderem die Datei
-``pyproject.toml``.
+ausgeführt (in diesem Verzeichnis befindet sich unter anderem die Datei
+``pyproject.toml``).
 
 Ohne Git
 --------
@@ -82,7 +81,7 @@ Anschließend wird sie aktiviert:
 
 .. code-block:: batch
 
-   .\.venv\Scripts\activate
+   .venv\Scripts\activate
 
 Nach der Aktivierung steht ``(.venv)`` am Anfang der
 Terminal-Eingabezeile.
@@ -131,8 +130,8 @@ Anschließend wird sie aktiviert:
 
    source .venv/bin/activate
 
-Nach der Aktivierung steht normalerweise ``(.venv)`` am Anfang der
-Terminalzeile.
+Nach der Aktivierung sollte ``(.venv)`` am Anfang der
+Terminalzeile stehen.
 
 Python-Pakete installieren
 --------------------------
@@ -177,8 +176,8 @@ Anschließend wird sie aktiviert:
 
    source .venv/bin/activate
 
-Nach der Aktivierung steht normalerweise ``(.venv)`` am Anfang der
-Terminalzeile.
+Nach der Aktivierung sollte ``(.venv)`` am Anfang der
+Terminalzeile stehen.
 
 Python-Pakete installieren
 --------------------------
@@ -203,9 +202,10 @@ Nach der Installation kann geprüft werden, ob Streamlit verfügbar ist:
 Es sollte die installierte Streamlit-Version angezeigt werden.
 
 .. note::
-   HiGHS wird zusammen mit den Python-Abhängigkeiten installiert. Für die
+   Der Solver HiGHS wird zusammen mit den Python-Abhängigkeiten installiert. Für die
    Standardnutzung des OWP-Tools ist daher keine separate Solver-Installation
-   notwendig.
+   notwendig. Weitere Informationen zu Solvern und deren Installation finden sich in der Dokumentation unter
+   :doc:`Erste_Schritte/Solver`.
 
 Anwendung starten
 =================
