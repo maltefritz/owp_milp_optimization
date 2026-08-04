@@ -210,77 +210,13 @@ Es sollte die installierte Streamlit-Version angezeigt werden.
 Anwendung starten
 =================
 
-Die Anwendung sollte aus dem Verzeichnis gestartet werden, in dem sich
-``Home.py`` und die Streamlit-Konfiguration befinden.
+Nach der Installation kann die Anwendung gestartet werden.
+Eine detaillierte Anleitung befindet sich in :doc:`Start`.
 
-Windows
--------
-
-Ausgehend vom Hauptverzeichnis des Repositorys:
-
-.. code-block:: batch
-
-   cd src\owp_milp_optimization
-   python -m streamlit run Home.py
-
-macOS und Linux
----------------
-
-Ausgehend vom Hauptverzeichnis des Repositorys:
-
-.. code-block:: batch
-
-   cd src/owp_milp_optimization
-   python -m streamlit run Home.py
-
-Streamlit zeigt anschließend im Terminal eine lokale Adresse an. In der Regel
-lautet sie:
-
-.. code-block:: text
-
-   http://localhost:8501
-
-Die Anwendung wird normalerweise automatisch im Standardbrowser geöffnet.
-Andernfalls kann die angezeigte Adresse manuell im Browser aufgerufen werden.
-
-Der Streamlit-Prozess wird mit :kbd:`Strg+C` beziehungsweise auf macOS mit
-:kbd:`Control+C` beendet.
-
-Erneuter Start
-==============
-
-Die virtuelle Umgebung muss nur einmal erstellt und das Projekt nur einmal
-installiert werden. Bei einer späteren Nutzung genügen die Aktivierung der
-Umgebung und der erneute Start der Anwendung.
-
-Windows
--------
-
-.. code-block:: batch
-
-   cd C:\Pfad\zum\owp_milp_optimization
-   .venv\Scripts\activate
-   cd src\owp_milp_optimization
-   python -m streamlit run Home.py
-
-macOS und Linux
----------------
-
-.. code-block:: batch
-
-   cd /pfad/zum/owp_milp_optimization
-   source .venv/bin/activate
-   cd src/owp_milp_optimization
-   python -m streamlit run Home.py
-
-Die virtuelle Umgebung kann nach der Nutzung mit folgendem Befehl verlassen
-werden:
-
-.. code-block:: batch
-
-   deactivate
-
-Alternativ genügt es auch, das Terminal zu schließen. Die Umgebung wird dann automatisch deaktiviert.
+.. note::
+   Die virtuelle Umgebung muss nur einmal erstellt und das Projekt nur einmal
+   installiert werden. Bei einer späteren Nutzung genügen die Aktivierung der
+   Umgebung und der erneute Start der Anwendung.
 
 Projekt aktualisieren
 =====================
@@ -357,15 +293,3 @@ aktiviert und das Projekt aus dem Hauptverzeichnis installiert werden:
 .. code-block:: batch
 
    python -m pip install .
-
-Port 8501 ist bereits belegt
-----------------------------
-
-Falls bereits eine andere Streamlit-Anwendung läuft, kann ein anderer Port
-verwendet werden:
-
-.. code-block:: batch
-
-   python -m streamlit run Home.py --server.port 8502
-
-Die Anwendung ist anschließend unter ``http://localhost:8502`` erreichbar.
