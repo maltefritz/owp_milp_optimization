@@ -1,5 +1,5 @@
 {
-    "Solver": "Gurobi",
+    "Solver": "HiGHS",
     "MIPGap": 0.02,
     "TimeLimit": 600,
     "calc_network": "specific",

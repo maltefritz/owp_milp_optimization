@@ -2042,7 +2042,7 @@ with tab_misc:
     init_ss_widget(
         widget_key='select_solver',
         ss_variable='solver',
-        default_value='Gurobi'
+        default_value='HiGHS'
     )
     ss.solver = col_opt.selectbox(
         'Solver', options=['Gurobi', 'SCIP', 'HiGHS'], help=ss.tt['solver'],
