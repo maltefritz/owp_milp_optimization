@@ -14,37 +14,75 @@ Research, Technology and Space.
 - Wide range of typical heating plants
 - Comprehensive data base of heat load data, energy prices and emission factors
 
+## Documentation
+
+Detailed installation instructions, usage guides, troubleshooting and further information are available in the [OWP Optimization Dashboard documentation](https://owp-milp-optimization.readthedocs.io/de/latest/).
+
+The documentation is currently available in German only. An English version will be added in the future.
+
 ## Funding
 
 [<img src="src\owp_milp_optimization\img\Logos_Förderer_ohnePTJ_BMFTR.png">](https://www.innovation-strukturwandel.de/strukturwandel/de/innovation-strukturwandel/t_raum/t_raum_node.html)
 
 ## Installation
 
-For now, only direct download from the [GitHub Repository](https://github.com/jfreissmann/owp_milp_optimization) is supported, so just clone it locally or download a ZIP file of the code. If you are using [Miniforge](https://github.com/conda-forge/miniforge) or another environment management tool using [conda](https://docs.conda.io/en/latest/), you can create and activate a clean environment like this:
+Python 3.11 is recommended. Clone the repository and navigate to its root directory:
 
-```
-conda create -n my_new_env python=3.11
-```
-
-```
-conda activate my_new_env
+```bash
+git clone https://github.com/maltefritz/owp_milp_optimization.git
+cd owp_milp_optimization
 ```
 
-To use the optimization dashboard, the necessary dependencies have to be installed. In a clean environment from the root directory the installation from this file could look like this:
+Create and activate a virtual environment.
 
-```
-python -m pip install "c:\path\to\the\package"
+### Windows
+
+```bash
+py -3.11 -m venv .venv
+.venv\Scripts\activate
 ```
 
-If you have already navigated your terminal (e.g. cmd) to the package directory, the path string in the command above simplifies to a single period character ("."), which means the current working directory.
+### macOS and Linux
+
+```bash
+python3.11 -m venv .venv
+source .venv/bin/activate
+```
+
+Install the application and its dependencies:
+
+```bash
+python -m pip install --upgrade pip
+python -m pip install .
+```
+
+The open-source HiGHS solver is installed as a dependency and is used by default. No separate solver installation is required for the standard setup.
 
 ## Run the dashboard
 
-Running the optimization dashboard is as easy as running the following command from the root directory in your virtual environment with dependencies installed:
+The virtual environment must be active before starting the application.
 
+### Windows
+
+```bash
+cd src\owp_milp_optimization
+python -m streamlit run Home.py
 ```
-streamlit run src\owp_milp_optimization\Home.py
+
+### macOS and Linux
+
+```bash
+cd src/owp_milp_optimization
+python -m streamlit run Home.py
 ```
+
+Streamlit will normally open the dashboard automatically. Otherwise, open the displayed local address, usually:
+
+```text
+http://localhost:8501
+```
+
+Stop the application by pressing `Ctrl+C`/`Cmd+C`.
 
 ## License
 
