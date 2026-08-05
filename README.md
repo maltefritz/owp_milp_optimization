@@ -82,7 +82,7 @@ Streamlit will normally open the dashboard automatically. Otherwise, open the di
 http://localhost:8501
 ```
 
-Stop the application by pressing `Ctrl+C`/`Cmd+C`.
+Stop the application by pressing `Ctrl+C`.
 
 ## License
 
