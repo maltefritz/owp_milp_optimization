@@ -5,12 +5,10 @@ Start des Tools
 Anwendung starten
 =================
 
-Die Anwendung sollte aus dem Verzeichnis gestartet werden, in dem sich
-``Home.py`` und die Streamlit-Konfiguration befinden.
+Die Anwendung sollte aus dem Verzeichnis gestartet werden, in dem sich ``Home.py`` und die Streamlit-Konfiguration befinden.
 
 .. important::
-   Die Anwendung muss aus derselben virtuellen Umgebung gestartet werden, in der das Tool installiert wurde.
-   Andernfalls kann es zu Problemen bei der Nutzung kommen.
+   Die Anwendung muss aus derselben virtuellen Umgebung gestartet werden, in der das Tool installiert wurde. Andernfalls kann es zu Problemen bei der Nutzung kommen.
 
 
 Windows
@@ -36,21 +34,18 @@ macOS und Linux
 
 Aufrufen des Tools
 ==================
-Streamlit zeigt anschließend im Terminal eine lokale Adresse an. In der Regel
-lautet sie:
+
+Streamlit zeigt anschließend im Terminal eine lokale Adresse an. In der Regel lautet sie:
 
 .. code-block:: text
 
    http://localhost:8501
 
-Die Anwendung wird normalerweise automatisch im Standardbrowser geöffnet.
-Andernfalls kann die angezeigte Adresse manuell im Browser aufgerufen werden.
+Die Anwendung wird normalerweise automatisch im Standardbrowser geöffnet. Andernfalls kann die angezeigte Adresse manuell im Browser aufgerufen werden.
 
-Der Streamlit-Prozess wird mit :kbd:`Strg+C` beziehungsweise auf macOS mit
-:kbd:`Control+C` beendet.
+Der Streamlit-Prozess wird mit :kbd:`Strg+C` beziehungsweise auf macOS mit :kbd:`Control+C` beendet.
 
-Die virtuelle Umgebung kann nach der Nutzung mit folgendem Befehl verlassen
-werden:
+Die virtuelle Umgebung kann nach der Nutzung mit folgendem Befehl verlassen werden:
 
 .. code-block:: batch
 
@@ -64,8 +59,7 @@ Fehlerbehebung
 Die virtuelle Umgebung ist nicht aktiv
 ---------------------------------------
 
-Nach der Aktivierung sollte ``(.venv)`` am Anfang der Kommandozeile stehen. Der
-verwendete Python-Interpreter kann geprüft werden.
+Nach der Aktivierung sollte ``(.venv)`` am Anfang der Kommandozeile stehen. Der verwendete Python-Interpreter kann geprüft werden.
 
 Unter Windows:
 
@@ -81,16 +75,12 @@ Unter macOS und Linux:
    which python
    python -m pip --version
 
-Die ausgegebenen Pfade sollten auf den Ordner ``.venv`` im Repository
-verweisen.
+Die ausgegebenen Pfade sollten auf den Ordner ``.venv`` im Repository verweisen.
 
 Streamlit wird nicht gefunden
 -----------------------------
 
-Wird die Meldung ``No module named streamlit`` angezeigt, ist Streamlit nicht
-installiert. Dies kann daran liegen, dass die virtuelle Umgebung nicht
-aktiviert ist (siehe oben) oder die Installation noch nicht durchgeführt wurde. Die Umgebung muss
-aktiviert und das Projekt aus dem Hauptverzeichnis installiert werden:
+Wird die Meldung ``No module named streamlit`` angezeigt, ist Streamlit nicht installiert. Dies kann daran liegen, dass die virtuelle Umgebung nicht aktiviert ist (siehe oben) oder die Installation noch nicht durchgeführt wurde. Die Umgebung muss aktiviert und das Projekt aus dem Hauptverzeichnis installiert werden:
 
 .. code-block:: batch
 
@@ -99,8 +89,7 @@ aktiviert und das Projekt aus dem Hauptverzeichnis installiert werden:
 Port 8501 ist bereits belegt
 ----------------------------
 
-Falls bereits eine andere Streamlit-Anwendung läuft, kann ein anderer Port
-verwendet werden:
+Falls bereits eine andere Streamlit-Anwendung läuft, kann ein anderer Port verwendet werden:
 
 .. code-block:: batch
 
