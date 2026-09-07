@@ -2,7 +2,7 @@
 Erstes Energiesystem
 ~~~~~~~~~~~~~~~~~~~~
 
-In diesem Tutorial wird ein vollständiger Arbeitsablauf im OWP-Tool anhand eines fiktiven kommunalen Fernwärmenetzes durchgeführt. Zunächst wird der Weiterbetrieb des vorhandenen Systems als **Referenzfall** simuliert. Anschließend werden eine Großwärmepumpe und ein thermischer Wärmespeicher ergänzt und durch die Optimierung dimensioniert. Abschließend werden beide Szenarien miteinander verglichen.
+In diesem Tutorial wird ein vollständiger Arbeitsablauf im OWP-Tool anhand eines fiktiven kommunalen Fernwärmenetzes durchgeführt. Zunächst wird der Weiterbetrieb des vorhandenen Systems als **Referenzfall** simuliert. Anschließend werden eine **Großwärmepumpe** und ein **thermischer Wärmespeicher** ergänzt und durch die Optimierung dimensioniert. Abschließend werden beide Szenarien miteinander verglichen.
 
 Das Tutorial zeigt damit sowohl eine reine Einsatzoptimierung als auch die kombinierte Auslegungs- und Einsatzoptimierung. Eine allgemeine Beschreibung der Bedienoberfläche befindet sich unter :doc:`Toolaufbau`.
 
@@ -48,12 +48,12 @@ Die Untersuchung wird in zwei aufeinander aufbauenden Szenarien durchgeführt:
 
    Die historischen Investitionskosten des bestehenden BHKW, des Gaskessels und des Wärmenetzes werden in beiden Szenarien mit 0 € angesetzt. Sie gelten für die betrachtete Erweiterungsentscheidung als bereits angefallen. Die später ausgewiesenen Wärmegestehungskosten sind deshalb **keine Vollkosten des gesamten realen Wärmesystems**, sondern vorwärtsgerichtete Modellkosten innerhalb der gewählten Systemgrenze.
 
-1. Gemeinsame Eingangsdaten festlegen
+Gemeinsame Eingangsdaten festlegen
 =====================================
 
 Beide Szenarien verwenden dieselbe Wärmenachfrage, dasselbe bestehende Wärmenetz sowie dieselben Energiepreise und wirtschaftlichen Randbedingungen. Diese Eingaben werden zunächst für den Referenzfall vorgenommen und im Erweiterungsszenario unverändert beibehalten.
 
-1.1 Wärmenachfrage
+Wärmenachfrage
 ------------------
 
 Die Konfiguration beginnt auf der Seite **Energiesystem** im Reiter **Wärme**. Unter **Wähle die Wärmelastdaten aus, die im System zu verwenden sind** wird ``Eigene Daten`` ausgewählt. Anschließend wird über **Datensatz einlesen** die für dieses Tutorial bereitgestellte synthetische Wärmelastzeitreihe eingelesen.
@@ -90,7 +90,7 @@ Nach dem Einlesen wird die Zeitreihe im rechten Bereich des Reiters dargestellt.
 
 Unterhalb der Wärmelastdaten wird im Abschnitt **Wärmeerlöse** ein Wärmeerlös von 105 €/MWh eingetragen. Da in beiden Szenarien dieselbe Wärmenachfrage vollständig gedeckt werden muss, ist auch der Wärmeerlös in beiden Fällen gleich. Für den späteren Variantenvergleich ist er daher keine entscheidende Größe, wird aber in der wirtschaftlichen Gesamtbilanz des Tools ausgewiesen.
 
-1.2 Wärmenetz
+Wärmenetz
 -------------
 
 Im Reiter **Netz** wird als Kalkulationsmethode ``Spezifische Kosten`` ausgewählt. Für die Trassenlänge werden 10 km eingetragen. Gemeint sind ausschließlich die Hauptleitungen des Fernwärmenetzes; Hausanschlussleitungen werden nicht berücksichtigt.
@@ -112,10 +112,10 @@ Im Reiter **Netz** wird als Kalkulationsmethode ``Spezifische Kosten`` ausgewäh
 
 Da das Netz bereits vorhanden ist, werden keine Investitionskosten für dessen Errichtung angesetzt. Die laufenden Netzkosten bleiben dagegen Bestandteil der Rechnung. Aus 10 km Trassenlänge und 15 €/m·a ergeben sich fixe Netzkosten von 150.000 € pro Jahr; hinzu kommen 1,5 €/MWh für die transportierte Wärmemenge.
 
-2. Referenzfall: bestehendes System modellieren
+Referenzfall: bestehendes System modellieren
 ===============================================
 
-Im Referenzfall wird geprüft, wie sich das vorhandene System ohne zusätzliche Investitionen verhält. Dazu werden im Reiter **System** unter **Wähle die Wärmeversorgungsanlagen aus, die im System verwendet werden können.** ausschließlich ein **Blockheizkraftwerk** und ein **Gaskessel** ausgewählt. Die Anzahl bleibt jeweils auf ``1`` eingestellt.
+Im Referenzfall wird geprüft, wie sich das vorhandene System ohne zusätzliche Investitionen verhält. Dazu werden im Reiter **System** unter **Wähle die Wärmeversorgungsanlagen aus, die im System verwendet werden können** ausschließlich ein **Blockheizkraftwerk** und ein **Gaskessel** ausgewählt. Die Anzahl bleibt jeweils auf ``1`` eingestellt.
 
 .. figure:: ../_static/images/erstes_energiesystem/waermesystem_referenz.png
    :alt: Schematische Darstellung des Referenzsystems mit Gaskessel und Blockheizkraftwerk.
@@ -124,7 +124,7 @@ Im Referenzfall wird geprüft, wie sich das vorhandene System ohne zusätzliche 
 
    Wärmeversorgungssystem des Referenzfalls.
 
-2.1 Bestandsanlagen parametrisieren
+Bestandsanlagen parametrisieren
 -----------------------------------
 
 Im Reiter **Anlagen** werden die Bereiche **Blockheizkraftwerk 1** und **Gaskessel 1** geöffnet. Bei beiden Anlagen bleibt **Kapazität optimieren** deaktiviert, da die installierten Leistungen des Bestands bereits bekannt sind.
@@ -159,23 +159,23 @@ Beim BHKW werden unter **Technische Parameter** 6 MW installierte Leistung, 45 %
 
 Mit zusammen 31 MW thermischer Leistung kann der bestehende Anlagenpark die maximale Wärmelast von rund 30 MW grundsätzlich vollständig decken. Damit ist sichergestellt, dass die später hinzukommenden Anlagen nicht aus Gründen der Versorgungssicherheit zwingend benötigt werden.
 
-2.2 Versorgungsdaten und weitere Einstellungen
+Versorgungsdaten und weitere Einstellungen
 ----------------------------------------------
 
 Im Reiter **Versorgung** werden durch BHKW und Gaskessel automatisch die Bereiche **Elektrizitätsversorgungsdaten** und **Gasversorgungsdaten** eingeblendet. Für das Tutorial werden die im Tool hinterlegten zeitabhängigen Daten des Jahres 2024 verwendet; die voreingestellten Werte werden unverändert übernommen.
 
-Im Reiter **Sonstiges** werden ebenfalls die Standardwerte verwendet. Im Bereich **Optimierung** wird ``HiGHS`` als Solver und ein MIP Gap von 2 % verwendet. **Simulationsdauer begrenzen** bleibt deaktiviert.
+Im Reiter **Sonstiges** werden ebenfalls die Standardwerte verwendet. Im Bereich **Optimierung** wird ``HiGHS`` als Solver und ein MIP Gap von 2 % verwendet. **Simulationsdauer begrenzen** bleibt deaktiviert. Die Optimierung wird damit so lange durchgeführt, bis eine Lösung gefunden ist, die maximal 2 % von der optimalen Lösung abweicht. Je nach Rechnerleistung kann die Berechnung einige Minuten dauern.
 
 Weitere Hinweise zu den Solver-Einstellungen befinden sich unter :doc:`/Dokumentation/Solver`.
 
-2.3 Referenzfall optimieren
+Referenzfall optimieren
 ---------------------------
 
 Nach Abschluss der Parametrisierung wird am unteren Ende des Reiters **Sonstiges** über **Zur Optimierung** zur Seite **Optimierung** gewechselt. Dort wird das System nochmals zusammengefasst. Insbesondere sollte geprüft werden, ob ausschließlich BHKW und Gaskessel enthalten sind und beide Kapazitäten fest vorgegeben wurden.
 
 Mit **Optimierung starten** wird der kostenoptimale Einsatz von BHKW und Gaskessel berechnet. Nach erfolgreichem Abschluss wird zu den **Simulationsergebnissen** gewechselt.
 
-3. Referenzfall auswerten
+Referenzfall auswerten
 =========================
 
 Der Referenzfall bildet den Ausgangspunkt für den späteren Vergleich. Im Reiter **Überblick** werden unter anderem die Wärmeproduktion und die wirtschaftlichen Kennzahlen dargestellt. Im Reiter **Anlageneinsatz** kann anschließend der zeitliche Betrieb der Bestandsanlagen nachvollzogen werden.
@@ -237,7 +237,7 @@ Die Wärmegestehungskosten liegen bei 47,73 €/MWh beziehungsweise 50,46 €/MW
 
 Bevor das Szenario verändert wird, können die Ergebnisse unten auf der Ergebnisseite über **Bericht herunterladen** gespeichert werden. Über **Daten exportieren** können zusätzlich alle Zahlenwerte für einen späteren Vergleich heruntergeladen werden.
 
-4. Erweiterungsszenario: Wärmepumpe und Speicher ergänzen
+Erweiterungsszenario: Wärmepumpe und Speicher ergänzen
 =========================================================
 
 Für den zweiten Lauf wird über die Navigation wieder zur Seite **Energiesystem** gewechselt. Die bereits vorgenommenen Eingaben für Wärmenachfrage, Wärmenetz, Bestandsanlagen, Versorgungsdaten und allgemeine wirtschaftliche Parameter bleiben unverändert.
@@ -253,7 +253,7 @@ Im Reiter **System** werden nun zusätzlich eine **Wärmepumpe** und ein **Wärm
 
 Im Reiter **Anlagen** erscheinen dadurch zusätzlich die Bereiche **Wärmepumpe 1** und **Wärmespeicher 1**. Bei beiden neuen Anlagen wird **Kapazität optimieren** aktiviert. Die Untergrenze von 0 erlaubt es dem Modell ausdrücklich, auf die jeweilige Investition zu verzichten, wenn sie sich unter den gewählten Annahmen nicht lohnt.
 
-4.1 Wärmepumpe parametrisieren
+Wärmepumpe parametrisieren
 ------------------------------
 
 Im Bereich **Wärmepumpe 1** werden unter **Technische Parameter** die minimale und maximale installierbare Leistung sowie der COP festgelegt. Unter **Ökonomische Parameter** werden anschließend die Kosten- und Förderannahmen eingetragen.
@@ -281,9 +281,7 @@ Im Bereich **Wärmepumpe 1** werden unter **Technische Parameter** die minimale 
    * - Betriebskostenförderung
      - 50 %
 
-Damit wird nicht vorgegeben, dass eine 10-MW-Wärmepumpe errichtet wird. Die Optimierung darf jede Leistung zwischen 0 und 10 MW wählen.
-
-4.2 Wärmespeicher parametrisieren
+Wärmespeicher parametrisieren
 ---------------------------------
 
 Im Bereich **Wärmespeicher 1** wird ebenfalls **Kapazität optimieren** aktiviert. Unter **Technische Parameter** werden die Kapazitätsgrenzen, die möglichen Be- und Entladeleistungen sowie die Speicherverluste festgelegt. Die Kostenannahmen werden unter **Ökonomische Parameter** eingetragen.
@@ -317,11 +315,11 @@ Im Bereich **Wärmespeicher 1** wird ebenfalls **Kapazität optimieren** aktivie
    * - Jährliche fixe Betriebskosten
      - 300 €/MWh\ :sub:`th`·a
 
-Bei einer Kapazität von 100 MWh würde ein Leistungsverhältnis von 0,1 h⁻¹ beispielsweise eine maximale Lade- und Entladeleistung von jeweils 10 MW erlauben. Der **Initialspeicherstand** wird auf 50 % gesetzt und **Ausgeglichener Speicher über Betrachtungsperiode** bleibt aktiviert. Dadurch muss am Ende des Betrachtungszeitraums wieder derselbe relative Füllstand wie zu Beginn erreicht werden.
+Bei einer Kapazität von 100 MWh würde ein Leistungsverhältnis von 0,1 h⁻¹ beispielsweise eine maximale Lade- und Entladeleistung von jeweils 10 MW erlauben. Der **Initialspeicherstand** wird auf 50 % gesetzt und **Ausgeglichener Speicher über Betrachtungsperiode** bleibt aktiviert. Dadurch muss am Ende des Betrachtungszeitraums wieder derselbe Füllstand wie zu Beginn erreicht werden.
 
-Die übrigen bereits gesetzten Werte werden nicht verändert. Anschließend wird erneut über **Zur Optimierung** zur Optimierungsseite gewechselt und die Berechnung mit **Optimierung starten** ausgeführt.
+Die übrigen bereits gesetzten Werte werden nicht verändert. Anschließend wird erneut zur Seite **Optimierung** gewechselt und die Berechnung mit **Optimierung starten** ausgeführt.
 
-5. Erweiterungsszenario auswerten
+Erweiterungsszenario auswerten
 =================================
 
 Nach Abschluss der zweiten Optimierung werden zunächst im Reiter **Überblick** die Anlagenkapazitäten betrachtet. Dabei ist zwischen den festen Bestandsleistungen und den durch die Optimierung bestimmten Kapazitäten zu unterscheiden.
@@ -348,9 +346,9 @@ Nach Abschluss der zweiten Optimierung werden zunächst im Reiter **Überblick**
 
 Für die Wärmepumpe werden rund 9,6 MW ermittelt. Damit liegt das Ergebnis nahe an der vorgegebenen Obergrenze von 10 MW. Eine weiterführende Untersuchung sollte deshalb prüfen, ob eine höhere zulässige Maximalleistung zu einer noch größeren optimalen Wärmepumpe führen würde.
 
-Die optimale Speicherkapazität beträgt rund 74,4 MWh. Sie liegt deutlich oberhalb von 0 MWh, aber zugleich unter der Obergrenze von 100 MWh. Der Speicher weist damit innerhalb des zulässigen Bereichs ein eigenes Optimum auf.
+Die optimale Speicherkapazität beträgt rund 74,4 MWh. Sie liegt deutlich oberhalb von 0 MWh, aber zugleich deutlich unter der Obergrenze von 100 MWh. Der Speicher weist damit innerhalb des zulässigen Bereichs ein eigenes Optimum auf.
 
-5.1 Wärmebereitstellung und Anlageneinsatz
+Wärmebereitstellung und Anlageneinsatz
 ------------------------------------------
 
 .. list-table:: Jährliche Wärmebereitstellung im Erweiterungsszenario
@@ -370,7 +368,7 @@ Die optimale Speicherkapazität beträgt rund 74,4 MWh. Sie liegt deutlich oberh
      - 30,6 GWh
      - 25,0 %
 
-Die Wärmepumpe übernimmt mit rund 51,3 GWh den größten Anteil der jährlichen Wärmebereitstellung. Auch das BHKW wird stärker eingesetzt als im Referenzfall. Der Gaskessel verliert dagegen deutlich an Bedeutung und übernimmt vor allem Mittel- und Spitzenlast.
+Die Wärmepumpe übernimmt mit rund 51,3 GWh den größten Anteil der jährlichen Wärmebereitstellung. Auch das BHKW wird stärker eingesetzt als im Referenzfall. Der Gaskessel verliert dagegen deutlich an Bedeutung und übernimmt vor allem den Mittel- und Spitzenlastbereich.
 
 Im Reiter **Anlageneinsatz** kann dieses Verhalten zunächst anhand der geordneten Jahresdauerlinie betrachtet werden. Die Wärmepumpe wird in vielen Stunden nahe ihrer optimierten Leistung betrieben. Das BHKW erreicht ebenfalls über weite Teile des Jahres seine Nennleistung. Der Gaskessel wird vor allem in höheren Lastbereichen benötigt.
 
@@ -390,7 +388,7 @@ In der zeitlich aufgelösten Darstellung wird sichtbar, dass der Gaskessel insbe
 
    Zeitlicher Verlauf von Wärmebedarf, Anlageneinsatz und Speicherbe- bzw. -entladung im Erweiterungsszenario.
 
-5.2 Stromseite und Speicherbetrieb
+Stromseite und Speicherbetrieb
 ----------------------------------
 
 Im Reiter **Stromproduktion** werden Details zu Einspeisung und Eigenverbrauch des Wärmesystems dargestellt. Das BHKW erzeugt im Erweiterungsszenario rund 36,3 GWh Strom. Davon werden etwa 12,4 GWh direkt innerhalb des Systems genutzt und rund 23,9 GWh in das Stromnetz eingespeist.
@@ -399,7 +397,7 @@ Die Wärmepumpe benötigt rund 14,7 GWh Strom. Etwa 85 % dieses Bedarfs werden d
 
 Im Reiter **Speicherstand** werden Füllstand sowie Be- und Entladung dargestellt. Über das Jahr werden rund 5,72 GWh eingespeichert und 5,65 GWh wieder entnommen. Der Speicher wird damit als Kurzzeit- beziehungsweise Mehrtagesspeicher genutzt und verschiebt Wärme zwischen Stunden mit unterschiedlichen Erzeugungskosten.
 
-6. Referenzfall und Erweiterung vergleichen
+Referenzfall und Erweiterung vergleichen
 ===========================================
 
 Für die eigentliche Planungsfrage ist nicht die absolute Wirtschaftlichkeit eines einzelnen Laufs, sondern die Veränderung gegenüber dem Referenzfall entscheidend. Beide Szenarien decken dieselbe Wärmenachfrage und verwenden dasselbe Netz. Unterschiede entstehen daher durch den veränderten Anlagenpark und dessen Einsatz.
@@ -448,14 +446,14 @@ Für die eigentliche Planungsfrage ist nicht die absolute Wirtschaftlichkeit ein
      - 42,33 €/MWh
      - −8,13 €/MWh
 
-6.1 Was erklärt die wirtschaftliche Verbesserung?
+Was erklärt die wirtschaftliche Verbesserung?
 -------------------------------------------------
 
 Die Erweiterung reduziert den Gasverbrauch um rund 46,8 GWh beziehungsweise 27,6 %. Dadurch sinken die Gaskosten deutlich. Gleichzeitig entstehen Stromkosten für die Wärmepumpe, und ein größerer Teil des BHKW-Stroms wird intern genutzt, sodass die Stromerlöse gegenüber dem Referenzfall zurückgehen. Der vermiedene Gasbezug überwiegt diese Nachteile im betrachteten Szenario.
 
-Die geförderten Investitionskosten der neuen Anlagen betragen rund 4,72 Mio. €. Bei 5 % Kapitalzins und 20 Jahren Betrachtungsdauer entspricht dies in der LCOH-Berechnung annualisierten Kapitalkosten von rund 379.000 €/a. Nach Berücksichtigung dieser Kapitalkosten sinken die modellierten jährlichen Wärmebereitstellungskosten gegenüber dem Referenzfall um rund 1 Mio. €/a. Dies entspricht der LCOH-Differenz von rund 8,13 €/MWh.
+Die durch Förderung verringerten Investitionskosten der neuen Anlagen betragen rund 4,72 Mio. €. Bei 5 % Kapitalzins und 20 Jahren Betrachtungsdauer entspricht dies in der LCOH-Berechnung annualisierten Kapitalkosten von rund 379.000 €/a. Nach Berücksichtigung dieser Kapitalkosten sinken die modellierten jährlichen Wärmebereitstellungskosten gegenüber dem Referenzfall um rund 1 Mio. €/a. Dies entspricht der LCOH-Differenz von rund 8,13 €/MWh.
 
-6.2 Wie sind die Wärmegestehungskosten zu verstehen?
+Wie sind die Wärmegestehungskosten zu verstehen?
 ----------------------------------------------------
 
 .. important::
@@ -466,7 +464,7 @@ Gerade deshalb ist hier der Vergleich zwischen den beiden Szenarien aussagekräf
 
 Auch die Netzkosten und die Wärmeerlöse sind in beiden Szenarien gleich. Sie sind für die vollständige wirtschaftliche Bilanz relevant, beeinflussen aber die Entscheidung zwischen Referenz- und Erweiterungsszenario nicht. Entsprechend beträgt die absolute LCOH-Verbesserung mit und ohne Netz in beiden Fällen rund 8,13 €/MWh.
 
-7. Ergebnis einordnen
+Ergebnis einordnen
 =====================
 
 Unter den gewählten Annahmen ist die Ergänzung des bestehenden Systems um Wärmepumpe und Wärmespeicher wirtschaftlich vorteilhaft. Das Modell wählt beide Anlagen mit positiver Kapazität und reduziert die modellierten Wärmebereitstellungskosten gegenüber dem Weiterbetrieb des Bestands deutlich. Zugleich sinkt der Gasverbrauch um rund 28 %.
