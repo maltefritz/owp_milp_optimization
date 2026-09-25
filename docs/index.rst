@@ -24,6 +24,7 @@
     :caption: Anleitungen
     :hidden:
 
+    HowTo/Waermespeicher
     HowTo/Optimierungsgrenzen_Sensitivitaeten
 
 ..  toctree::
