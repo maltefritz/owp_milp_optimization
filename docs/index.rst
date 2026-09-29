@@ -24,6 +24,7 @@
     :caption: Anleitungen
     :hidden:
 
+    HowTo/Anlageneinsatz_Zeitreihen
     HowTo/Waermespeicher
     HowTo/Optimierungsgrenzen_Sensitivitaeten
 
