@@ -2,6 +2,28 @@
 What's New
 ~~~~~~~~~~
 
+v0.0.7 -- xxx (xxx xx, 2026)
+=============================================
+
+New Features
+------------
+
+Improvements
+------------
+
+Fixes
+-----
+
+- Fix charges on input flows
+- Fix energy tax of gas boiler in postprocessing
+
+Contributors
+------------
+
+- `@maltefritz <https://github.com/maltefritz>`__
+- `@jfreissmann <https://github.com/jfreissmann>`__
+
+
 v0.0.6 -- Maximum Memorization (Jun 24, 2026)
 =============================================
 
