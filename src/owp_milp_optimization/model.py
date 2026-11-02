@@ -564,7 +564,7 @@ class EnergySystem():
             add_cost = 0
 
             if unit_cat == 'gb':
-                add_cost = self.param_opt['energy_tax']
+                add_cost = self.param_opt['energy_tax'] / unit_params['eta']
                 E_N_label = f'Q_{unit}'
             elif unit_cat == 'hp':
                 E_N_label = f'Q_out_{unit}'
