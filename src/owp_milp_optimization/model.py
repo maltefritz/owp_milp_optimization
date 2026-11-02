@@ -253,27 +253,15 @@ class EnergySystem():
                 if unit_cat == 'hp':
                     eff = 'cop'
                     input_nw = 'enw'
-                    var_cost = (
-                        unit_params['op_cost_var']
-                        * (1 - unit_params['op_cost_bonus_rel'])
-                        + self.param_opt['elec_consumer_charges_self']
-                        )
+                    input_cost = self.param_opt['elec_consumer_charges_self']
                 elif unit_cat == 'gb':
                     eff = 'eta'
                     input_nw = 'gnw'
-                    var_cost = (
-                        unit_params['op_cost_var']
-                        * (1 - unit_params['op_cost_bonus_rel'])
-                        + self.param_opt['energy_tax']
-                        )
+                    input_cost = self.param_opt['energy_tax']
                 elif unit_cat == 'eb':
                     eff = 'eta'
                     input_nw = 'enw'
-                    var_cost = (
-                        unit_params['op_cost_var']
-                        * (1 - unit_params['op_cost_bonus_rel'])
-                        + self.param_opt['elec_consumer_charges_self']
-                        )
+                    input_cost = self.param_opt['elec_consumer_charges_self']
 
                 if unit_params['invest_mode']:
                     nominal_capacity = solph.Investment(
@@ -290,14 +278,21 @@ class EnergySystem():
 
                 self.comps[unit] = solph.components.Converter(
                     label=unit,
-                    inputs={self.buses[input_nw]: solph.flows.Flow()},
+                    inputs={
+                        self.buses[input_nw]: solph.flows.Flow(
+                            variable_costs=input_cost
+                            )
+                        },
                     outputs={
                         self.buses['hnw']: solph.flows.Flow(
                             nominal_capacity=nominal_capacity,
                             max=unit_params['Q_rel_max'],
                             min=unit_params['Q_rel_min'],
                             nonconvex=solph.NonConvex(),
-                            variable_costs=var_cost
+                            variable_costs=(
+                                unit_params['op_cost_var']
+                                * (1 - unit_params['op_cost_bonus_rel'])
+                                )
                             )
                         },
                     conversion_factors={
