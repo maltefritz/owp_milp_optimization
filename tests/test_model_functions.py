@@ -132,3 +132,82 @@ def test_calc_cost_zero_dispatch_has_only_fixed_cost(cost_params):
     )
     assert cost_df.loc['op_cost_var', 'hp1'] == 0
     assert cost_df.loc['op_cost', 'hp1'] == cost_df.loc['op_cost_fix', 'hp1']
+
+
+# %% check_column (oemof result key -> readable label)
+
+HNW = 'heat network'
+
+LABEL_CASES = [
+    # heat producers that feed the heat network: heat pump
+    ((('hp1', HNW), 'flow'), 'Q_out_hp1'),
+    ((('hp1', HNW), 'invest'), 'cap_hp1'),
+    ((('hp1', HNW), 'status'), 'state_hp1'),
+    ((('hp1', HNW), 'status_nominal'), 'state_nom_hp1'),
+    ((('hp1', HNW), 'total'), 'total_hp1'),
+    # thermal energy storage discharging into the heat network
+    ((('tes1', HNW), 'flow'), 'Q_out_tes1'),
+    ((('tes1', HNW), 'invest'), 'cap_out_tes1'),
+    ((('tes1', HNW), 'status'), 'state_out_tes1'),
+    ((('tes1', HNW), 'status_nominal'), 'state_nom_out_tes1'),
+    ((('tes1', HNW), 'total'), 'total_out_tes1'),
+    # every other heat producer
+    ((('gb1', HNW), 'flow'), 'Q_gb1'),
+    ((('ccet2', HNW), 'invest'), 'cap_ccet2'),
+    ((('sol1', HNW), 'status'), 'state_sol1'),
+    ((('eb1', HNW), 'status_nominal'), 'state_nom_eb1'),
+    ((('exhs3', HNW), 'total'), 'total_exhs3'),
+    # flows out of the heat network
+    (((HNW, 'tes1'), 'flow'), 'Q_in_tes1'),
+    (((HNW, 'tes1'), 'invest'), 'cap_in_tes1'),
+    (((HNW, 'tes1'), 'status'), 'state_in_tes1'),
+    (((HNW, 'tes1'), 'status_nominal'), 'state_nom_in_tes1'),
+    (((HNW, 'tes1'), 'total'), 'total_in_tes1'),
+    (((HNW, 'heat demand'), 'flow'), 'Q_demand'),
+    # CHP electricity
+    ((('ccet1', 'chp node'), 'flow'), 'P_ccet1'),
+    ((('ice1', 'chp node'), 'flow'), 'P_ice1'),
+    ((('chp node', 'spotmarket'), 'flow'), 'P_spotmarket'),
+    ((('chp node', 'chp internal'), 'flow'), 'P_internal'),
+    ((('chp internal', 'electricity network'), 'flow'), 'P_internal'),
+    # electricity consumers
+    ((('electricity network', 'hp1'), 'flow'), 'P_in_hp1'),
+    ((('electricity network', 'hp1'), 'status'), 'state_hp1'),
+    ((('electricity network', 'eb1'), 'flow'), 'P_eb1'),
+    # gas consumers
+    ((('gas network', 'gb1'), 'flow'), 'H_gb1'),
+    ((('gas network', 'ccet1'), 'flow'), 'H_ccet1'),
+    # sources
+    ((('gas source', 'gas network'), 'flow'), 'H_source'),
+    ((('electricity source', 'electricity network'), 'flow'), 'P_source'),
+    # storage internals
+    ((('tes1', 'None'), 'storage_content'), 'storage_content_tes1'),
+    ((('tes1', 'None'), 'invest'), 'cap_tes1'),
+    ((('tes1', 'None'), 'total'), 'total_tes1'),
+    ((('tes1', 'None'), 'storage_losses'), 'storage_losses_tes1'),
+    ((('tes1', 'None'), 'other'), "(('tes1', 'None'), 'other')"),
+]
+
+
+@pytest.mark.parametrize('col, expected', LABEL_CASES)
+def test_check_column_labels(col, expected):
+    assert check_column(col, debug=False) == expected
+
+
+@pytest.mark.parametrize('col', [
+    (('foo', 'bar'), 'flow'),
+    (('hp1', HNW), 'unknown_variable'),
+    (('chp node', 'somewhere'), 'flow'),
+])
+def test_check_column_unknown_returns_none(col):
+    assert check_column(col, debug=False) is None
+
+
+def test_check_column_reports_unknown_edge_in_debug_mode(capsys):
+    check_column((('foo', 'bar'), 'flow'), debug=True)
+    assert 'could not be labeled' in capsys.readouterr().out
+
+
+def test_check_column_is_silent_without_debug(capsys):
+    check_column((('foo', 'bar'), 'flow'), debug=False)
+    assert capsys.readouterr().out == ''
