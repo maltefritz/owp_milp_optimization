@@ -323,3 +323,59 @@ def test_storage_parameters(data, opt, make_unit):
     assert tes.invest_relation_output_capacity[0] == params['Q_out_to_cap']
     for flow in (in_flow(es, 'tes1', 'hnw'), out_flow(es, 'tes1', 'hnw')):
         assert flow.variable_costs[0] == pytest.approx(0.15)
+
+
+# %% Investment mode
+
+INVEST_KEYS = {
+    'hp': ('cap_max', 'cap_min'),
+    'ccet': ('cap_max', 'cap_min'),
+    'ice': ('cap_max', 'cap_min'),
+    'gb': ('cap_max', 'cap_min'),
+    'eb': ('cap_max', 'cap_min'),
+    'exhs': ('cap_max', 'cap_min'),
+    'sol': ('A_max', 'A_min'),
+    'tes': ('Q_max', 'Q_min'),
+}
+
+
+@pytest.mark.parametrize('cat', ALL_CATS)
+def test_investment_parameters(cat, data, make_opt, make_unit):
+    opt = make_opt(capital_interest=0.06, lifetime=25)
+    max_key, min_key = INVEST_KEYS[cat]
+    params = make_unit(
+        cat, invest_mode=True, inv_bonus_rel=0.3, **{min_key: 1.0}
+    )
+    es = build(data, {f'{cat}1': params}, opt)
+
+    if cat == 'tes':
+        investment = es.comps['tes1'].investment
+    else:
+        flow = out_flow(es, f'{cat}1')
+        assert flow.nominal_capacity is None
+        investment = flow.investment
+
+    assert isinstance(investment, solph.Investment)
+    expected_ep_costs = (
+        params['inv_spez'] / calc_bwsf(0.06, 25) * 0.7 + params['op_cost_fix']
+    )
+    assert investment.ep_costs[0] == pytest.approx(expected_ep_costs)
+    assert investment.maximum[0] == params[max_key]
+    assert investment.minimum[0] == params[min_key]
+
+
+def test_storage_investment_links_flow_capacities(data, opt, make_unit):
+    es = build(data, {'tes1': make_unit('tes', invest_mode=True)}, opt)
+    assert es.comps['tes1'].nominal_storage_capacity is None
+    assert isinstance(in_flow(es, 'tes1', 'hnw').investment, solph.Investment)
+    assert isinstance(out_flow(es, 'tes1', 'hnw').investment, solph.Investment)
+
+
+def test_mixed_invest_and_dispatch_units(data, opt, make_unit):
+    es = build(data, {
+        'gb1': make_unit('gb', invest_mode=True),
+        'gb2': make_unit('gb', invest_mode=False),
+    }, opt)
+    assert isinstance(out_flow(es, 'gb1').investment, solph.Investment)
+    assert out_flow(es, 'gb2').investment is None
+    assert out_flow(es, 'gb2').nominal_capacity == 150.0
