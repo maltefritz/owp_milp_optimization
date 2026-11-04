@@ -335,3 +335,65 @@ def test_cheaper_unit_is_dispatched_first(
     d = flows(es)
     np.testing.assert_allclose(d['Q_gb1'], 60.0, atol=TOL)
     np.testing.assert_allclose(d['Q_gb2'], 40.0, atol=TOL)
+
+
+# %% Investment results
+
+INVEST_BOUNDS = {'tes': ('Q_min', 'Q_max'), 'sol': ('A_min', 'A_max')}
+
+
+def test_invest_capacities_within_bounds(full_invest):
+    caps = full_invest.data_caps.loc[0]
+    for unit, params in full_invest.param_units.items():
+        lo, hi = INVEST_BOUNDS.get(
+            unit.rstrip('0123456789'), ('cap_min', 'cap_max')
+        )
+        assert params[lo] - TOL <= caps[f'cap_{unit}'] <= params[hi] + TOL
+
+
+def test_invest_minimum_capacity_is_enforced(full_invest):
+    assert full_invest.data_caps.loc[0, 'cap_hp1'] >= 5.0 - TOL
+
+
+@pytest.mark.parametrize('unit, col', [
+    ('hp1', 'Q_out_hp1'), ('gb1', 'Q_gb1'), ('eb1', 'Q_eb1'),
+    ('exhs1', 'Q_exhs1'),
+])
+def test_invest_flows_within_optimized_capacity(full_invest, unit, col):
+    cap = full_invest.data_caps.loc[0, f'cap_{unit}']
+    q_rel_max = full_invest.param_units[unit].get('Q_rel_max', 1.0)
+    assert (flows(full_invest)[col] <= q_rel_max * cap + TOL).all()
+
+
+def test_invest_solar_scales_with_optimized_area(full_invest, make_data):
+    area = full_invest.data_caps.loc[0, 'cap_sol1']
+    eta = full_invest.param_units['sol1']['eta_col']
+    np.testing.assert_allclose(
+        flows(full_invest)['Q_sol1'],
+        make_data()['solar_heat_flow'] * eta * area, atol=1e-5
+    )
+
+
+def test_invest_storage_power_follows_capacity(full_invest):
+    caps = full_invest.data_caps.loc[0]
+    params = full_invest.param_units['tes1']
+    assert caps['cap_in_tes1'] == pytest.approx(
+        params['Q_in_to_cap'] * caps['cap_tes1']
+    )
+    assert caps['cap_out_tes1'] == pytest.approx(
+        params['Q_out_to_cap'] * caps['cap_tes1']
+    )
+    d = flows(full_invest)
+    assert (d['Q_in_tes1'] <= caps['cap_in_tes1'] + TOL).all()
+    assert (d['Q_out_tes1'] <= caps['cap_out_tes1'] + TOL).all()
+    assert (
+        full_invest.data_all['storage_content_tes1'] <= caps['cap_tes1'] + TOL
+    ).all()
+
+
+def test_invest_cost_uses_optimized_capacity(full_invest):
+    cap = full_invest.data_caps.loc[0, 'cap_hp1']
+    params = full_invest.param_units['hp1']
+    assert full_invest.cost_df.loc['invest', 'hp1'] == pytest.approx(
+        params['inv_spez'] * cap * (1 - params['inv_bonus_rel'])
+    )
