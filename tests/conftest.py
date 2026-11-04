@@ -137,12 +137,14 @@ def _make_data(n=N_STEPS, start='2024-01-01', **overrides):
 
 
 def _make_unit(cat, **overrides):
+    """Copy of the ``UNIT_DEFAULTS`` of a unit type with overrides."""
     params = copy.deepcopy(UNIT_DEFAULTS[cat])
     params.update(overrides)
     return params
 
 
 def _make_opt(**overrides):
+    """Copy of ``OPT_DEFAULTS`` with overrides."""
     params = copy.deepcopy(OPT_DEFAULTS)
     params.update(overrides)
     return params
