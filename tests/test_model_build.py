@@ -185,3 +185,48 @@ def test_component_connections(es_all, unit, cls, inputs, outputs):
     assert isinstance(comp, cls)
     assert {bus_key[b] for b in comp.inputs} == inputs
     assert {bus_key[b] for b in comp.outputs} == outputs
+
+
+# %% Commodity sources and sinks
+
+def test_gas_source_cost_includes_co2(es_all, data, opt):
+    flow = out_flow(es_all, 'gas_source', 'gnw')
+    expected = data['gas_price'] + data['co2_price'] * opt['ef_gas']
+    np.testing.assert_allclose(seq(flow.variable_costs, len(data)), expected)
+
+
+def test_electricity_source_cost(es_all, data, opt):
+    flow = out_flow(es_all, 'elec_source', 'enw')
+    expected = (
+        data['el_spot_price'] + opt['elec_consumer_charges_grid']
+        - opt['elec_consumer_charges_self']
+    )
+    np.testing.assert_allclose(seq(flow.variable_costs, len(data)), expected)
+
+
+def test_heat_sink_is_fixed_to_demand(es_all, data, opt):
+    flow = in_flow(es_all, 'heat_sink', 'hnw')
+    demand = data['heat_demand']
+    assert flow.nominal_capacity == pytest.approx(demand.max())
+    np.testing.assert_allclose(
+        seq(flow.fix, len(data)) * flow.nominal_capacity, demand
+    )
+    np.testing.assert_allclose(
+        seq(flow.variable_costs, len(data)), -opt['heat_price']
+    )
+
+
+def test_spotmarket_sink_revenue(es_all, data, opt):
+    flow = in_flow(es_all, 'elec_sink', 'chp_node')
+    np.testing.assert_allclose(
+        seq(flow.variable_costs, len(data)),
+        -(data['el_spot_price'] + opt['vNNE'])
+    )
+
+
+def test_chp_internal_link(es_all):
+    comp = es_all.comps['chp_internal']
+    enw = es_all.buses['enw']
+    assert comp.conversion_factors[enw][0] == 1
+    assert comp.outputs[enw].nominal_capacity == 9999
+    assert comp.inputs[es_all.buses['chp_node']].variable_costs[0] in (0, None)
