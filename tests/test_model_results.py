@@ -551,3 +551,33 @@ def test_electric_only_system_has_no_gas_cost(
     assert kp['cost_gas'] == 0
     assert kp['Emissions OM (Gas)'] == 0
     assert kp['cost_el_grid'] > 0
+
+
+# %% Ecological key parameters
+
+def test_emissions_time_series(full_dispatch):
+    es = full_dispatch
+    d = flows(es)
+    expected = (
+        d['H_source'] * es.param_opt['ef_gas']
+        + (d['P_source'] - d['P_spotmarket']) * es.data['ef_om']
+    )
+    np.testing.assert_allclose(d['Emissions OM'], expected, atol=1e-6)
+
+
+def test_emission_key_params(full_dispatch):
+    es = full_dispatch
+    d, kp = flows(es), es.key_params
+    assert kp['Emissions OM (Gas)'] == pytest.approx(
+        (d['H_source'] * es.param_opt['ef_gas']).sum()
+    )
+    assert kp['Emissions OM (Electricity)'] == pytest.approx(
+        (d['P_source'] * es.data['ef_om']).sum()
+    )
+    assert kp['Emissions OM (Spotmarket)'] == pytest.approx(
+        -(d['P_spotmarket'] * es.data['ef_om']).sum()
+    )
+    assert kp['Total Emissions OM'] == pytest.approx(
+        kp['Emissions OM (Gas)'] + kp['Emissions OM (Electricity)']
+        + kp['Emissions OM (Spotmarket)']
+    )
