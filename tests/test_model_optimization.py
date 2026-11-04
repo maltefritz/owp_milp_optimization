@@ -223,3 +223,151 @@ def test_highs_without_time_limit(gb_system, log_dir, spy_highs):
     assert gb_system(TimeLimit=None).solve_model() == 'ok'
     (solver,) = spy_highs.instances
     assert solver.config.time_limit is None
+
+
+# %% Termination condition mapping (fake solvers)
+# A real solver cannot easily be forced into every termination condition
+# (time limit, unbounded, error, ...), so these tests replace it with a fake
+# that returns a preset condition and only check the translation into the
+# status string of solve_model.
+
+STATUS_CASES_APPSI = [
+    (AppsiTC.optimal, 'ok'),
+    (AppsiTC.objectiveLimit, 'ok'),
+    (AppsiTC.maxTimeLimit, 'ok'),
+    (AppsiTC.infeasible, 'infeasable'),
+    (AppsiTC.unbounded, 'infeasable'),
+    (AppsiTC.infeasibleOrUnbounded, 'infeasable'),
+    (AppsiTC.error, 'unknown solver error'),
+    (AppsiTC.interrupted, 'unknown solver error'),
+    (AppsiTC.unknown, 'unknown solver error'),
+]
+
+
+class FakeHighs:
+    """Stand-in for appsi's Highs returning a preset termination condition.
+
+    It does not solve anything. Set ``termination_condition`` to choose the
+    result, or ``raise_runtime_error`` to fail like appsi does when it finds
+    no solution.
+    """
+    termination_condition = None
+    raise_runtime_error = False
+
+    def __init__(self):
+        self.config = types.SimpleNamespace(
+            mip_gap=None, logfile=None, time_limit=None
+        )
+
+    def solve(self, pyomo_model):
+        if FakeHighs.raise_runtime_error:
+            raise RuntimeError('A feasible solution was not found')
+        return types.SimpleNamespace(
+            termination_condition=FakeHighs.termination_condition
+        )
+
+
+@pytest.mark.parametrize('tc, expected', STATUS_CASES_APPSI)
+def test_highs_termination_condition_mapping(
+        tc, expected, gb_system, log_dir, monkeypatch):
+    """Each appsi termination condition maps to the right status string."""
+    monkeypatch.setattr(model.appsi.solvers, 'Highs', FakeHighs)
+    monkeypatch.setattr(FakeHighs, 'termination_condition', tc)
+    assert gb_system().solve_model() == expected
+
+
+def test_highs_runtime_error_is_unknown_solver_error(
+        gb_system, log_dir, monkeypatch):
+    """A RuntimeError from appsi is caught and reported, not raised."""
+    monkeypatch.setattr(model.appsi.solvers, 'Highs', FakeHighs)
+    monkeypatch.setattr(FakeHighs, 'raise_runtime_error', True)
+    assert gb_system().solve_model() == 'unknown solver error'
+
+
+@pytest.fixture
+def fake_solph_solve(monkeypatch):
+    """Replace ``solph.Model.solve`` and record the call arguments.
+
+    Gurobi and SCIP are called through ``solph.Model.solve``, so no solver
+    has to be installed. Returns an object with ``calls`` (the keyword
+    arguments of every call) and ``outcome['tc']`` (the termination
+    condition the fake returns, ``optimal`` by default).
+    """
+    calls = []
+    outcome = {'tc': OptTC.optimal}
+
+    def fake_solve(self, **kwargs):
+        calls.append(kwargs)
+        return types.SimpleNamespace(
+            Solver=types.SimpleNamespace(Termination_condition=outcome['tc'])
+        )
+
+    monkeypatch.setattr(solph.Model, 'solve', fake_solve)
+    return types.SimpleNamespace(calls=calls, outcome=outcome)
+
+
+def test_gurobi_options(gb_system, log_dir, fake_solph_solve):
+    """param_opt is translated into Gurobi's option names."""
+    status = gb_system(Solver='Gurobi', MIPGap=0.05, TimeLimit=30).solve_model()
+
+    assert status == 'ok'
+    (call,) = fake_solph_solve.calls
+    assert call['solver'] == 'gurobi'
+    assert call['allow_nonoptimal'] is True
+    assert call['solve_kwargs'] == {'tee': True}
+    assert call['cmdline_options'] == {
+        'MIPGap': 0.05,
+        'LogFile': str(log_dir / 'gurobi_log.txt'),
+        'TimeLimit': 30,
+    }
+
+
+def test_scip_options(gb_system, log_dir, fake_solph_solve):
+    """param_opt is translated into SCIP's option names."""
+    status = gb_system(Solver='SCIP', MIPGap=0.05, TimeLimit=30).solve_model()
+
+    assert status == 'ok'
+    (call,) = fake_solph_solve.calls
+    assert call['solver'] == 'scip'
+    assert call['allow_nonoptimal'] is True
+    assert call['cmdline_options'] == {
+        'limits/gap': 0.05,
+        'logfile': str(log_dir / 'scip_log.txt'),
+        'limits/time': 30,
+    }
+
+
+@pytest.mark.parametrize('solver, time_key', [
+    ('Gurobi', 'TimeLimit'), ('SCIP', 'limits/time')
+])
+def test_cli_solvers_without_time_limit(
+        solver, time_key, gb_system, log_dir, fake_solph_solve):
+    """``TimeLimit=None`` leaves the time option out for Gurobi and SCIP."""
+    gb_system(Solver=solver, TimeLimit=None).solve_model()
+    (call,) = fake_solph_solve.calls
+    assert time_key not in call['cmdline_options']
+
+
+@pytest.mark.parametrize('solver', ['Gurobi', 'SCIP'])
+@pytest.mark.parametrize('tc, expected', [
+    (OptTC.optimal, 'ok'),
+    (OptTC.maxTimeLimit, 'ok'),
+    # pyomo.opt has no objectiveLimit member, so a plain string is used
+    ('objectiveLimit', 'ok'),
+    (OptTC.infeasible, 'infeasable'),
+    (OptTC.unbounded, 'infeasable'),
+    (OptTC.infeasibleOrUnbounded, 'infeasable'),
+    (OptTC.error, 'unknown solver error'),
+    (OptTC.other, 'unknown solver error'),
+])
+def test_cli_solver_termination_condition_mapping(
+        solver, tc, expected, gb_system, log_dir, fake_solph_solve):
+    """Each pyomo.opt termination condition maps to the right status.
+
+    Gurobi and SCIP report ``pyomo.opt`` conditions, not the appsi ones
+    ``solve_model`` compares against. They still match because the pyomo.opt
+    members are strings ('optimal', ...) and the lists in ``solve_model``
+    also contain the plain string names.
+    """
+    fake_solph_solve.outcome['tc'] = tc
+    assert gb_system(Solver=solver).solve_model() == expected
