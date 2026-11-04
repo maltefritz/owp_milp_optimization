@@ -176,3 +176,162 @@ def test_pipeline_does_not_mutate_inputs(
     pd.testing.assert_frame_equal(full_dispatch.data, make_data())
     assert full_dispatch.param_units == full_dispatch_units
     assert full_dispatch.param_opt == make_opt()
+
+
+# %% Physical consistency (dispatch)
+
+def test_heat_balance(full_dispatch):
+    d = flows(full_dispatch)
+    supply = (
+        d['Q_out_hp1'] + d['Q_ccet1'] + d['Q_ice1'] + d['Q_gb1'] + d['Q_eb1']
+        + d['Q_sol1'] + d['Q_exhs1'] + d['Q_exhs2'] + d['Q_out_tes1']
+    )
+    np.testing.assert_allclose(
+        supply - d['Q_in_tes1'], d['Q_demand'], atol=TOL
+    )
+
+
+def test_heat_demand_is_met_exactly(full_dispatch, make_data):
+    np.testing.assert_allclose(
+        flows(full_dispatch)['Q_demand'], make_data()['heat_demand'],
+        atol=TOL
+    )
+
+
+def test_gas_balance(full_dispatch):
+    d = flows(full_dispatch)
+    np.testing.assert_allclose(
+        d['H_source'], d['H_ccet1'] + d['H_ice1'] + d['H_gb1'], atol=TOL
+    )
+
+
+def test_electricity_balance(full_dispatch):
+    d = flows(full_dispatch)
+    np.testing.assert_allclose(
+        d['P_source'] + d['P_internal'], d['P_in_hp1'] + d['P_eb1'], atol=TOL
+    )
+
+
+def test_chp_electricity_balance(full_dispatch):
+    d = flows(full_dispatch)
+    np.testing.assert_allclose(
+        d['P_ccet1'] + d['P_ice1'], d['P_spotmarket'] + d['P_internal'],
+        atol=TOL
+    )
+
+
+@pytest.mark.parametrize('output, inp, unit, eff', [
+    ('Q_gb1', 'H_gb1', 'gb1', 'eta'),
+    ('Q_eb1', 'P_eb1', 'eb1', 'eta'),
+    ('Q_out_hp1', 'P_in_hp1', 'hp1', 'cop'),
+    ('Q_ccet1', 'H_ccet1', 'ccet1', 'eta_th'),
+    ('P_ccet1', 'H_ccet1', 'ccet1', 'eta_el'),
+    ('Q_ice1', 'H_ice1', 'ice1', 'eta_th'),
+    ('P_ice1', 'H_ice1', 'ice1', 'eta_el'),
+])
+def test_conversion_efficiencies(full_dispatch, output, inp, unit, eff):
+    d = flows(full_dispatch)
+    factor = full_dispatch.param_units[unit][eff]
+    np.testing.assert_allclose(d[output], factor * d[inp], atol=TOL)
+
+
+@pytest.mark.parametrize('unit, col', [
+    ('hp1', 'Q_out_hp1'), ('ccet1', 'Q_ccet1'), ('ice1', 'Q_ice1'),
+    ('gb1', 'Q_gb1'), ('eb1', 'Q_eb1'),
+])
+def test_part_load_limits(full_dispatch, unit, col):
+    params = full_dispatch.param_units[unit]
+    q = flows(full_dispatch)[col]
+    on = q > TOL
+    assert (q[on] >= params['Q_rel_min'] * params['cap_N'] - TOL).all()
+    assert (q <= params['Q_rel_max'] * params['cap_N'] + TOL).all()
+    assert (q >= -TOL).all()
+
+
+def test_solar_thermal_follows_irradiation(full_dispatch, make_data):
+    params = full_dispatch.param_units['sol1']
+    np.testing.assert_allclose(
+        flows(full_dispatch)['Q_sol1'],
+        make_data()['solar_heat_flow'] * params['eta_col'] * params['A_N'],
+        atol=TOL
+    )
+
+
+def test_fixed_external_heat_source_runs_at_nominal_capacity(full_dispatch):
+    cap = full_dispatch.param_units['exhs1']['cap_N']
+    np.testing.assert_allclose(flows(full_dispatch)['Q_exhs1'], cap, atol=TOL)
+
+
+def test_flexible_external_heat_source_is_bounded(full_dispatch):
+    cap = full_dispatch.param_units['exhs2']['cap_N']
+    q = flows(full_dispatch)['Q_exhs2']
+    assert (q <= cap + TOL).all() and (q >= -TOL).all()
+
+
+def test_storage_content_within_capacity(full_dispatch):
+    content = full_dispatch.data_all['storage_content_tes1']
+    cap = full_dispatch.param_units['tes1']['Q_N']
+    assert (content >= -TOL).all() and (content <= cap + TOL).all()
+
+
+def test_storage_initial_level_and_balance(full_dispatch):
+    params = full_dispatch.param_units['tes1']
+    content = full_dispatch.data_all['storage_content_tes1']
+    assert content.iloc[0] == pytest.approx(
+        params['init_storage'] * params['Q_N']
+    )
+    assert params['balanced']
+    assert content.iloc[-1] == pytest.approx(content.iloc[0])
+
+
+def test_storage_dynamics(full_dispatch):
+    d = full_dispatch.data_all
+    loss_rate = full_dispatch.param_units['tes1']['Q_rel_loss']
+    content = d['storage_content_tes1'].to_numpy()
+    q_in = d['Q_in_tes1'].to_numpy()[:-1]
+    q_out = d['Q_out_tes1'].to_numpy()[:-1]
+    np.testing.assert_allclose(
+        content[1:], content[:-1] * (1 - loss_rate) + q_in - q_out, atol=1e-5
+    )
+    np.testing.assert_allclose(
+        d['storage_losses_tes1'].to_numpy()[:-1], content[:-1] * loss_rate,
+        atol=1e-5
+    )
+
+
+@pytest.mark.xfail(
+    strict=True, raises=AssertionError,
+    reason=(
+        'BUG: Q_in_to_cap and Q_out_to_cap are passed to solph as '
+        'invest_relation_*_capacity, which solph only applies in invest '
+        'mode. In dispatch mode the storage can be charged and discharged '
+        'with unlimited power, although the dashboard shows and uses both '
+        'ratios for storages with a fixed capacity.'
+    )
+)
+def test_storage_power_limited_in_dispatch_mode(
+        solve_and_process, make_data, make_unit, make_opt):
+    # One hour of very cheap electricity makes fast charging attractive
+    data = make_data(el_spot_price=300.0)
+    data.iloc[2, data.columns.get_loc('el_spot_price')] = -500.0
+    tes = make_unit('tes', Q_N=1000.0)
+    es = solve_and_process(data, {
+        'eb1': make_unit('eb', cap_N=2000.0),
+        'gb1': make_unit('gb', Q_rel_min=0.0),
+        'tes1': tes,
+    }, make_opt())
+
+    d = flows(es)
+    assert d['Q_in_tes1'].max() <= tes['Q_in_to_cap'] * tes['Q_N'] + TOL
+    assert d['Q_out_tes1'].max() <= tes['Q_out_to_cap'] * tes['Q_N'] + TOL
+
+
+def test_cheaper_unit_is_dispatched_first(
+        solve_and_process, make_data, make_unit, make_opt):
+    es = solve_and_process(make_data(heat_demand=100.0), {
+        'gb1': make_unit('gb', cap_N=60.0, Q_rel_min=0.0, eta=0.95),
+        'gb2': make_unit('gb', cap_N=100.0, Q_rel_min=0.0, eta=0.80),
+    }, make_opt())
+    d = flows(es)
+    np.testing.assert_allclose(d['Q_gb1'], 60.0, atol=TOL)
+    np.testing.assert_allclose(d['Q_gb2'], 40.0, atol=TOL)
