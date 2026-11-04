@@ -235,8 +235,8 @@ class EnergySystem():
                             ),
                         self.buses['hnw']: solph.flows.Flow(
                             nominal_capacity=nominal_capacity,
-                            max=unit_params['Q_rel_max'],
-                            min=unit_params['Q_rel_min'],
+                            maximum=unit_params['Q_rel_max'],
+                            minimum=unit_params['Q_rel_min'],
                             nonconvex=solph.NonConvex()
                             )
                         },
@@ -286,8 +286,8 @@ class EnergySystem():
                     outputs={
                         self.buses['hnw']: solph.flows.Flow(
                             nominal_capacity=nominal_capacity,
-                            max=unit_params['Q_rel_max'],
-                            min=unit_params['Q_rel_min'],
+                            maximum=unit_params['Q_rel_max'],
+                            minimum=unit_params['Q_rel_min'],
                             nonconvex=solph.NonConvex(),
                             variable_costs=(
                                 unit_params['op_cost_var']
@@ -354,8 +354,8 @@ class EnergySystem():
                 inputs={self.buses['chp_node']: solph.flows.Flow()},
                 outputs={self.buses['enw']: solph.flows.Flow(
                     nominal_capacity=9999,
-                    max=1.0,
-                    min=0.0
+                    maximum=1.0,
+                    minimum=0.0
                     )},
                 conversion_factors={self.buses['enw']: 1}
                 )
