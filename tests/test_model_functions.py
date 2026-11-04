@@ -10,22 +10,25 @@ from owp_milp_optimization.model import (
 # %% calc_bwsf (Barwert-Summenfaktor / present value annuity factor)
 
 def test_calc_bwsf_reference_value():
-    # 5 % interest over 20 years, standard textbook value
+    """Matches the textbook value for 5 % interest over 20 years."""
     assert calc_bwsf(0.05, 20) == pytest.approx(12.462210, abs=1e-6)
 
 
 @pytest.mark.parametrize('i', [0.01, 0.05, 0.08, 0.2])
 @pytest.mark.parametrize('n', [1, 5, 20, 40])
 def test_calc_bwsf_equals_sum_of_discount_factors(i, n):
+    """Equals the definition: the sum of 1 / (1 + i)^t for t = 1..n."""
     expected = sum((1 + i) ** -t for t in range(1, n + 1))
     assert calc_bwsf(i, n) == pytest.approx(expected)
 
 
 def test_calc_bwsf_single_year():
+    """For a single year, it is just the discount factor of that year."""
     assert calc_bwsf(0.1, 1) == pytest.approx(1 / 1.1)
 
 
 def test_calc_bwsf_decreases_with_interest():
+    """A higher interest rate gives a smaller present value factor."""
     assert calc_bwsf(0.02, 20) > calc_bwsf(0.05, 20) > calc_bwsf(0.1, 20)
 
 
@@ -38,12 +41,14 @@ def test_calc_bwsf_decreases_with_interest():
     )
 )
 def test_calc_bwsf_zero_interest_equals_lifetime():
+    """At 0 % interest, every year counts fully, so the factor is n."""
     assert calc_bwsf(0.0, 20) == pytest.approx(20)
 
 
 # %% LCOH (levelized cost of heat)
 
 def test_lcoh_matches_formula():
+    """Equals (invest + bwsf * (cost - revenue)) / (bwsf * Q)."""
     invest, cost, Q, revenue, i, n = 1e6, 2e5, 1e4, 5e4, 0.04, 25
     bwsf = calc_bwsf(i, n)
     expected = (invest + bwsf * (cost - revenue)) / (bwsf * Q)
@@ -53,21 +58,25 @@ def test_lcoh_matches_formula():
 
 
 def test_lcoh_defaults_are_five_percent_and_twenty_years():
+    """Without explicit values: no revenue, 5 % interest and 20 years."""
     assert LCOH(1e6, 2e5, 1e4) == pytest.approx(
         LCOH(1e6, 2e5, 1e4, revenue=0, i=0.05, n=20)
     )
 
 
 def test_lcoh_without_invest_is_specific_running_cost():
+    """Without invest, LCOH is simply the annual cost per MWh of heat."""
     assert LCOH(0, 5000, 100) == pytest.approx(50)
 
 
 def test_lcoh_annualizes_invest_with_bwsf():
+    """The invest is spread over the lifetime using the bwsf."""
     # Pure investment: invest / (bwsf * Q) is the annuity per MWh
     assert LCOH(12.462210 * 100, 0, 100) == pytest.approx(1.0, abs=1e-6)
 
 
 def test_lcoh_decreases_with_revenue():
+    """Revenues (e.g. from selling electricity) lower the heat cost."""
     assert LCOH(1e6, 2e5, 1e4, revenue=1e5) < LCOH(1e6, 2e5, 1e4)
 
 
@@ -75,6 +84,8 @@ def test_lcoh_decreases_with_revenue():
 
 @pytest.fixture
 def cost_params():
+    """Cost parameters of one heat pump, with bonuses on invest (25 %) and
+    operating cost (50 %) so that their effect is visible."""
     return {
         'hp1': {
             'inv_spez': 1000.0, 'inv_bonus_rel': 0.25, 'op_cost_fix': 10.0,
@@ -84,6 +95,10 @@ def cost_params():
 
 
 def test_calc_cost_computes_all_cost_rows(cost_params):
+    """Every cost row follows from capacity (20), dispatch and the bonuses.
+
+    The dispatch series ``uc`` sums up to 6 MWh.
+    """
     uc = pd.Series([1.0, 2.0, 3.0])
     cost_df = calc_cost('hp1', 20.0, cost_params, uc, pd.DataFrame())
 
@@ -94,6 +109,7 @@ def test_calc_cost_computes_all_cost_rows(cost_params):
 
 
 def test_calc_cost_adds_additional_variable_cost_without_bonus(cost_params):
+    """``add_var_cost`` is charged per MWh on top of the variable cost."""
     uc = pd.Series([1.0, 2.0, 3.0])
     cost_df = calc_cost(
         'hp1', 20.0, cost_params, uc, pd.DataFrame(), add_var_cost=4.0
@@ -105,6 +121,7 @@ def test_calc_cost_adds_additional_variable_cost_without_bonus(cost_params):
 
 @pytest.mark.parametrize('add_var_cost', [None, 0, 0.0])
 def test_calc_cost_ignores_empty_additional_cost(cost_params, add_var_cost):
+    """``None`` and 0 as ``add_var_cost`` leave the variable cost unchanged."""
     uc = pd.Series([1.0, 2.0, 3.0])
     cost_df = calc_cost(
         'hp1', 20.0, cost_params, uc, pd.DataFrame(),
@@ -114,6 +131,7 @@ def test_calc_cost_ignores_empty_additional_cost(cost_params, add_var_cost):
 
 
 def test_calc_cost_keeps_existing_columns(cost_params):
+    """Adding a second unit leaves the column of the first one untouched."""
     cost_params['gb1'] = dict(cost_params['hp1'])
     uc = pd.Series([1.0])
     cost_df = calc_cost('hp1', 1.0, cost_params, uc, pd.DataFrame())
@@ -127,6 +145,7 @@ def test_calc_cost_keeps_existing_columns(cost_params):
 
 
 def test_calc_cost_zero_dispatch_has_only_fixed_cost(cost_params):
+    """A unit that never runs only causes fixed operating cost."""
     cost_df = calc_cost(
         'hp1', 20.0, cost_params, pd.Series([0.0, 0.0]), pd.DataFrame()
     )
@@ -191,6 +210,11 @@ LABEL_CASES = [
 
 @pytest.mark.parametrize('col, expected', LABEL_CASES)
 def test_check_column_labels(col, expected):
+    """Each oemof result key gets its readable label.
+
+    oemof names results ``((from_node, to_node), variable)``. ``check_column``
+    turns that into labels like ``Q_gb1`` (heat from gas boiler 1).
+    """
     assert check_column(col, debug=False) == expected
 
 
@@ -200,15 +224,18 @@ def test_check_column_labels(col, expected):
     (('chp node', 'somewhere'), 'flow'),
 ])
 def test_check_column_unknown_returns_none(col):
+    """Keys that match no labeling rule return None instead of raising."""
     assert check_column(col, debug=False) is None
 
 
 def test_check_column_reports_unknown_edge_in_debug_mode(capsys):
+    """With ``debug=True``, an unknown key is printed."""
     check_column((('foo', 'bar'), 'flow'), debug=True)
     assert 'could not be labeled' in capsys.readouterr().out
 
 
 def test_check_column_is_silent_without_debug(capsys):
+    """With ``debug=False``, nothing is printed."""
     check_column((('foo', 'bar'), 'flow'), debug=False)
     assert capsys.readouterr().out == ''
 
@@ -216,6 +243,7 @@ def test_check_column_is_silent_without_debug(capsys):
 # %% result_labeling
 
 def test_result_labeling_renames_dataframe_columns_in_place():
+    """DataFrame columns are renamed in place, nothing is returned."""
     df = pd.DataFrame(
         [[1.0, 2.0]],
         columns=[(('gb1', HNW), 'flow'), (('gas source', 'gas network'),
@@ -226,6 +254,7 @@ def test_result_labeling_renames_dataframe_columns_in_place():
 
 
 def test_result_labeling_renames_series_index_in_place():
+    """For a Series, the index is renamed and the values are kept."""
     s = pd.Series(
         [10.0, 20.0],
         index=[(('hp1', HNW), 'invest'), (('tes1', 'None'), 'invest')]
@@ -236,6 +265,8 @@ def test_result_labeling_renames_series_index_in_place():
 
 
 def test_result_labeling_skips_non_tuple_columns(capsys):
+    """Columns that are not oemof keys stay as they are (and are reported
+    in debug mode)."""
     df = pd.DataFrame([[1.0, 2.0]], columns=['already_labeled',
                                              (('gb1', HNW), 'flow')])
     result_labeling(df, debug=True)
@@ -244,12 +275,14 @@ def test_result_labeling_skips_non_tuple_columns(capsys):
 
 
 def test_result_labeling_maps_unknown_edges_to_none():
+    """Unknown keys become a column named None (see ``check_column``)."""
     df = pd.DataFrame([[1.0]], columns=[(('foo', 'bar'), 'flow')])
     result_labeling(df, debug=False)
     assert list(df.columns) == [None]
 
 
 def test_result_labeling_handles_empty_series():
+    """An empty Series does not raise."""
     s = pd.Series(dtype=float)
     result_labeling(s, debug=False)
     assert s.empty
