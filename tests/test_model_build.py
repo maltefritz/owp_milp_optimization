@@ -21,6 +21,8 @@ def seq(values, n):
 
 
 def build(data, param_units, param_opt):
+    """Build all nodes of an ``EnergySystem`` like ``run_model``, but don't
+    solve it."""
     es = EnergySystem(data, param_units, param_opt)
     es.generate_buses()
     es.generate_sources()
@@ -31,16 +33,19 @@ def build(data, param_units, param_opt):
 
 @pytest.fixture
 def data(make_data):
+    """Default synthetic 24 h input time series."""
     return make_data()
 
 
 @pytest.fixture
 def opt(make_opt):
+    """Default optimization parameters."""
     return make_opt()
 
 
 @pytest.fixture
 def all_units(make_unit):
+    """Parameters for one unit of every type (``hp1``, ``ccet1``, ...)."""
     return {f'{cat}1': make_unit(cat) for cat in ALL_CATS}
 
 
@@ -51,10 +56,12 @@ def es_all(data, all_units, opt):
 
 
 def out_flow(es, unit, bus='hnw'):
+    """The solph flow from ``unit`` into ``bus`` (default: heat network)."""
     return es.comps[unit].outputs[es.buses[bus]]
 
 
 def in_flow(es, unit, bus):
+    """The solph flow from ``bus`` into ``unit``."""
     return es.comps[unit].inputs[es.buses[bus]]
 
 
@@ -81,6 +88,7 @@ def test_usage_flags(units, tes, chp, gas, el, data, opt, make_unit):
 
 
 def test_time_index_starts_at_data_and_is_hourly(data, opt, make_unit):
+    """The model time index is hourly and matches the input data."""
     es = EnergySystem(data, {'gb1': make_unit('gb')}, opt)
     assert es.periods == len(data)
     # infer_last_interval adds the end of the last time step
@@ -90,12 +98,14 @@ def test_time_index_starts_at_data_and_is_hourly(data, opt, make_unit):
 
 
 def test_bwsf_uses_capital_interest_and_lifetime(data, make_opt, make_unit):
+    """The bwsf is computed from ``capital_interest`` and ``lifetime``."""
     opt = make_opt(capital_interest=0.07, lifetime=15)
     es = EnergySystem(data, {'gb1': make_unit('gb')}, opt)
     assert es.bwsf == pytest.approx(calc_bwsf(0.07, 15))
 
 
 def test_constructor_does_not_build_nodes(data, opt, make_unit):
+    """Nodes are only created by the generate_* methods."""
     es = EnergySystem(data, {'gb1': make_unit('gb')}, opt)
     assert es.buses == {}
     assert es.comps == {}
@@ -133,6 +143,11 @@ def test_constructor_does_not_build_nodes(data, opt, make_unit):
     ),
 ])
 def test_topology(units, buses, comps, data, opt, make_unit):
+    """Only the buses and components needed by the given units are built.
+
+    E.g. a gas boiler needs a gas network and gas source, but no
+    electricity network.
+    """
     param_units = {u: make_unit(u.rstrip('0123456789')) for u in units}
     es = build(data, param_units, opt)
     assert set(es.buses) == buses
@@ -140,6 +155,8 @@ def test_topology(units, buses, comps, data, opt, make_unit):
 
 
 def test_all_nodes_are_added_to_solph_energy_system(es_all):
+    """Every created node is also added to the solph energy system (a node
+    missing there would silently be left out of the optimization)."""
     expected = (
         {str(b.label) for b in es_all.buses.values()}
         | {str(c.label) for c in es_all.comps.values()}
@@ -148,6 +165,7 @@ def test_all_nodes_are_added_to_solph_energy_system(es_all):
 
 
 def test_node_labels(es_all):
+    """Nodes carry the labels that ``check_column`` relies on later."""
     assert {k: str(b.label) for k, b in es_all.buses.items()} == {
         'gnw': 'gas network',
         'enw': 'electricity network',
@@ -180,6 +198,8 @@ def test_node_labels(es_all):
     ('chp_internal', solph.components.Converter, {'chp_node'}, {'enw'}),
 ])
 def test_component_connections(es_all, unit, cls, inputs, outputs):
+    """Each component has the right solph type and connects to the right
+    input and output buses."""
     comp = es_all.comps[unit]
     bus_key = {b: k for k, b in es_all.buses.items()}
     assert isinstance(comp, cls)
@@ -190,12 +210,19 @@ def test_component_connections(es_all, unit, cls, inputs, outputs):
 # %% Commodity sources and sinks
 
 def test_gas_source_cost_includes_co2(es_all, data, opt):
+    """Gas costs the gas price plus the CO2 price per MWh of gas."""
     flow = out_flow(es_all, 'gas_source', 'gnw')
     expected = data['gas_price'] + data['co2_price'] * opt['ef_gas']
     np.testing.assert_allclose(seq(flow.variable_costs, len(data)), expected)
 
 
 def test_electricity_source_cost(es_all, data, opt):
+    """Grid electricity costs spot price plus grid charges minus self charges.
+
+    The self consumption charges are added again on the consumer's input
+    flow (see ``test_single_input_converter_parameters``), so grid power
+    pays the full grid charges and CHP power only the self charges.
+    """
     flow = out_flow(es_all, 'elec_source', 'enw')
     expected = (
         data['el_spot_price'] + opt['elec_consumer_charges_grid']
@@ -205,6 +232,8 @@ def test_electricity_source_cost(es_all, data, opt):
 
 
 def test_heat_sink_is_fixed_to_demand(es_all, data, opt):
+    """The heat demand must be met exactly; sold heat counts as revenue
+    (negative cost)."""
     flow = in_flow(es_all, 'heat_sink', 'hnw')
     demand = data['heat_demand']
     assert flow.nominal_capacity == pytest.approx(demand.max())
@@ -217,6 +246,8 @@ def test_heat_sink_is_fixed_to_demand(es_all, data, opt):
 
 
 def test_spotmarket_sink_revenue(es_all, data, opt):
+    """Sold CHP electricity earns the spot price plus the avoided grid fees
+    (vNNE)."""
     flow = in_flow(es_all, 'elec_sink', 'chp_node')
     np.testing.assert_allclose(
         seq(flow.variable_costs, len(data)),
@@ -225,6 +256,8 @@ def test_spotmarket_sink_revenue(es_all, data, opt):
 
 
 def test_chp_internal_link(es_all):
+    """CHP electricity can be used internally without loss, practically
+    unlimited capacity and extra cost."""
     comp = es_all.comps['chp_internal']
     enw = es_all.buses['enw']
     assert comp.conversion_factors[enw][0] == 1
@@ -241,6 +274,12 @@ def test_chp_internal_link(es_all):
 ])
 def test_single_input_converter_parameters(
         cat, input_bus, eff_key, cost_key, data, opt, make_unit):
+    """Heat pump, electrode and gas boiler get their parameters from the
+    unit dict.
+
+    Checked: input cost, efficiency, capacity, part load limits, on/off
+    behavior (NonConvex) and the variable cost reduced by the bonus.
+    """
     params = make_unit(cat, op_cost_bonus_rel=0.25)
     es = build(data, {f'{cat}1': params}, opt)
     comp = es.comps[f'{cat}1']
@@ -263,6 +302,8 @@ def test_single_input_converter_parameters(
 
 @pytest.mark.parametrize('cat', ['ccet', 'ice'])
 def test_chp_parameters(cat, data, opt, make_unit):
+    """CHP units (ccet, ice) convert gas into heat and electricity with the
+    given efficiencies."""
     params = make_unit(cat, op_cost_bonus_rel=0.25)
     es = build(data, {f'{cat}1': params}, opt)
     comp = es.comps[f'{cat}1']
@@ -286,6 +327,7 @@ def test_chp_parameters(cat, data, opt, make_unit):
 
 
 def test_solar_thermal_parameters(data, opt, make_unit):
+    """Solar heat is fixed by irradiation, collector efficiency and area."""
     params = make_unit('sol', op_cost_bonus_rel=0.5)
     es = build(data, {'sol1': params}, opt)
     flow = out_flow(es, 'sol1')
@@ -300,6 +342,8 @@ def test_solar_thermal_parameters(data, opt, make_unit):
 
 @pytest.mark.parametrize('fix, expected', [(True, 1), (False, None)])
 def test_external_heat_source_fix(fix, expected, data, opt, make_unit):
+    """With ``fix=True``, the external heat source always runs at nominal
+    capacity. Otherwise the optimizer decides."""
     params = make_unit('exhs', fix=fix)
     es = build(data, {'exhs1': params}, opt)
     flow = out_flow(es, 'exhs1')
@@ -310,6 +354,11 @@ def test_external_heat_source_fix(fix, expected, data, opt, make_unit):
 
 
 def test_storage_parameters(data, opt, make_unit):
+    """The storage gets capacity, losses, initial level and power ratios.
+
+    The variable cost (0.3, with 50 % bonus) is charged on both charging
+    and discharging.
+    """
     params = make_unit('tes', op_cost_var=0.3, op_cost_bonus_rel=0.5)
     es = build(data, {'tes1': params}, opt)
     tes = es.comps['tes1']
@@ -341,6 +390,12 @@ INVEST_KEYS = {
 
 @pytest.mark.parametrize('cat', ALL_CATS)
 def test_investment_parameters(cat, data, make_opt, make_unit):
+    """In invest mode, the capacity becomes a decision variable.
+
+    Its yearly cost (ep_costs) is the annualized invest (inv_spez / bwsf,
+    reduced by the bonus) plus the fixed operating cost. The size limits
+    come from the unit dict.
+    """
     opt = make_opt(capital_interest=0.06, lifetime=25)
     max_key, min_key = INVEST_KEYS[cat]
     params = make_unit(
@@ -365,6 +420,8 @@ def test_investment_parameters(cat, data, make_opt, make_unit):
 
 
 def test_storage_investment_links_flow_capacities(data, opt, make_unit):
+    """In invest mode, storage capacity and charging/discharging power are
+    all optimized."""
     es = build(data, {'tes1': make_unit('tes', invest_mode=True)}, opt)
     assert es.comps['tes1'].nominal_storage_capacity is None
     assert isinstance(in_flow(es, 'tes1', 'hnw').investment, solph.Investment)
@@ -372,6 +429,7 @@ def test_storage_investment_links_flow_capacities(data, opt, make_unit):
 
 
 def test_mixed_invest_and_dispatch_units(data, opt, make_unit):
+    """``invest_mode`` applies per unit, so both modes can be combined."""
     es = build(data, {
         'gb1': make_unit('gb', invest_mode=True),
         'gb2': make_unit('gb', invest_mode=False),
@@ -384,6 +442,7 @@ def test_mixed_invest_and_dispatch_units(data, opt, make_unit):
 # %% Input handling
 
 def test_building_does_not_mutate_inputs(data, all_units, opt):
+    """Building leaves the input data and parameter dicts unchanged."""
     data_before = data.copy()
     units_before = copy.deepcopy(all_units)
     opt_before = copy.deepcopy(opt)
