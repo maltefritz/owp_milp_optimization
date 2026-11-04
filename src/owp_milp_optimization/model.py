@@ -387,11 +387,11 @@ class EnergySystem():
                     }
             if self.param_opt['TimeLimit'] is not None:
                 options.update({'TimeLimit': self.param_opt['TimeLimit']})
-            results = self.model.solve(
+            self.model.solve(
                 solver='gurobi', solve_kwargs={'tee': True},
                 cmdline_options=options, allow_nonoptimal=True
                 )
-            tc = results.Solver.Termination_condition
+            tc = self.model.solver_results.Solver.Termination_condition
         elif self.param_opt['Solver'] == 'SCIP':
             options = {
                     'limits/gap': self.param_opt['MIPGap'],
@@ -399,11 +399,11 @@ class EnergySystem():
                     }
             if self.param_opt['TimeLimit'] is not None:
                 options.update({'limits/time': self.param_opt['TimeLimit']})
-            results = self.model.solve(
+            self.model.solve(
                 solver='scip', solve_kwargs={'tee': True},
                 cmdline_options=options, allow_nonoptimal=True
                 )
-            tc = results.Solver.Termination_condition
+            tc = self.model.solver_results.Solver.Termination_condition
         elif self.param_opt['Solver'] == 'HiGHS':
             opt = appsi.solvers.Highs()
             opt.config.mip_gap = self.param_opt['MIPGap']
