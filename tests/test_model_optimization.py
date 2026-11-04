@@ -371,3 +371,30 @@ def test_cli_solver_termination_condition_mapping(
     """
     fake_solph_solve.outcome['tc'] = tc
     assert gb_system(Solver=solver).solve_model() == expected
+
+
+# %% run_model
+
+def test_run_model_builds_and_solves(
+        make_data, make_unit, make_opt, log_dir):
+    """``run_model`` runs all generate_* steps and then solves the model."""
+    es = EnergySystem(
+        make_data(heat_demand=100.0),
+        {'gb1': make_unit('gb', Q_rel_min=0.0)},
+        make_opt(),
+    )
+    es.run_model()
+
+    assert set(es.buses) == {'gnw', 'hnw'}
+    assert {'gas_source', 'heat_sink', 'gb1'} <= set(es.comps)
+    assert math.isfinite(value(es.model.objective))
+
+
+def test_shipped_default_parameters_solve(
+        shipped_defaults, make_data, solve_es):
+    """The dashboard defaults (one unit of each type) solve with HiGHS."""
+    param_units, param_opt = shipped_defaults
+    es, status = solve_es(make_data(heat_demand=100.0), param_units, param_opt)
+    assert status == 'ok'
+    es.run_postprocessing()
+    assert all(math.isfinite(v) for v in es.key_params.values())
