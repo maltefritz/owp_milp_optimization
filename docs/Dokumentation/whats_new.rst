@@ -2,7 +2,7 @@
 What's New
 ~~~~~~~~~~
 
-v0.0.7 -- xxx (xxx xx, 2026)
+v0.1.0 -- xxx (xxx xx, 2026)
 =============================================
 
 New Features
@@ -11,11 +11,16 @@ New Features
 Improvements
 ------------
 
+- Update oemof.solph to v0.6.5
+- Update highspy to v1.15.1
+
 Fixes
 -----
 
 - Fix charges on input flows
 - Fix energy tax of gas boiler in postprocessing
+- Fix missing limit of charging and discharging power of thermal storages with
+  fixed capacity (results of existing energy systems may change)
 
 Contributors
 ------------
