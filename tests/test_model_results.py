@@ -644,3 +644,60 @@ def test_objective_matches_costs_with_operating_cost_bonus_in_invest_mode(
     )
     require(es.data_caps.loc[0, 'cap_gb1'] > 1, 'gas boiler is built')
     assert_objective_consistent(es)
+
+
+# %% Input edge cases
+
+def test_two_units_of_same_type_are_reported_separately(full_dispatch):
+    caps = full_dispatch.data_caps.loc[0]
+    assert caps['cap_exhs1'] == 5.0
+    assert caps['cap_exhs2'] == 15.0
+    assert {'exhs1', 'exhs2'} <= set(full_dispatch.cost_df.columns)
+
+
+@pytest.mark.xfail(
+    strict=True, raises=KeyError,
+    reason=(
+        'BUG: get_results drops every data_caps column containing "0", so '
+        'cap_gb10 (and cap_hp20, ...) is lost and calc_econ_params raises '
+        'KeyError. The dashboard allows up to 99 units per type.'
+    )
+)
+def test_ten_or_more_units_of_same_type(
+        solve_es, make_data, make_unit, make_opt):
+    units = {
+        f'gb{i}': make_unit('gb', cap_N=20.0, Q_rel_min=0.0)
+        for i in range(1, 11)
+    }
+    es, status = solve_es(make_data(heat_demand=100.0), units, make_opt())
+    require(status == 'ok', 'system with ten boilers solves')
+
+    es.run_postprocessing()
+    assert 'cap_gb10' in es.data_caps.columns
+    assert 'gb10' in es.cost_df.columns
+
+
+@pytest.mark.xfail(
+    strict=True, raises=AssertionError,
+    reason=(
+        'BUG: the input index is not validated. A non-datetime index makes '
+        'the model time index start at 1970-01-01; costs and emissions are '
+        'then computed from misaligned series (all NaN) and silently become '
+        '0. The input should either be rejected or handled correctly.'
+    )
+)
+def test_non_datetime_index_is_rejected_or_handled(
+        solve_es, make_data, make_unit, make_opt):
+    data = make_data(heat_demand=100.0).reset_index(drop=True)
+    opt = make_opt()
+    try:
+        es, status = solve_es(
+            data, {'gb1': make_unit('gb', Q_rel_min=0.0)}, opt
+        )
+        es.run_postprocessing()
+    except (ValueError, TypeError):
+        return  # rejecting the input is fine
+
+    gas = es.data_all['H_source'].to_numpy()[:len(data)]
+    price = (data['gas_price'] + data['co2_price'] * opt['ef_gas']).to_numpy()
+    assert es.key_params['cost_gas'] == pytest.approx((gas * price).sum())
