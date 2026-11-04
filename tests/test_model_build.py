@@ -230,3 +230,96 @@ def test_chp_internal_link(es_all):
     assert comp.conversion_factors[enw][0] == 1
     assert comp.outputs[enw].nominal_capacity == 9999
     assert comp.inputs[es_all.buses['chp_node']].variable_costs[0] in (0, None)
+
+
+# %% Heat production units (dispatch mode)
+
+@pytest.mark.parametrize('cat, input_bus, eff_key, cost_key', [
+    ('hp', 'enw', 'cop', 'elec_consumer_charges_self'),
+    ('eb', 'enw', 'eta', 'elec_consumer_charges_self'),
+    ('gb', 'gnw', 'eta', 'energy_tax'),
+])
+def test_single_input_converter_parameters(
+        cat, input_bus, eff_key, cost_key, data, opt, make_unit):
+    params = make_unit(cat, op_cost_bonus_rel=0.25)
+    es = build(data, {f'{cat}1': params}, opt)
+    comp = es.comps[f'{cat}1']
+    inflow = in_flow(es, f'{cat}1', input_bus)
+    outflow = out_flow(es, f'{cat}1')
+
+    assert inflow.variable_costs[0] == pytest.approx(opt[cost_key])
+    assert comp.conversion_factors[es.buses[input_bus]][0] == pytest.approx(
+        1 / params[eff_key]
+    )
+    assert outflow.nominal_capacity == params['cap_N']
+    assert outflow.max[0] == params['Q_rel_max']
+    assert outflow.min[0] == params['Q_rel_min']
+    assert isinstance(outflow.nonconvex, solph.NonConvex)
+    assert outflow.investment is None
+    assert outflow.variable_costs[0] == pytest.approx(
+        params['op_cost_var'] * 0.75
+    )
+
+
+@pytest.mark.parametrize('cat', ['ccet', 'ice'])
+def test_chp_parameters(cat, data, opt, make_unit):
+    params = make_unit(cat, op_cost_bonus_rel=0.25)
+    es = build(data, {f'{cat}1': params}, opt)
+    comp = es.comps[f'{cat}1']
+    heat = out_flow(es, f'{cat}1', 'hnw')
+    power = out_flow(es, f'{cat}1', 'chp_node')
+    gas = in_flow(es, f'{cat}1', 'gnw')
+
+    assert comp.conversion_factors[es.buses['hnw']][0] == params['eta_th']
+    assert comp.conversion_factors[es.buses['chp_node']][0] == (
+        params['eta_el']
+    )
+    assert heat.nominal_capacity == params['cap_N']
+    assert heat.max[0] == params['Q_rel_max']
+    assert heat.min[0] == params['Q_rel_min']
+    assert isinstance(heat.nonconvex, solph.NonConvex)
+    # variable operating cost is charged on the electricity output
+    assert power.variable_costs[0] == pytest.approx(
+        params['op_cost_var'] * 0.75
+    )
+    assert gas.variable_costs[0] in (0, None)
+
+
+def test_solar_thermal_parameters(data, opt, make_unit):
+    params = make_unit('sol', op_cost_bonus_rel=0.5)
+    es = build(data, {'sol1': params}, opt)
+    flow = out_flow(es, 'sol1')
+
+    assert flow.nominal_capacity == params['A_N']
+    np.testing.assert_allclose(
+        seq(flow.fix, len(data)),
+        data['solar_heat_flow'] * params['eta_col']
+    )
+    assert flow.variable_costs[0] == pytest.approx(params['op_cost_var'] / 2)
+
+
+@pytest.mark.parametrize('fix, expected', [(True, 1), (False, None)])
+def test_external_heat_source_fix(fix, expected, data, opt, make_unit):
+    params = make_unit('exhs', fix=fix)
+    es = build(data, {'exhs1': params}, opt)
+    flow = out_flow(es, 'exhs1')
+
+    assert flow.fix[0] == expected
+    assert flow.nominal_capacity == params['cap_N']
+    assert flow.variable_costs[0] == pytest.approx(params['op_cost_var'])
+
+
+def test_storage_parameters(data, opt, make_unit):
+    params = make_unit('tes', op_cost_var=0.3, op_cost_bonus_rel=0.5)
+    es = build(data, {'tes1': params}, opt)
+    tes = es.comps['tes1']
+
+    assert tes.nominal_storage_capacity == params['Q_N']
+    assert tes.investment is None
+    assert tes.loss_rate[0] == params['Q_rel_loss']
+    assert tes.initial_storage_level == params['init_storage']
+    assert tes.balanced == params['balanced']
+    assert tes.invest_relation_input_capacity[0] == params['Q_in_to_cap']
+    assert tes.invest_relation_output_capacity[0] == params['Q_out_to_cap']
+    for flow in (in_flow(es, 'tes1', 'hnw'), out_flow(es, 'tes1', 'hnw')):
+        assert flow.variable_costs[0] == pytest.approx(0.15)
