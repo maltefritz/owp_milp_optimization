@@ -100,3 +100,88 @@ def test_constructor_does_not_build_nodes(data, opt, make_unit):
     assert es.buses == {}
     assert es.comps == {}
     assert len(es.es.nodes) == 0
+
+
+# %% Topology
+
+@pytest.mark.parametrize('units, buses, comps', [
+    (
+        ['gb1'],
+        {'gnw', 'hnw'},
+        {'gas_source', 'heat_sink', 'gb1'},
+    ),
+    (
+        ['hp1', 'eb1'],
+        {'enw', 'hnw'},
+        {'elec_source', 'heat_sink', 'hp1', 'eb1'},
+    ),
+    (
+        ['ccet1'],
+        {'gnw', 'enw', 'hnw', 'chp_node'},
+        {'gas_source', 'elec_source', 'heat_sink', 'elec_sink', 'ccet1',
+         'chp_internal'},
+    ),
+    (
+        ['sol1', 'exhs1', 'tes1'],
+        {'hnw'},
+        {'heat_sink', 'sol1', 'exhs1', 'tes1'},
+    ),
+    (
+        ['gb1', 'gb2', 'hp1', 'hp2'],
+        {'gnw', 'enw', 'hnw'},
+        {'gas_source', 'elec_source', 'heat_sink', 'gb1', 'gb2', 'hp1', 'hp2'},
+    ),
+])
+def test_topology(units, buses, comps, data, opt, make_unit):
+    param_units = {u: make_unit(u.rstrip('0123456789')) for u in units}
+    es = build(data, param_units, opt)
+    assert set(es.buses) == buses
+    assert set(es.comps) == comps
+
+
+def test_all_nodes_are_added_to_solph_energy_system(es_all):
+    expected = (
+        {str(b.label) for b in es_all.buses.values()}
+        | {str(c.label) for c in es_all.comps.values()}
+    )
+    assert {str(n.label) for n in es_all.es.nodes} == expected
+
+
+def test_node_labels(es_all):
+    assert {k: str(b.label) for k, b in es_all.buses.items()} == {
+        'gnw': 'gas network',
+        'enw': 'electricity network',
+        'hnw': 'heat network',
+        'chp_node': 'chp node',
+    }
+    labels = {k: str(c.label) for k, c in es_all.comps.items()}
+    assert labels['gas_source'] == 'gas source'
+    assert labels['elec_source'] == 'electricity source'
+    assert labels['heat_sink'] == 'heat demand'
+    assert labels['elec_sink'] == 'spotmarket'
+    assert labels['chp_internal'] == 'chp internal'
+    for cat in ALL_CATS:
+        assert labels[f'{cat}1'] == f'{cat}1'
+
+
+@pytest.mark.parametrize('unit, cls, inputs, outputs', [
+    ('hp1', solph.components.Converter, {'enw'}, {'hnw'}),
+    ('eb1', solph.components.Converter, {'enw'}, {'hnw'}),
+    ('gb1', solph.components.Converter, {'gnw'}, {'hnw'}),
+    ('ccet1', solph.components.Converter, {'gnw'}, {'hnw', 'chp_node'}),
+    ('ice1', solph.components.Converter, {'gnw'}, {'hnw', 'chp_node'}),
+    ('sol1', solph.components.Source, set(), {'hnw'}),
+    ('exhs1', solph.components.Source, set(), {'hnw'}),
+    ('tes1', solph.components.GenericStorage, {'hnw'}, {'hnw'}),
+    ('gas_source', solph.components.Source, set(), {'gnw'}),
+    ('elec_source', solph.components.Source, set(), {'enw'}),
+    ('heat_sink', solph.components.Sink, {'hnw'}, set()),
+    ('elec_sink', solph.components.Sink, {'chp_node'}, set()),
+    ('chp_internal', solph.components.Converter, {'chp_node'}, {'enw'}),
+])
+def test_component_connections(es_all, unit, cls, inputs, outputs):
+    comp = es_all.comps[unit]
+    bus_key = {b: k for k, b in es_all.buses.items()}
+    assert isinstance(comp, cls)
+    assert {bus_key[b] for b in comp.inputs} == inputs
+    assert {bus_key[b] for b in comp.outputs} == outputs
