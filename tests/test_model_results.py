@@ -581,3 +581,66 @@ def test_emission_key_params(full_dispatch):
         kp['Emissions OM (Gas)'] + kp['Emissions OM (Electricity)']
         + kp['Emissions OM (Spotmarket)']
     )
+
+
+# %% Consistency of post-processing and optimization
+
+@pytest.mark.parametrize('scenario', ['full_dispatch', 'full_invest',
+                                      'gas_boiler_only'])
+def test_objective_matches_postprocessed_costs(scenario, request):
+    assert_objective_consistent(request.getfixturevalue(scenario))
+
+
+@pytest.mark.xfail(
+    strict=True, raises=AssertionError,
+    reason=(
+        'BUG: the optimization charges op_cost_var of a storage on both the '
+        'charging and the discharging flow, the post-processing only on the '
+        'charging flow (Q_in).'
+    )
+)
+def test_objective_matches_costs_with_storage_variable_cost(
+        solve_and_process, make_data, make_opt, full_dispatch_units):
+    full_dispatch_units['tes1']['op_cost_var'] = 0.5
+    es = solve_and_process(make_data(), full_dispatch_units, make_opt())
+    require(flows(es)['Q_out_tes1'].sum() > 1, 'storage is discharged')
+    assert_objective_consistent(es)
+
+
+@pytest.mark.xfail(
+    strict=True, raises=AssertionError,
+    reason=(
+        'BUG: for CHP units in invest mode, the optimization applies '
+        'inv_spez and op_cost_fix to the thermal capacity, while the '
+        'post-processing applies them to the electrical capacity '
+        '(cap / eta_th * eta_el).'
+    )
+)
+def test_objective_matches_costs_with_chp_investment(
+        solve_and_process, make_data, make_unit, make_opt, scaled_invest):
+    es = solve_and_process(make_data(), {
+        'ccet1': scaled_invest('ccet', Q_rel_min=0.0),
+        'gb1': make_unit('gb', Q_rel_min=0.0),
+    }, make_opt())
+    require(es.data_caps.loc[0, 'cap_ccet1'] > 1, 'CHP capacity is built')
+    assert_objective_consistent(es)
+
+
+@pytest.mark.xfail(
+    strict=True, raises=AssertionError,
+    reason=(
+        'BUG: in invest mode, the ep_costs passed to solph contain '
+        'op_cost_fix without the operating cost bonus (op_cost_bonus_rel), '
+        'while the post-processing reduces the fixed operating cost by it '
+        '(as the dashboard tooltip describes).'
+    )
+)
+def test_objective_matches_costs_with_operating_cost_bonus_in_invest_mode(
+        solve_and_process, make_data, make_opt, scaled_invest):
+    es = solve_and_process(
+        make_data(),
+        {'gb1': scaled_invest('gb', Q_rel_min=0.0, op_cost_bonus_rel=0.5)},
+        make_opt()
+    )
+    require(es.data_caps.loc[0, 'cap_gb1'] > 1, 'gas boiler is built')
+    assert_objective_consistent(es)
