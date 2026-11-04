@@ -211,3 +211,45 @@ def test_check_column_reports_unknown_edge_in_debug_mode(capsys):
 def test_check_column_is_silent_without_debug(capsys):
     check_column((('foo', 'bar'), 'flow'), debug=False)
     assert capsys.readouterr().out == ''
+
+
+# %% result_labeling
+
+def test_result_labeling_renames_dataframe_columns_in_place():
+    df = pd.DataFrame(
+        [[1.0, 2.0]],
+        columns=[(('gb1', HNW), 'flow'), (('gas source', 'gas network'),
+                                          'flow')]
+    )
+    assert result_labeling(df, debug=False) is None
+    assert list(df.columns) == ['Q_gb1', 'H_source']
+
+
+def test_result_labeling_renames_series_index_in_place():
+    s = pd.Series(
+        [10.0, 20.0],
+        index=[(('hp1', HNW), 'invest'), (('tes1', 'None'), 'invest')]
+    )
+    result_labeling(s, debug=False)
+    assert list(s.index) == ['cap_hp1', 'cap_tes1']
+    assert list(s.values) == [10.0, 20.0]
+
+
+def test_result_labeling_skips_non_tuple_columns(capsys):
+    df = pd.DataFrame([[1.0, 2.0]], columns=['already_labeled',
+                                             (('gb1', HNW), 'flow')])
+    result_labeling(df, debug=True)
+    assert list(df.columns) == ['already_labeled', 'Q_gb1']
+    assert 'already_labeled' in capsys.readouterr().out
+
+
+def test_result_labeling_maps_unknown_edges_to_none():
+    df = pd.DataFrame([[1.0]], columns=[(('foo', 'bar'), 'flow')])
+    result_labeling(df, debug=False)
+    assert list(df.columns) == [None]
+
+
+def test_result_labeling_handles_empty_series():
+    s = pd.Series(dtype=float)
+    result_labeling(s, debug=False)
+    assert s.empty
