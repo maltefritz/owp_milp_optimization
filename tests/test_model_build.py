@@ -379,3 +379,24 @@ def test_mixed_invest_and_dispatch_units(data, opt, make_unit):
     assert isinstance(out_flow(es, 'gb1').investment, solph.Investment)
     assert out_flow(es, 'gb2').investment is None
     assert out_flow(es, 'gb2').nominal_capacity == 150.0
+
+
+# %% Input handling
+
+def test_building_does_not_mutate_inputs(data, all_units, opt):
+    data_before = data.copy()
+    units_before = copy.deepcopy(all_units)
+    opt_before = copy.deepcopy(opt)
+
+    build(data, all_units, opt)
+
+    pd.testing.assert_frame_equal(data, data_before)
+    assert all_units == units_before
+    assert opt == opt_before
+
+
+def test_shipped_default_parameters_build(shipped_defaults, make_data):
+    """The default JSON files of the dashboard contain every required key."""
+    param_units, param_opt = shipped_defaults
+    es = build(make_data(), param_units, param_opt)
+    assert set(param_units) <= set(es.comps)
