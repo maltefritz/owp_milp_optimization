@@ -69,3 +69,66 @@ def test_lcoh_annualizes_invest_with_bwsf():
 
 def test_lcoh_decreases_with_revenue():
     assert LCOH(1e6, 2e5, 1e4, revenue=1e5) < LCOH(1e6, 2e5, 1e4)
+
+
+# %% calc_cost
+
+@pytest.fixture
+def cost_params():
+    return {
+        'hp1': {
+            'inv_spez': 1000.0, 'inv_bonus_rel': 0.25, 'op_cost_fix': 10.0,
+            'op_cost_var': 2.0, 'op_cost_bonus_rel': 0.5,
+        }
+    }
+
+
+def test_calc_cost_computes_all_cost_rows(cost_params):
+    uc = pd.Series([1.0, 2.0, 3.0])
+    cost_df = calc_cost('hp1', 20.0, cost_params, uc, pd.DataFrame())
+
+    assert cost_df.loc['invest', 'hp1'] == pytest.approx(1000 * 20 * 0.75)
+    assert cost_df.loc['op_cost_fix', 'hp1'] == pytest.approx(10 * 20 * 0.5)
+    assert cost_df.loc['op_cost_var', 'hp1'] == pytest.approx(2 * 6 * 0.5)
+    assert cost_df.loc['op_cost', 'hp1'] == pytest.approx(100 + 6)
+
+
+def test_calc_cost_adds_additional_variable_cost_without_bonus(cost_params):
+    uc = pd.Series([1.0, 2.0, 3.0])
+    cost_df = calc_cost(
+        'hp1', 20.0, cost_params, uc, pd.DataFrame(), add_var_cost=4.0
+    )
+    # The additional cost (e.g. energy tax) is not reduced by the bonus
+    assert cost_df.loc['op_cost_var', 'hp1'] == pytest.approx(6 + 4 * 6)
+    assert cost_df.loc['op_cost', 'hp1'] == pytest.approx(100 + 6 + 24)
+
+
+@pytest.mark.parametrize('add_var_cost', [None, 0, 0.0])
+def test_calc_cost_ignores_empty_additional_cost(cost_params, add_var_cost):
+    uc = pd.Series([1.0, 2.0, 3.0])
+    cost_df = calc_cost(
+        'hp1', 20.0, cost_params, uc, pd.DataFrame(),
+        add_var_cost=add_var_cost
+    )
+    assert cost_df.loc['op_cost_var', 'hp1'] == pytest.approx(6)
+
+
+def test_calc_cost_keeps_existing_columns(cost_params):
+    cost_params['gb1'] = dict(cost_params['hp1'])
+    uc = pd.Series([1.0])
+    cost_df = calc_cost('hp1', 1.0, cost_params, uc, pd.DataFrame())
+    before = cost_df['hp1'].copy()
+    cost_df = calc_cost('gb1', 2.0, cost_params, uc, cost_df)
+
+    assert list(cost_df.columns) == ['hp1', 'gb1']
+    assert list(cost_df.index) == ['invest', 'op_cost_fix', 'op_cost_var',
+                                   'op_cost']
+    pd.testing.assert_series_equal(cost_df['hp1'], before)
+
+
+def test_calc_cost_zero_dispatch_has_only_fixed_cost(cost_params):
+    cost_df = calc_cost(
+        'hp1', 20.0, cost_params, pd.Series([0.0, 0.0]), pd.DataFrame()
+    )
+    assert cost_df.loc['op_cost_var', 'hp1'] == 0
+    assert cost_df.loc['op_cost', 'hp1'] == cost_df.loc['op_cost_fix', 'hp1']
