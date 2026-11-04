@@ -313,14 +313,32 @@ class EnergySystem():
                         maximum=unit_params['Q_max'],
                         minimum=unit_params['Q_min']
                     )
+                    nominal_capacity_in = solph.Investment()
+                    nominal_capacity_out = solph.Investment()
+                    invest_relations = {
+                        'invest_relation_input_capacity': (
+                            unit_params['Q_in_to_cap']
+                            ),
+                        'invest_relation_output_capacity': (
+                            unit_params['Q_out_to_cap']
+                            )
+                        }
                 else:
                     nominal_capacity = unit_params['Q_N']
+                    nominal_capacity_in = (
+                        unit_params['Q_N'] * unit_params['Q_in_to_cap']
+                        )
+                    nominal_capacity_out = (
+                        unit_params['Q_N'] * unit_params['Q_out_to_cap']
+                        )
+                    invest_relations = {}
 
                 self.comps[unit] = solph.components.GenericStorage(
                     label=unit,
                     nominal_capacity=nominal_capacity,
                     inputs={
                         self.buses['hnw']: solph.flows.Flow(
+                            nominal_capacity=nominal_capacity_in,
                             variable_costs=(
                                 unit_params['op_cost_var']
                                 * (1 - unit_params['op_cost_bonus_rel'])
@@ -329,21 +347,17 @@ class EnergySystem():
                         },
                     outputs={
                         self.buses['hnw']: solph.flows.Flow(
+                            nominal_capacity=nominal_capacity_out,
                             variable_costs=(
                                 unit_params['op_cost_var']
                                 * (1 - unit_params['op_cost_bonus_rel'])
                                 )
                             )
                         },
-                    invest_relation_input_capacity=(
-                        unit_params['Q_in_to_cap']
-                        ),
-                    invest_relation_output_capacity=(
-                        unit_params['Q_out_to_cap']
-                        ),
                     initial_storage_level=unit_params['init_storage'],
                     loss_rate=unit_params['Q_rel_loss'],
-                    balanced=unit_params['balanced']
+                    balanced=unit_params['balanced'],
+                    **invest_relations
                     )
 
                 self.es.add(self.comps[unit])
