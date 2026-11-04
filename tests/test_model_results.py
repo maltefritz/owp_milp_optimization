@@ -397,3 +397,157 @@ def test_invest_cost_uses_optimized_capacity(full_invest):
     assert full_invest.cost_df.loc['invest', 'hp1'] == pytest.approx(
         params['inv_spez'] * cap * (1 - params['inv_bonus_rel'])
     )
+
+
+# %% Economic key parameters (recomputed independently)
+
+@pytest.fixture(scope='module')
+def econ(full_dispatch):
+    es = full_dispatch
+    d = flows(es)
+    data, opt = es.data, es.param_opt
+    expected = {
+        'cost_gas': (
+            d['H_source'] * (data['gas_price']
+                             + data['co2_price'] * opt['ef_gas'])
+        ).sum(),
+        'cost_el_grid': (
+            d['P_source'] * (data['el_spot_price']
+                             + opt['elec_consumer_charges_grid'])
+        ).sum(),
+        'cost_el_internal': (
+            d['P_internal'] * opt['elec_consumer_charges_self']
+        ).sum(),
+        'revenues_spotmarket': (
+            d['P_spotmarket'] * (data['el_spot_price'] + opt['vNNE'])
+        ).sum(),
+        'revenues_heat': d['Q_demand'].sum() * opt['heat_price'],
+        'total_heat_demand': data['heat_demand'].sum(),
+        'invest_net_total': opt['net_inv_spez'] * opt['net_dist'] * 1000,
+        'cost_net_fix_total': (
+            opt['net_op_cost_fix'] * opt['net_dist'] * 1000
+        ),
+        'cost_net_var_total': opt['net_op_cost_var'] * d['Q_demand'].sum(),
+    }
+    return es, expected
+
+
+@pytest.mark.parametrize('key', [
+    'cost_gas', 'cost_el_grid', 'cost_el_internal', 'revenues_spotmarket',
+    'revenues_heat', 'total_heat_demand', 'invest_net_total',
+    'cost_net_fix_total', 'cost_net_var_total',
+])
+def test_key_param_values(econ, key):
+    es, expected = econ
+    assert es.key_params[key] == pytest.approx(expected[key])
+
+
+def test_key_param_aggregates(full_dispatch):
+    kp = full_dispatch.key_params
+    cost_df = full_dispatch.cost_df
+    assert kp['op_cost_total'] == pytest.approx(cost_df.loc['op_cost'].sum())
+    assert kp['invest_total'] == pytest.approx(cost_df.loc['invest'].sum())
+    assert kp['cost_el'] == pytest.approx(
+        kp['cost_el_grid'] + kp['cost_el_internal']
+    )
+    assert kp['cost_total'] == pytest.approx(
+        kp['op_cost_total'] + kp['cost_gas'] + kp['cost_el']
+    )
+    assert kp['revenues_total'] == pytest.approx(
+        kp['revenues_spotmarket'] + kp['revenues_heat']
+    )
+    assert kp['balance_total'] == pytest.approx(
+        kp['revenues_total'] - kp['cost_total']
+    )
+
+
+def test_lcoh_values(full_dispatch):
+    kp, opt = full_dispatch.key_params, full_dispatch.param_opt
+    i, n = opt['capital_interest'], opt['lifetime']
+    Q = kp['total_heat_demand']
+    revenue = kp['revenues_spotmarket']
+    assert kp['LCOH'] == pytest.approx(
+        LCOH(kp['invest_total'], kp['cost_total'], Q, revenue, i, n)
+    )
+    assert kp['LCOH_incl_net'] == pytest.approx(LCOH(
+        kp['invest_total'] + kp['invest_net_total'],
+        kp['cost_total'] + kp['cost_net_fix_total']
+        + kp['cost_net_var_total'],
+        Q, revenue, i, n
+    ))
+    assert kp['LCOH_incl_net'] > kp['LCOH']
+
+
+def unit_cost_basis(es, unit):
+    """(capacity, energy series) that the specific unit costs refer to."""
+    cat = unit.rstrip('0123456789')
+    params = es.param_units[unit]
+    cap = es.data_caps.loc[0, f'cap_{unit}']
+    d = flows(es)
+    if cat == 'hp':
+        return cap, d[f'Q_out_{unit}']
+    if cat == 'tes':
+        return cap, d[f'Q_in_{unit}']
+    if cat in ('ccet', 'ice'):
+        # specific CHP costs refer to the electrical capacity and output
+        return cap / params['eta_th'] * params['eta_el'], d[f'P_{unit}']
+    return cap, d[f'Q_{unit}']
+
+
+@pytest.mark.parametrize('unit', [
+    'hp1', 'ccet1', 'ice1', 'gb1', 'eb1', 'sol1', 'exhs1', 'exhs2', 'tes1'
+])
+def test_unit_costs(full_dispatch, unit):
+    es = full_dispatch
+    params = es.param_units[unit]
+    cap, energy = unit_cost_basis(es, unit)
+    bonus = 1 - params['op_cost_bonus_rel']
+    var = params['op_cost_var'] * energy.sum() * bonus
+    if unit.startswith('gb'):
+        var += es.param_opt['energy_tax'] / params['eta'] * energy.sum()
+
+    costs = es.cost_df[unit]
+    assert costs['invest'] == pytest.approx(
+        params['inv_spez'] * cap * (1 - params['inv_bonus_rel'])
+    )
+    assert costs['op_cost_fix'] == pytest.approx(
+        params['op_cost_fix'] * cap * bonus
+    )
+    assert costs['op_cost_var'] == pytest.approx(var)
+    assert costs['op_cost'] == pytest.approx(
+        costs['op_cost_fix'] + costs['op_cost_var']
+    )
+
+
+def test_network_cost_total_mode(
+        solve_and_process, make_data, make_unit, make_opt):
+    opt = make_opt(calc_network='total')
+    es = solve_and_process(
+        make_data(heat_demand=100.0), {'gb1': make_unit('gb', Q_rel_min=0.0)},
+        opt
+    )
+    kp = es.key_params
+    assert kp['invest_net_total'] == opt['net_inv_total']
+    assert kp['cost_net_fix_total'] == opt['net_op_cost_fix_total']
+    assert kp['cost_net_var_total'] == opt['net_op_cost_var_total']
+
+
+def test_absent_commodities_have_zero_cost_and_emissions(gas_boiler_only):
+    kp = gas_boiler_only.key_params
+    for key in ['cost_el_grid', 'cost_el_internal', 'cost_el',
+                'revenues_spotmarket', 'Emissions OM (Electricity)',
+                'Emissions OM (Spotmarket)']:
+        assert kp[key] == 0, key
+    assert kp['cost_gas'] > 0
+
+
+def test_electric_only_system_has_no_gas_cost(
+        solve_and_process, make_data, make_unit, make_opt):
+    es = solve_and_process(
+        make_data(heat_demand=100.0), {'eb1': make_unit('eb', cap_N=150.0)},
+        make_opt()
+    )
+    kp = es.key_params
+    assert kp['cost_gas'] == 0
+    assert kp['Emissions OM (Gas)'] == 0
+    assert kp['cost_el_grid'] > 0
