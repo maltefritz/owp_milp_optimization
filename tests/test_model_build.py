@@ -291,8 +291,8 @@ def test_single_input_converter_parameters(
         1 / params[eff_key]
     )
     assert outflow.nominal_capacity == params['cap_N']
-    assert outflow.max[0] == params['Q_rel_max']
-    assert outflow.min[0] == params['Q_rel_min']
+    assert outflow.maximum[0] == params['Q_rel_max']
+    assert outflow.minimum[0] == params['Q_rel_min']
     assert isinstance(outflow.nonconvex, solph.NonConvex)
     assert outflow.investment is None
     assert outflow.variable_costs[0] == pytest.approx(
@@ -316,8 +316,8 @@ def test_chp_parameters(cat, data, opt, make_unit):
         params['eta_el']
     )
     assert heat.nominal_capacity == params['cap_N']
-    assert heat.max[0] == params['Q_rel_max']
-    assert heat.min[0] == params['Q_rel_min']
+    assert heat.maximum[0] == params['Q_rel_max']
+    assert heat.minimum[0] == params['Q_rel_min']
     assert isinstance(heat.nonconvex, solph.NonConvex)
     # variable operating cost is charged on the electricity output
     assert power.variable_costs[0] == pytest.approx(
