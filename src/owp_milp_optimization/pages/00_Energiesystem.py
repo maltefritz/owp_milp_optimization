@@ -11,7 +11,6 @@ import pandas as pd
 import pyomo.environ as pyo
 import streamlit as st
 from helpers import footer, format_sep, load_icon_base64s
-from pyomo.contrib.appsi.solvers import Highs
 from pyomo.opt import check_available_solvers
 from streamlit import session_state as ss
 
@@ -2051,7 +2050,7 @@ with tab_misc:
     ss.param_opt['Solver'] = ss.solver
 
     if ss.param_opt['Solver'] == 'HiGHS':
-        if not Highs().available():
+        if not check_available_solvers('appsi_highs'):
             col_opt.error(
                 'Der Solver `HiGHS` ist auf diesem System nicht verfügbar. '
                 + 'Bitte verwenden Sie einen anderen Solver.'

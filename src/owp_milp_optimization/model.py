@@ -3,8 +3,6 @@ import os
 import oemof.solph as solph
 import pandas as pd
 from oemof.solph import views
-from pyomo.contrib import appsi
-from pyomo.contrib.appsi.base import TerminationCondition
 
 
 class EnergySystem():
@@ -235,8 +233,8 @@ class EnergySystem():
                             ),
                         self.buses['hnw']: solph.flows.Flow(
                             nominal_capacity=nominal_capacity,
-                            max=unit_params['Q_rel_max'],
-                            min=unit_params['Q_rel_min'],
+                            maximum=unit_params['Q_rel_max'],
+                            minimum=unit_params['Q_rel_min'],
                             nonconvex=solph.NonConvex()
                             )
                         },
@@ -286,8 +284,8 @@ class EnergySystem():
                     outputs={
                         self.buses['hnw']: solph.flows.Flow(
                             nominal_capacity=nominal_capacity,
-                            max=unit_params['Q_rel_max'],
-                            min=unit_params['Q_rel_min'],
+                            maximum=unit_params['Q_rel_max'],
+                            minimum=unit_params['Q_rel_min'],
                             nonconvex=solph.NonConvex(),
                             variable_costs=(
                                 unit_params['op_cost_var']
@@ -313,14 +311,32 @@ class EnergySystem():
                         maximum=unit_params['Q_max'],
                         minimum=unit_params['Q_min']
                     )
+                    nominal_capacity_in = solph.Investment()
+                    nominal_capacity_out = solph.Investment()
+                    invest_relations = {
+                        'invest_relation_input_capacity': (
+                            unit_params['Q_in_to_cap']
+                            ),
+                        'invest_relation_output_capacity': (
+                            unit_params['Q_out_to_cap']
+                            )
+                        }
                 else:
                     nominal_capacity = unit_params['Q_N']
+                    nominal_capacity_in = (
+                        unit_params['Q_N'] * unit_params['Q_in_to_cap']
+                        )
+                    nominal_capacity_out = (
+                        unit_params['Q_N'] * unit_params['Q_out_to_cap']
+                        )
+                    invest_relations = {}
 
                 self.comps[unit] = solph.components.GenericStorage(
                     label=unit,
                     nominal_capacity=nominal_capacity,
                     inputs={
                         self.buses['hnw']: solph.flows.Flow(
+                            nominal_capacity=nominal_capacity_in,
                             variable_costs=(
                                 unit_params['op_cost_var']
                                 * (1 - unit_params['op_cost_bonus_rel'])
@@ -329,21 +345,17 @@ class EnergySystem():
                         },
                     outputs={
                         self.buses['hnw']: solph.flows.Flow(
+                            nominal_capacity=nominal_capacity_out,
                             variable_costs=(
                                 unit_params['op_cost_var']
                                 * (1 - unit_params['op_cost_bonus_rel'])
                                 )
                             )
                         },
-                    invest_relation_input_capacity=(
-                        unit_params['Q_in_to_cap']
-                        ),
-                    invest_relation_output_capacity=(
-                        unit_params['Q_out_to_cap']
-                        ),
                     initial_storage_level=unit_params['init_storage'],
                     loss_rate=unit_params['Q_rel_loss'],
-                    balanced=unit_params['balanced']
+                    balanced=unit_params['balanced'],
+                    **invest_relations
                     )
 
                 self.es.add(self.comps[unit])
@@ -354,8 +366,8 @@ class EnergySystem():
                 inputs={self.buses['chp_node']: solph.flows.Flow()},
                 outputs={self.buses['enw']: solph.flows.Flow(
                     nominal_capacity=9999,
-                    max=1.0,
-                    min=0.0
+                    maximum=1.0,
+                    minimum=0.0
                     )},
                 conversion_factors={self.buses['enw']: 1}
                 )
@@ -387,11 +399,11 @@ class EnergySystem():
                     }
             if self.param_opt['TimeLimit'] is not None:
                 options.update({'TimeLimit': self.param_opt['TimeLimit']})
-            results = self.model.solve(
+            self.model.solve(
                 solver='gurobi', solve_kwargs={'tee': True},
                 cmdline_options=options, allow_nonoptimal=True
                 )
-            tc = results.Solver.Termination_condition
+            tc = self.model.solver_results.Solver.Termination_condition
         elif self.param_opt['Solver'] == 'SCIP':
             options = {
                     'limits/gap': self.param_opt['MIPGap'],
@@ -399,44 +411,30 @@ class EnergySystem():
                     }
             if self.param_opt['TimeLimit'] is not None:
                 options.update({'limits/time': self.param_opt['TimeLimit']})
-            results = self.model.solve(
+            self.model.solve(
                 solver='scip', solve_kwargs={'tee': True},
                 cmdline_options=options, allow_nonoptimal=True
                 )
-            tc = results.Solver.Termination_condition
+            tc = self.model.solver_results.Solver.Termination_condition
         elif self.param_opt['Solver'] == 'HiGHS':
-            opt = appsi.solvers.Highs()
-            opt.config.mip_gap = self.param_opt['MIPGap']
-            opt.config.logfile = logpath
+            options = {
+                    'mip_rel_gap': self.param_opt['MIPGap'],
+                    'log_file': logpath
+                    }
             if self.param_opt['TimeLimit'] is not None:
-                opt.config.time_limit = self.param_opt['TimeLimit']
-            # opt.config.stream_solver = True
-            # opt.highs_options['output_flag'] = True
-            # opt.highs_options['log_to_console'] = True
-            try:
-                results = opt.solve(self.model)
-            except RuntimeError:
-                results = appsi.solvers.highs.HighsResults(opt)
-            tc = results.termination_condition
+                options.update({'time_limit': self.param_opt['TimeLimit']})
+            self.model.solve(
+                solver='highs', cmdline_options=options, allow_nonoptimal=True
+                )
+            tc = self.model.solver_results['termination_condition']
 
-        feasable_sols = [
-            TerminationCondition.optimal,
-            'optimal',
-            TerminationCondition.objectiveLimit,
-            'objectiveLimit',
-            TerminationCondition.maxTimeLimit,
-            'maxTimeLimit',
-        ]
-        infeasable_sols = [
-            TerminationCondition.infeasible,
-            'infeasible',
-            TerminationCondition.unbounded,
-            'unbounded',
-            TerminationCondition.infeasibleOrUnbounded,
-            'infeasibleOrUnbounded',
-        ]
+        feasable_sols = ['optimal', 'objectiveLimit', 'maxTimeLimit']
+        infeasable_sols = ['infeasible', 'unbounded', 'infeasibleOrUnbounded']
 
-        if tc in feasable_sols:
+        # A solver can reach a limit before it finds a feasible solution
+        solution_found = self.model.objective(exception=False) is not None
+
+        if tc in feasable_sols and solution_found:
             return 'ok'
         elif tc in infeasable_sols:
             return 'infeasable'
