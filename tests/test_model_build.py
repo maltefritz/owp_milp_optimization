@@ -354,23 +354,32 @@ def test_external_heat_source_fix(fix, expected, data, opt, make_unit):
 
 
 def test_storage_parameters(data, opt, make_unit):
-    """The storage gets capacity, losses, initial level and power ratios.
+    """The storage gets capacity, losses, initial level and power limits.
 
-    The variable cost (0.3, with 50 % bonus) is charged on both charging
-    and discharging.
+    With a fixed capacity, the charging and discharging power is limited
+    by giving both flows a fixed capacity of ``Q_N * Q_in_to_cap`` and
+    ``Q_N * Q_out_to_cap``. (solph's ``invest_relation_*_capacity`` would
+    only apply in invest mode.) The variable cost (0.3, with 50 % bonus) is
+    charged on both charging and discharging.
     """
-    params = make_unit('tes', op_cost_var=0.3, op_cost_bonus_rel=0.5)
+    params = make_unit(
+        'tes', Q_in_to_cap=0.2, Q_out_to_cap=0.3, op_cost_var=0.3,
+        op_cost_bonus_rel=0.5
+    )
     es = build(data, {'tes1': params}, opt)
     tes = es.comps['tes1']
+    charge = in_flow(es, 'tes1', 'hnw')
+    discharge = out_flow(es, 'tes1', 'hnw')
 
     assert tes.nominal_storage_capacity == params['Q_N']
     assert tes.investment is None
     assert tes.loss_rate[0] == params['Q_rel_loss']
     assert tes.initial_storage_level == params['init_storage']
     assert tes.balanced == params['balanced']
-    assert tes.invest_relation_input_capacity[0] == params['Q_in_to_cap']
-    assert tes.invest_relation_output_capacity[0] == params['Q_out_to_cap']
-    for flow in (in_flow(es, 'tes1', 'hnw'), out_flow(es, 'tes1', 'hnw')):
+    assert charge.nominal_capacity == pytest.approx(params['Q_N'] * 0.2)
+    assert discharge.nominal_capacity == pytest.approx(params['Q_N'] * 0.3)
+    for flow in (charge, discharge):
+        assert flow.investment is None
         assert flow.variable_costs[0] == pytest.approx(0.15)
 
 
@@ -421,11 +430,17 @@ def test_investment_parameters(cat, data, make_opt, make_unit):
 
 def test_storage_investment_links_flow_capacities(data, opt, make_unit):
     """In invest mode, storage capacity and charging/discharging power are
-    all optimized."""
-    es = build(data, {'tes1': make_unit('tes', invest_mode=True)}, opt)
-    assert es.comps['tes1'].nominal_storage_capacity is None
+    all optimized, and the power is tied to the capacity by the ratios."""
+    params = make_unit(
+        'tes', invest_mode=True, Q_in_to_cap=0.2, Q_out_to_cap=0.3
+    )
+    es = build(data, {'tes1': params}, opt)
+    tes = es.comps['tes1']
+    assert tes.nominal_storage_capacity is None
     assert isinstance(in_flow(es, 'tes1', 'hnw').investment, solph.Investment)
     assert isinstance(out_flow(es, 'tes1', 'hnw').investment, solph.Investment)
+    assert tes.invest_relation_input_capacity[0] == 0.2
+    assert tes.invest_relation_output_capacity[0] == 0.3
 
 
 def test_mixed_invest_and_dispatch_units(data, opt, make_unit):

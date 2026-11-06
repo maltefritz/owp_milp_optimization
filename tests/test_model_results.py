@@ -338,20 +338,15 @@ def test_storage_dynamics(full_dispatch):
     )
 
 
-@pytest.mark.xfail(
-    strict=True, raises=AssertionError,
-    reason=(
-        'BUG: Q_in_to_cap and Q_out_to_cap are passed to solph as '
-        'invest_relation_*_capacity, which solph only applies in invest '
-        'mode. In dispatch mode the storage can be charged and discharged '
-        'with unlimited power, although the dashboard shows and uses both '
-        'ratios for storages with a fixed capacity.'
-    )
-)
 def test_storage_power_limited_in_dispatch_mode(
         solve_and_process, make_data, make_unit, make_opt):
     """Storage power stays within ``Q_in_to_cap``/``Q_out_to_cap`` times the
-    capacity, also when the capacity is fixed."""
+    capacity, also when the capacity is fixed.
+
+    Regression test: up to v0.0.6 the ratios were only passed as solph's
+    ``invest_relation_*_capacity``, which only applies in invest mode, so a
+    storage with a fixed capacity could be charged with unlimited power.
+    """
     # One hour of very cheap electricity makes fast charging attractive
     data = make_data(el_spot_price=300.0)
     data.iloc[2, data.columns.get_loc('el_spot_price')] = -500.0
