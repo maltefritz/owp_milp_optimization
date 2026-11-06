@@ -340,15 +340,18 @@ def test_solar_thermal_parameters(data, opt, make_unit):
     assert flow.variable_costs[0] == pytest.approx(params['op_cost_var'] / 2)
 
 
-@pytest.mark.parametrize('fix, expected', [(True, 1), (False, None)])
-def test_external_heat_source_fix(fix, expected, data, opt, make_unit):
+@pytest.mark.parametrize('fix', [True, False])
+def test_external_heat_source_fix(fix, data, opt, make_unit):
     """With ``fix=True``, the external heat source always runs at nominal
-    capacity. Otherwise the optimizer decides."""
+    capacity. Otherwise the optimizer decides (solph stores ``fix=None``)."""
     params = make_unit('exhs', fix=fix)
     es = build(data, {'exhs1': params}, opt)
     flow = out_flow(es, 'exhs1')
 
-    assert flow.fix[0] == expected
+    if fix:
+        assert flow.fix[0] == 1
+    else:
+        assert flow.fix is None
     assert flow.nominal_capacity == params['cap_N']
     assert flow.variable_costs[0] == pytest.approx(params['op_cost_var'])
 
