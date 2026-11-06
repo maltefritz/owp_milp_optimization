@@ -14,6 +14,9 @@ Improvements
 - Update oemof.solph to v0.6.5
 - Update highspy to v1.15.1
 - Use the HiGHS interface of oemof.solph instead of calling Pyomo directly
+- Add suite of tests for all stages of ``model.py`` (energy system build,
+  parametrization, solvers & solving, results postprocessing, and KPI
+  calculation)
 
 Fixes
 -----

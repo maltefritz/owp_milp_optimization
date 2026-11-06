@@ -45,5 +45,9 @@ exclude = [
     "docs/_build"
 ]
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+xfail_strict = true
+
 [tool.esbonio.sphinx]
 pythonCommand = "${venv:.venv}"
