@@ -72,7 +72,7 @@ HiGHS
 Einbindung in das Tool
 --------------------------
 
-HiGHS wird über das Python-Paket ``highspy`` und die APPSI-Schnittstelle von Pyomo eingebunden. ``highspy`` ist eine reguläre Abhängigkeit des Tools und wird bei der im Kapitel :doc:`../Erste_Schritte/Installation` beschriebenen Installation automatisch installiert:
+HiGHS wird über die in ``oemof.solph`` integrierte Anbindung genutzt, die auf dem Python-Paket ``highspy`` basiert. ``highspy`` ist eine reguläre Abhängigkeit des Tools und wird bei der im Kapitel :doc:`../Erste_Schritte/Installation` beschriebenen Installation automatisch installiert:
 
 .. code-block:: batch
 
@@ -93,7 +93,7 @@ Innerhalb der aktivierten virtuellen Umgebung kann die Verfügbarkeit mit folgen
 
 .. code-block:: batch
 
-   python -c "from pyomo.contrib.appsi.solvers import Highs; print('HiGHS verfügbar:', bool(Highs().available()))"
+   python -c "import pyomo.environ; from pyomo.opt import check_available_solvers; print('HiGHS verfügbar:', 'appsi_highs' in check_available_solvers('appsi_highs'))"
 
 Bei erfolgreicher Installation wird ausgegeben:
 

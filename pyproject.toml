@@ -18,9 +18,9 @@ classifiers = [
 ]
 dependencies = [
     "streamlit>=1.51.0,!=1.59.0",
-    "oemof.solph==0.6.0a4",
+    "oemof.solph==0.6.5",
     "pandas>=2.2.2",
-    "highspy==1.5.3",
+    "highspy==1.15.1",
     "jinja2>=3.0.0",
     "openpyxl>=3.1",
 ]
