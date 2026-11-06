@@ -3,8 +3,6 @@ import os
 import oemof.solph as solph
 import pandas as pd
 from oemof.solph import views
-from pyomo.contrib import appsi
-from pyomo.contrib.appsi.base import TerminationCondition
 
 
 class EnergySystem():
@@ -419,38 +417,24 @@ class EnergySystem():
                 )
             tc = self.model.solver_results.Solver.Termination_condition
         elif self.param_opt['Solver'] == 'HiGHS':
-            opt = appsi.solvers.Highs()
-            opt.config.mip_gap = self.param_opt['MIPGap']
-            opt.config.logfile = logpath
+            options = {
+                    'mip_rel_gap': self.param_opt['MIPGap'],
+                    'log_file': logpath
+                    }
             if self.param_opt['TimeLimit'] is not None:
-                opt.config.time_limit = self.param_opt['TimeLimit']
-            # opt.config.stream_solver = True
-            # opt.highs_options['output_flag'] = True
-            # opt.highs_options['log_to_console'] = True
-            try:
-                results = opt.solve(self.model)
-            except RuntimeError:
-                results = appsi.solvers.highs.HighsResults(opt)
-            tc = results.termination_condition
+                options.update({'time_limit': self.param_opt['TimeLimit']})
+            self.model.solve(
+                solver='highs', cmdline_options=options, allow_nonoptimal=True
+                )
+            tc = self.model.solver_results['termination_condition']
 
-        feasable_sols = [
-            TerminationCondition.optimal,
-            'optimal',
-            TerminationCondition.objectiveLimit,
-            'objectiveLimit',
-            TerminationCondition.maxTimeLimit,
-            'maxTimeLimit',
-        ]
-        infeasable_sols = [
-            TerminationCondition.infeasible,
-            'infeasible',
-            TerminationCondition.unbounded,
-            'unbounded',
-            TerminationCondition.infeasibleOrUnbounded,
-            'infeasibleOrUnbounded',
-        ]
+        feasable_sols = ['optimal', 'objectiveLimit', 'maxTimeLimit']
+        infeasable_sols = ['infeasible', 'unbounded', 'infeasibleOrUnbounded']
 
-        if tc in feasable_sols:
+        # A solver can reach a limit before it finds a feasible solution
+        solution_found = self.model.objective(exception=False) is not None
+
+        if tc in feasable_sols and solution_found:
             return 'ok'
         elif tc in infeasable_sols:
             return 'infeasable'
