@@ -2,6 +2,10 @@
 Anwendungsbeispiele
 ~~~~~~~~~~~~~~~~~~~
 
+- Fragenschwerpunkt 2
+Wie gut und in welcher Form lassen sich reale Ergebnisse reproduzieren?
+Kann durch das Arbeiten mit dem Tool das Verständnis für die Planung erhöht werden?
+
 Integriertes energetisches Quartierskonzept Steinbergkirche
 -----------------------------------------------------------
 
@@ -88,3 +92,8 @@ Nächster Schritt:
    - S-TES var. Speicherkosten: 2,5 €/MWh ohne die Berücksichtigung der WP
 
 Ergebnisse
+
+Klimaneutralität der Stadt Flensburg
+------------------------------------
+
+Zusammenarbeit mit dem Klimabegehren als externes Beispiel

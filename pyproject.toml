@@ -22,6 +22,7 @@ dependencies = [
     "pandas>=2.2.2",
     "highspy==1.5.3",
     "jinja2>=3.0.0",
+    "openpyxl>=3.1",
 ]
 
 [project.optional-dependencies]
@@ -43,3 +44,6 @@ Homepage = "https://github.com/maltefritz/owp_milp_optimization"
 exclude = [
     "docs/_build"
 ]
+
+[tool.esbonio.sphinx]
+pythonCommand = "${venv:.venv}"

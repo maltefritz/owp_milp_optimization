@@ -2039,9 +2039,14 @@ with tab_misc:
 
     col_opt.subheader('Optimierung')
 
-    ss.param_opt['Solver'] = col_opt.selectbox(
-        'Solver', options=['HiGHS'], help=ss.tt['solver'],
-        key='solver'
+    init_ss_widget(
+        widget_key='select_solver',
+        ss_variable='solver',
+        default_value='HiGHS'
+    )
+    ss.solver = col_opt.selectbox(
+        'Solver', options=['Gurobi', 'SCIP', 'HiGHS'], help=ss.tt['solver'],
+        key='select_solver'
         )
     ss.param_opt['Solver'] = ss.solver
 
