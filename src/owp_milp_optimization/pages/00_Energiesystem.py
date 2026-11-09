@@ -2045,7 +2045,7 @@ with tab_misc:
         default_value='HiGHS'
     )
     ss.solver = col_opt.selectbox(
-        'Solver', options=['Gurobi', 'SCIP', 'HiGHS'], help=ss.tt['solver'],
+        'Solver', options=['HiGHS'], help=ss.tt['solver'],
         key='select_solver'
         )
     ss.param_opt['Solver'] = ss.solver
