@@ -17,6 +17,8 @@ Improvements
 - Add suite of tests for all stages of ``model.py`` (energy system build,
   parametrization, solvers & solving, results postprocessing, and KPI
   calculation)
+- Keep solver logs in memory instead of writing them into the package
+  directory
 
 Fixes
 -----
@@ -27,6 +29,8 @@ Fixes
   fixed capacity (results of existing energy systems may change)
 - Fix detection of infeasible optimization problems with HiGHS
 - Fix handling of SCIP reaching the time limit without a feasible solution
+- Fix ``PermissionError`` on Windows when running another optimization with
+  HiGHS
 
 Contributors
 ------------

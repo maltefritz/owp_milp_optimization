@@ -251,21 +251,9 @@ Für die meisten Anwenderinnen und Anwender ist folgende Reihenfolge sinnvoll:
 Solverprotokolle
 ================
 
-Bei jeder Optimierung erzeugt das Tool ein Solverprotokoll. Die Dateien werden im Quellverzeichnis unter folgendem Pfad gespeichert:
+Bei jeder Optimierung mit HiGHS oder Gurobi erzeugt der Solver ein Protokoll. Die Ausgabe von HiGHS schneidet das Tool während der Optimierung direkt mit. Gurobi schreibt sein Protokoll in einen temporären Ordner des Benutzers, den das Tool nach dem Einlesen sofort wieder löscht. Im Installations- oder Quellverzeichnis des Tools werden keine Protokolldateien gespeichert. Für SCIP steht derzeit kein Solverprotokoll zur Verfügung.
 
-.. code-block:: text
-
-   src/owp_milp_optimization/solverlogs/
-
-Der Dateiname richtet sich nach dem ausgewählten Solver:
-
-.. code-block:: text
-
-   highs_log.txt
-   gurobi_log.txt
-   scip_log.txt
-
-Ein vorhandenes Protokoll desselben Solvers wird beim nächsten Lauf ersetzt. Das Protokoll enthält je nach Solver unter anderem Angaben zum Modell, Lösungsfortschritt, Zielfunktionswert, MIP Gap, Zeitlimit und Abbruchgrund. Bei unerwarteten Ergebnissen oder vorzeitig beendeten Optimierungen sollte diese Datei zuerst geprüft werden.
+Das Protokoll wird auf der Ergebnisseite im Reiter **Erweitert** unter **Solver Log** angezeigt. Es enthält je nach Solver unter anderem Angaben zum Modell, Lösungsfortschritt, Zielfunktionswert, MIP Gap, Zeitlimit und Abbruchgrund. Bei unerwarteten Ergebnissen oder vorzeitig beendeten Optimierungen sollte das Protokoll zuerst geprüft werden.
 
 Fehlerbehebung
 ==============
