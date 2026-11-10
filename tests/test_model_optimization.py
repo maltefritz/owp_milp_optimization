@@ -7,7 +7,7 @@ additional solver is needed (e.g. in CI).
 
 The file has three parts:
 
-1. Real HiGHS solves: does a small model solve, is the log file handled and
+1. Real HiGHS solves: does a small model solve, is the solver log kept and
    do the options really reach the solver?
 2. Fake solves: are the options translated into each solver's names, and is
    each termination condition translated into the right status string ('ok',
@@ -16,7 +16,8 @@ The file has three parts:
 """
 import gc
 import math
-import sys
+import pathlib
+import tempfile
 import types
 
 import oemof.solph as solph
@@ -25,7 +26,6 @@ from pyomo.contrib.appsi.base import TerminationCondition as AppsiTC
 from pyomo.environ import Var, value
 from pyomo.opt import TerminationCondition as OptTC
 
-from owp_milp_optimization import model
 from owp_milp_optimization.model import EnergySystem
 
 # solph warns when the solver ends without an optimal solution. Tests that
@@ -37,14 +37,15 @@ ignore_nonoptimal_warning = pytest.mark.filterwarnings(
 
 @pytest.fixture
 def log_dir(tmp_path, monkeypatch):
-    """Redirect the solver log directory of ``solve_model`` to tmp_path.
+    """Redirect the temporary log directories of ``solve_model`` to tmp_path.
 
-    ``solve_model`` writes its log to ``<dir of model.py>/solverlogs``. Faking
-    the module's ``__file__`` keeps the tests from writing into the installed
-    package. Returns the (not yet existing) ``solverlogs`` directory.
+    Gurobi and SCIP write their log into a new temporary directory, which
+    ``solve_model`` removes after reading the log. Redirecting the temporary
+    directory of ``tempfile`` keeps these directories out of the user's temp
+    folder and lets tests check that they are removed. Returns tmp_path.
     """
-    monkeypatch.setattr(model, '__file__', str(tmp_path / 'model.py'))
-    return tmp_path / 'solverlogs'
+    monkeypatch.setattr(tempfile, 'tempdir', str(tmp_path))
+    return tmp_path
 
 
 @pytest.fixture
@@ -89,20 +90,21 @@ def test_solution_meets_fixed_demand(gb_system, log_dir):
         assert value(flow[gb1, hnw, t]) == pytest.approx(100.0)
 
 
-def test_highs_log_file_is_written(gb_system, log_dir):
-    """Solving creates the solverlogs directory and a non-empty HiGHS log."""
-    gb_system().solve_model()
-    logfile = log_dir / 'highs_log.txt'
-    assert logfile.is_file()
-    assert logfile.stat().st_size > 0
+def test_highs_log_is_kept(gb_system, log_dir):
+    """Solving keeps the content of the HiGHS log."""
+    es = gb_system()
+    es.solve_model()
+    assert es.solver_log
 
 
-def test_previous_log_file_is_replaced(gb_system, log_dir):
-    """A log from an earlier run is deleted, not appended to."""
-    log_dir.mkdir()
-    (log_dir / 'highs_log.txt').write_text('STALE LOG CONTENT')
-    gb_system().solve_model()
-    assert 'STALE LOG CONTENT' not in (log_dir / 'highs_log.txt').read_text()
+def test_each_solve_keeps_its_own_log(gb_system, log_dir):
+    """A second solve neither sees nor changes the log of the first one."""
+    first = gb_system(MIPGap=0.123)
+    first.solve_model()
+    second = gb_system(MIPGap=0.05)
+    second.solve_model()
+    assert 'tolerance: 12.3%' in first.solver_log
+    assert 'tolerance: 12.3%' not in second.solver_log
 
 
 def test_highs_uses_mip_gap(gb_system, log_dir):
@@ -112,8 +114,9 @@ def test_highs_uses_mip_gap(gb_system, log_dir):
     ``solve_model`` would not cause any error. The solving report in the log
     shows the gap tolerance HiGHS actually used.
     """
-    gb_system(MIPGap=0.123).solve_model()
-    assert 'tolerance: 12.3%' in (log_dir / 'highs_log.txt').read_text()
+    es = gb_system(MIPGap=0.123)
+    es.solve_model()
+    assert 'tolerance: 12.3%' in es.solver_log
 
 
 @ignore_nonoptimal_warning
@@ -189,25 +192,15 @@ def gc_disabled():
     gc.collect()
 
 
-@pytest.mark.xfail(
-    sys.platform == 'win32', raises=PermissionError, strict=True,
-    reason=(
-        'BUG (Windows): every solve writes to the same solverlogs/'
-        'highs_log.txt inside the package and deletes it first. HiGHS keeps '
-        'that file open until the garbage collector frees the previous '
-        'solver, so a second solve in the same process fails with '
-        'PermissionError depending on GC timing (pinned here by disabling '
-        'the GC).'
-    )
-)
-def test_consecutive_solves_with_shared_log_dir(
+def test_consecutive_solves(
         log_dir, make_data, make_opt, full_dispatch_units, gb_system,
         gc_disabled):
     """Two solves in one process (e.g. two dashboard runs) both succeed.
 
-    Both systems use the same log directory, like the dashboard does. The
-    first solve's HiGHS instance still holds the log file open when the
-    second solve tries to delete it.
+    When all solves shared one log file, the second solve failed on Windows
+    with a PermissionError, because HiGHS kept the file of the first solve
+    open until the garbage collector freed it (pinned here by disabling the
+    GC).
     """
     first = EnergySystem(make_data(), full_dispatch_units, make_opt())
     first.run_model()
@@ -267,11 +260,14 @@ def fake_solph_solve(monkeypatch):
 
 # Each solver's own names for the options set from param_opt
 OPTION_NAMES = {
-    # solver: (solph name, MIPGap, log file, TimeLimit)
-    'HiGHS': ('highs', 'mip_rel_gap', 'log_file', 'time_limit'),
-    'Gurobi': ('gurobi', 'MIPGap', 'LogFile', 'TimeLimit'),
-    'SCIP': ('scip', 'limits/gap', 'logfile', 'limits/time'),
+    # solver: (solph name, MIPGap, TimeLimit)
+    'HiGHS': ('highs', 'mip_rel_gap', 'time_limit'),
+    'Gurobi': ('gurobi', 'MIPGap', 'TimeLimit'),
+    'SCIP': ('scip', 'limits/gap', 'limits/time'),
 }
+
+# Gurobi and SCIP write their log into a file, HiGHS needs none
+LOG_FILE_OPTIONS = {'Gurobi': 'LogFile', 'SCIP': 'logfile'}
 
 
 @pytest.mark.parametrize('solver', OPTION_NAMES)
@@ -282,7 +278,7 @@ def test_solver_options(solver, gb_system, log_dir, fake_solph_solve):
     raising and ``solve_model`` can report the status. Gurobi and SCIP also
     print their output to the console (``tee``).
     """
-    solph_name, gap_key, log_key, time_key = OPTION_NAMES[solver]
+    solph_name, gap_key, time_key = OPTION_NAMES[solver]
     status = gb_system(Solver=solver, MIPGap=0.05, TimeLimit=30).solve_model()
 
     assert status == 'ok'
@@ -291,21 +287,41 @@ def test_solver_options(solver, gb_system, log_dir, fake_solph_solve):
     assert call['allow_nonoptimal'] is True
     if solver != 'HiGHS':
         assert call['solve_kwargs'] == {'tee': True}
-    assert call['cmdline_options'] == {
-        gap_key: 0.05,
-        log_key: str(log_dir / f'{solph_name}_log.txt'),
-        time_key: 30,
-    }
+    # The log file option is checked in test_log_file_in_temporary_directory
+    options = dict(call['cmdline_options'])
+    options.pop(LOG_FILE_OPTIONS.get(solver), None)
+    assert options == {gap_key: 0.05, time_key: 30}
+
+
+@pytest.mark.parametrize('solver', LOG_FILE_OPTIONS)
+def test_log_file_in_temporary_directory(
+        solver, gb_system, log_dir, fake_solph_solve):
+    """Gurobi and SCIP log into a temporary directory, which is removed."""
+    gb_system(Solver=solver).solve_model()
+    (call,) = fake_solph_solve.calls
+    logfile = pathlib.Path(call['cmdline_options'][LOG_FILE_OPTIONS[solver]])
+    assert logfile.name == f'{solver.lower()}_log.txt'
+    assert logfile.parent.parent == log_dir
+    assert not logfile.parent.exists()
 
 
 @pytest.mark.parametrize('solver', OPTION_NAMES)
 def test_solvers_without_time_limit(
         solver, gb_system, log_dir, fake_solph_solve):
     """``TimeLimit=None`` leaves the time option out for every solver."""
-    time_key = OPTION_NAMES[solver][3]
+    time_key = OPTION_NAMES[solver][2]
     assert gb_system(Solver=solver, TimeLimit=None).solve_model() == 'ok'
     (call,) = fake_solph_solve.calls
     assert time_key not in call['cmdline_options']
+
+
+@pytest.mark.parametrize('solver', ['HiGHS', 'SCIP'])
+def test_no_log_without_solver_output(
+        solver, gb_system, log_dir, fake_solph_solve):
+    """Without any log output from the solver (like SCIP), there is no log."""
+    es = gb_system(Solver=solver)
+    assert es.solve_model() == 'ok'
+    assert es.solver_log is None
 
 
 OK, INFEASIBLE, UNKNOWN = 'ok', 'infeasable', 'unknown solver error'
