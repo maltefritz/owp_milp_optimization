@@ -967,16 +967,10 @@ with tab_pro:
         st.text('Der SCIP Solver ermöglicht aktuell keine Solverlogs.')
     else:
         with tab_pro.expander('Solver Log'):
-            logpath = os.path.abspath(
-                os.path.join(
-                    os.path.dirname(__file__), '..', 'solverlogs',
-                    f'{ss.param_opt["Solver"].lower()}_log.txt'
-                    )
+            st.text(
+                ss.energy_system.solver_log
+                or 'Für diese Optimierung liegt kein Solverlog vor.'
                 )
-            with open(logpath, 'r', encoding='utf-8') as file:
-                solverlog = file.read()
-
-            st.text(solverlog)
 
 # %% MARK: Footer
 icon_path = os.path.join(os.path.dirname(__file__), '..', 'img', 'icons')
