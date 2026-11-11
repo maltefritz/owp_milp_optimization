@@ -4,7 +4,10 @@ import sys
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath(os.path.join('..', 'src')))
+
+# The version is only defined in the package itself
+from owp_milp_optimization import __version__  # noqa: E402
 
 # -- General configuration ------------------------------------------------
 
@@ -44,9 +47,9 @@ author = 'Malte Fritz & Jonas Freißmann'
 copyright = '{0}, {1}'.format(year, author)
 
 # The short X.Y version.
-version = 'v0.0.6'
+version = f'v{__version__}'
 # The full version, including alpha/beta/rc tags.
-release = 'v0.0.6'
+release = f'v{__version__}'
 
 # The suffix of source filenames.
 source_suffix = '.rst'
