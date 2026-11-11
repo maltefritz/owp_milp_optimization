@@ -19,6 +19,10 @@ Improvements
   calculation)
 - Keep solver logs in memory instead of writing them into the package
   directory
+- Create downloads and read uploads in memory instead of using a temporary
+  folder in the package directory
+- Remove the button that saved the input data into the package directory (the
+  energy system download contains the same files)
 
 Fixes
 -----
@@ -33,6 +37,8 @@ Fixes
   HiGHS
 - Fix ``FileNotFoundError`` for the license file on the home page when the
   dashboard runs from an installed package
+- Fix ``PermissionError`` on the optimization page when the package directory
+  is read-only
 
 Contributors
 ------------
