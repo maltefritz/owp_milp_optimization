@@ -29,6 +29,7 @@ Improvements
   energy system download contains the same files)
 - Define the version only once in the package (``pyproject.toml`` and the
   documentation read it from there)
+- Declare the license as SPDX expression in the package metadata (PEP 639)
 
 Fixes
 -----
