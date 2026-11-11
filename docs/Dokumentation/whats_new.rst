@@ -8,6 +8,10 @@ v0.1.0 -- xxx (xxx xx, 2026)
 New Features
 ------------
 
+- Add command ``owp-milp-optimization`` to start the dashboard from any
+  directory after the installation (alternatively
+  ``python -m owp_milp_optimization``)
+
 Improvements
 ------------
 
