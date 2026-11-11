@@ -37,6 +37,9 @@ dev = [
     "sphinxcontrib.bibtex",
 ]
 
+[project.scripts]
+owp-milp-optimization = "owp_milp_optimization.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/maltefritz/owp_milp_optimization"
 
