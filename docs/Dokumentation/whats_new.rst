@@ -27,6 +27,8 @@ Improvements
   folder in the package directory
 - Remove the button that saved the input data into the package directory (the
   energy system download contains the same files)
+- Define the version only once in the package (``pyproject.toml`` and the
+  documentation read it from there)
 
 Fixes
 -----
