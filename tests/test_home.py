@@ -56,6 +56,8 @@ def test_license_from_source_checkout(tmp_path, monkeypatch):
     """Without an installation, it reads the LICENSE of the source checkout."""
     (tmp_path / 'LICENSE').write_text('Lizenz ß', encoding='utf-8')
     module = tmp_path / 'src' / 'owp_milp_optimization' / 'helpers.py'
+    # POSIX resolves '..' only through existing folders
+    module.parent.mkdir(parents=True)
     monkeypatch.setattr(metadata, 'distribution', _not_installed)
     monkeypatch.setattr(helpers, '__file__', str(module))
     assert helpers.read_license() == 'Lizenz ß'
@@ -64,6 +66,7 @@ def test_license_from_source_checkout(tmp_path, monkeypatch):
 def test_no_license_found(tmp_path, monkeypatch):
     """Returns None instead of failing if there is no license file at all."""
     module = tmp_path / 'site-packages' / 'owp_milp_optimization' / 'helpers.py'
+    module.parent.mkdir(parents=True)
     monkeypatch.setattr(metadata, 'distribution', _not_installed)
     monkeypatch.setattr(helpers, '__file__', str(module))
     assert helpers.read_license() is None
