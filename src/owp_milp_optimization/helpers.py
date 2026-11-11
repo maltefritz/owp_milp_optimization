@@ -1,7 +1,11 @@
 import base64
+import io
+import json
 import os
+import zipfile
 from importlib import metadata
 
+import pandas as pd
 import streamlit as st
 
 
@@ -27,6 +31,44 @@ def read_license():
         with open(licpath, 'r', encoding='utf-8') as file:
             return file.read()
     return None
+
+
+def zip_files(files):
+    """Return a zip archive of the given files as bytes.
+
+    The archive is built in memory, so nothing is written to the package
+    directory, which can be read-only in an installation. ``files`` maps the
+    file names in the archive to their content (str or bytes).
+    """
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as archive:
+        for name, content in files.items():
+            archive.writestr(name, content)
+    return buffer.getvalue()
+
+
+def energy_system_to_zip(data, param_opt, param_units):
+    """Return the energy system as zip archive (bytes) for the download."""
+    return zip_files({
+        'data_input.csv': data.to_csv(sep=';'),
+        'param_opt.json': json.dumps(param_opt, indent=4, sort_keys=True),
+        'param_units.json': json.dumps(param_units, indent=4, sort_keys=True),
+    })
+
+
+def energy_system_from_zip(file):
+    """Read an energy system from a zip archive saved by the dashboard.
+
+    Returns the input data, the optimization and the unit parameters.
+    """
+    with zipfile.ZipFile(file) as archive:
+        with archive.open('data_input.csv') as csvfile:
+            data = pd.read_csv(csvfile, sep=';', index_col=0, parse_dates=True)
+        param_opt = json.loads(archive.read('param_opt.json').decode('utf-8'))
+        param_units = json.loads(
+            archive.read('param_units.json').decode('utf-8')
+        )
+    return data, param_opt, param_units
 
 
 def img_to_base64(image_path):

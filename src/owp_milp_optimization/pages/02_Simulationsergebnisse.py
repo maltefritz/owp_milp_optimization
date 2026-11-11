@@ -4,13 +4,12 @@ import io
 import json
 import os
 import re
-import shutil
 
 import altair as alt
 import numpy as np
 import pandas as pd
 import streamlit as st
-from helpers import footer, format_sep, load_icon_base64s
+from helpers import footer, format_sep, load_icon_base64s, zip_files
 from reporting import generate_html_report
 from streamlit import session_state as ss
 
@@ -21,26 +20,8 @@ st.set_page_config(
 
 @st.dialog('Ergebnisse lokal speichern')
 def save_results():
-    """Temporarely save results and zip them, then let user download it."""
+    """Zip results in memory, then let user download zip archive."""
     with st.spinner('Daten werden verarbeitet...'):
-        tmppath = os.path.abspath(
-            os.path.join(
-                os.path.dirname(__file__), '..', '_tmp'
-            )
-        )
-        if not os.path.exists(tmppath):
-            os.mkdir(tmppath)
-
-        zippath = os.path.join(tmppath, 'results')
-        if not os.path.exists(zippath):
-            os.mkdir(zippath)
-
-        tspath = os.path.join(zippath, 'Ergebnisse_Zeitreihen.csv')
-        ss.energy_system.data_all.to_csv(tspath, sep=';')
-
-        cappath = os.path.join(zippath, 'Ergebnisse_Kapazitäten.csv')
-        ss.overview_caps.to_csv(cappath, sep=';', encoding='utf-8-sig')
-
         kpdf = pd.DataFrame.from_dict(
             {k: [v] for k, v in ss.energy_system.key_params.items()}
         )
@@ -65,20 +46,22 @@ def save_results():
         }
         kpdf.rename(columns=kprename, inplace=True)
 
-        kppath = os.path.join(zippath, 'Ergebnisse_Allgemein.csv')
-        kpdf.to_csv(kppath, sep=';', encoding='utf-8-sig', index=False)
+        # The BOM of utf-8-sig lets Excel detect the encoding of the umlauts
+        zipdata = zip_files({
+            'Ergebnisse_Zeitreihen.csv':
+                ss.energy_system.data_all.to_csv(sep=';'),
+            'Ergebnisse_Kapazitäten.csv':
+                ss.overview_caps.to_csv(sep=';').encode('utf-8-sig'),
+            'Ergebnisse_Allgemein.csv':
+                kpdf.to_csv(sep=';', index=False).encode('utf-8-sig'),
+        })
 
-        shutil.make_archive(zippath, 'zip', zippath)
-
-    with open(f'{zippath}.zip', 'rb') as file:
-        btn = st.download_button(
-            label='Speichere deine Ergebnisse',
-            data=file,
-            file_name='Ergebnisse',
-            mime='application/zip'
-        )
-
-    shutil.rmtree(tmppath)
+    btn = st.download_button(
+        label='Speichere deine Ergebnisse',
+        data=zipdata,
+        file_name='Ergebnisse',
+        mime='application/zip'
+    )
 
 
 @st.dialog('Bericht herunterladen')

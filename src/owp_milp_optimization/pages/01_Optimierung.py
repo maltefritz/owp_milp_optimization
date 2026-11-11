@@ -1,11 +1,9 @@
 import base64
-import json
 import os
-import shutil
 
 import pandas as pd
 import streamlit as st
-from helpers import footer, load_icon_base64s
+from helpers import energy_system_to_zip, footer, load_icon_base64s
 from model import EnergySystem
 from streamlit import session_state as ss
 
@@ -16,42 +14,16 @@ st.set_page_config(
 
 @st.dialog('Energiesystem lokal speichern')
 def download_energy_system():
-    """Temporarely save data and zip it, then let user download zip archive."""
+    """Zip data in memory, then let user download zip archive."""
     with st.spinner('Daten werden verarbeitet...'):
-        tmppath = os.path.abspath(
-            os.path.join(
-                os.path.dirname(__file__), '..', '_tmp'
-            )
-        )
-        if not os.path.exists(tmppath):
-            os.mkdir(tmppath)
+        zipdata = energy_system_to_zip(ss.data, ss.param_opt, ss.param_units)
 
-        zippath = os.path.join(tmppath, 'energysystem')
-        if not os.path.exists(zippath):
-            os.mkdir(zippath)
-
-        tspath = os.path.join(zippath, 'data_input.csv')
-        ss.data.to_csv(tspath, sep=';')
-
-        optpath = os.path.join(zippath, 'param_opt.json')
-        with open(optpath, 'w', encoding='utf-8') as file:
-            json.dump(ss.param_opt, file, indent=4, sort_keys=True)
-
-        unitpath = os.path.join(zippath, 'param_units.json')
-        with open(unitpath, 'w', encoding='utf-8') as file:
-            json.dump(ss.param_units, file, indent=4, sort_keys=True)
-
-        shutil.make_archive(zippath, 'zip', zippath)
-
-    with open(f'{zippath}.zip', 'rb') as file:
-        btn = st.download_button(
-            label='Speichere dein Energiesystem',
-            data=file,
-            file_name='Energiesystem',
-            mime='application/zip'
-        )
-
-    shutil.rmtree(tmppath)
+    btn = st.download_button(
+        label='Speichere dein Energiesystem',
+        data=zipdata,
+        file_name='Energiesystem',
+        mime='application/zip'
+    )
 
 shortnames = {
     'Wärmepumpe': 'hp',
