@@ -31,6 +31,8 @@ Fixes
 - Fix handling of SCIP reaching the time limit without a feasible solution
 - Fix ``PermissionError`` on Windows when running another optimization with
   HiGHS
+- Fix ``FileNotFoundError`` for the license file on the home page when the
+  dashboard runs from an installed package
 
 Contributors
 ------------
