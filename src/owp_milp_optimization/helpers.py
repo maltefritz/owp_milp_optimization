@@ -1,7 +1,32 @@
 import base64
 import os
+from importlib import metadata
 
 import streamlit as st
+
+
+def read_license():
+    """Return the license text of the dashboard.
+
+    An installed package (regular or editable) ships its license file in its
+    metadata. Without an installation, the license file of the source checkout
+    is used. Returns None if no license file is available.
+    """
+    try:
+        dist = metadata.distribution('owp_milp_optimization')
+    except metadata.PackageNotFoundError:
+        pass
+    else:
+        for name in dist.metadata.get_all('License-File') or ['LICENSE']:
+            text = dist.read_text(f'licenses/{name}') or dist.read_text(name)
+            if text:
+                return text
+
+    licpath = os.path.join(os.path.dirname(__file__), '..', '..', 'LICENSE')
+    if os.path.isfile(licpath):
+        with open(licpath, 'r', encoding='utf-8') as file:
+            return file.read()
+    return None
 
 
 def img_to_base64(image_path):
