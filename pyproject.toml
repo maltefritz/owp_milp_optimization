@@ -14,6 +14,32 @@ authors = [
     { name = "Malte Fritz", email = "malte.fritz@web.de" },
     { name = "Jonas Freißmann", email = "jonas.freissmann@web.de" }
 ]
+keywords = [
+    "district heating system",
+    "energy system modelling",
+    "design optimization",
+    "dispatch optimization",
+    "MILP",
+    "oemof.solph",
+    "streamlit",
+    "open-source web dashboard",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Intended Audience :: Science/Research",
+    "Natural Language :: German",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
 dependencies = [
     "streamlit>=1.51.0,!=1.59.0",
     "oemof.solph==0.6.5",
@@ -40,6 +66,9 @@ owp-milp-optimization = "owp_milp_optimization.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/maltefritz/owp_milp_optimization"
+Documentation = "https://owp-milp-optimization.readthedocs.io/de/latest/"
+Issues = "https://github.com/maltefritz/owp_milp_optimization/issues"
+Changelog = "https://owp-milp-optimization.readthedocs.io/de/latest/Dokumentation/whats_new.html"
 
 [tool.flit.sdist]
 exclude = [
