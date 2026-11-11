@@ -30,6 +30,8 @@ Improvements
 - Define the version only once in the package (``pyproject.toml`` and the
   documentation read it from there)
 - Declare the license as SPDX expression in the package metadata (PEP 639)
+- Add classifiers, keywords and links to the documentation, issues and
+  changelog to the package metadata
 
 Fixes
 -----
