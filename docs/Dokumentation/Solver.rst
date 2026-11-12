@@ -76,9 +76,9 @@ HiGHS wird über die in ``oemof.solph`` integrierte Anbindung genutzt, die auf d
 
 .. code-block:: batch
 
-   python -m pip install .
+   python -m pip install owp-milp-optimization
 
-Für die Weiterentwicklung des Tools kann stattdessen die editierbare Installation verwendet werden:
+Für die Weiterentwicklung des Tools kann stattdessen die editierbare Installation aus dem Quellcode verwendet werden:
 
 .. code-block:: batch
 
@@ -251,21 +251,9 @@ Für die meisten Anwenderinnen und Anwender ist folgende Reihenfolge sinnvoll:
 Solverprotokolle
 ================
 
-Bei jeder Optimierung erzeugt das Tool ein Solverprotokoll. Die Dateien werden im Quellverzeichnis unter folgendem Pfad gespeichert:
+Bei jeder Optimierung mit HiGHS oder Gurobi erzeugt der Solver ein Protokoll. Die Ausgabe von HiGHS schneidet das Tool während der Optimierung direkt mit. Gurobi schreibt sein Protokoll in einen temporären Ordner des Benutzers, den das Tool nach dem Einlesen sofort wieder löscht. Im Installations- oder Quellverzeichnis des Tools werden keine Protokolldateien gespeichert. Für SCIP steht derzeit kein Solverprotokoll zur Verfügung.
 
-.. code-block:: text
-
-   src/owp_milp_optimization/solverlogs/
-
-Der Dateiname richtet sich nach dem ausgewählten Solver:
-
-.. code-block:: text
-
-   highs_log.txt
-   gurobi_log.txt
-   scip_log.txt
-
-Ein vorhandenes Protokoll desselben Solvers wird beim nächsten Lauf ersetzt. Das Protokoll enthält je nach Solver unter anderem Angaben zum Modell, Lösungsfortschritt, Zielfunktionswert, MIP Gap, Zeitlimit und Abbruchgrund. Bei unerwarteten Ergebnissen oder vorzeitig beendeten Optimierungen sollte diese Datei zuerst geprüft werden.
+Das Protokoll wird auf der Ergebnisseite im Reiter **Erweitert** unter **Solver Log** angezeigt. Es enthält je nach Solver unter anderem Angaben zum Modell, Lösungsfortschritt, Zielfunktionswert, MIP Gap, Zeitlimit und Abbruchgrund. Bei unerwarteten Ergebnissen oder vorzeitig beendeten Optimierungen sollte das Protokoll zuerst geprüft werden.
 
 Fehlerbehebung
 ==============
@@ -289,18 +277,18 @@ Unter macOS und Linux:
    which python
    python -m pip --version
 
-Die ausgegebenen Pfade sollten auf die virtuelle Umgebung ``.venv`` im Repository verweisen.
+Die ausgegebenen Pfade sollten auf die virtuelle Umgebung ``.venv`` verweisen.
 
 HiGHS ist nicht verfügbar
 -------------------------
 
-Das Projekt wurde möglicherweise nicht vollständig in der aktiven virtuellen Umgebung installiert. Aus dem Hauptverzeichnis des Repositorys kann die Installation wiederholt werden:
+Das Tool wurde möglicherweise nicht vollständig in der aktiven virtuellen Umgebung installiert. Die Installation kann wiederholt werden:
 
 .. code-block:: batch
 
-   python -m pip install .
+   python -m pip install owp-milp-optimization
 
-Für eine editierbare Installation:
+Für eine editierbare Installation aus dem Quellcode wird im Hauptverzeichnis des Repositorys folgender Befehl ausgeführt:
 
 .. code-block:: batch
 

@@ -14,7 +14,6 @@ part. Tests must treat them as read-only.
 """
 import copy
 import json
-import os
 from importlib import resources
 
 import numpy as np
@@ -159,24 +158,14 @@ def _scaled_invest(cat, **overrides):
     return params
 
 
-def _solve(data, param_units, param_opt, logdir):
-    """Build and solve an energy system like the dashboard does.
-
-    The solver log is written to ``<logdir>/solverlogs`` instead of the
-    package directory. ``solve_model`` derives that path from the module's
-    ``__file__``, so it is redirected for the duration of the solve. Every
-    solve gets its own directory because HiGHS keeps its log file open while
-    the solved model is alive, which would otherwise make the next solve fail
-    on Windows (see ``test_consecutive_solves_with_shared_log_dir``).
-    """
+def _solve(data, param_units, param_opt):
+    """Build and solve an energy system like the dashboard does."""
     es = model.EnergySystem(data, param_units, param_opt)
     es.generate_buses()
     es.generate_sources()
     es.generate_sinks()
     es.generate_components()
-    with pytest.MonkeyPatch.context() as mp:
-        mp.setattr(model, '__file__', os.path.join(str(logdir), 'model.py'))
-        status = es.solve_model()
+    status = es.solve_model()
     return es, status
 
 
@@ -220,12 +209,9 @@ def scaled_invest():
 
 
 @pytest.fixture(scope='session')
-def solve_es(tmp_path_factory):
+def solve_es():
     """Return ``solve(data, param_units, param_opt) -> (es, status)``."""
-    def solve(data, param_units, param_opt):
-        logdir = tmp_path_factory.mktemp('solver')
-        return _solve(data, param_units, param_opt, logdir)
-    return solve
+    return _solve
 
 
 @pytest.fixture(scope='session')

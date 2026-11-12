@@ -2,15 +2,15 @@ import base64
 import datetime as dt
 import json
 import os
-import shutil
-import zipfile
 from copy import deepcopy
 
 import altair as alt
 import pandas as pd
 import pyomo.environ as pyo
 import streamlit as st
-from helpers import footer, format_sep, load_icon_base64s
+from helpers import (
+    energy_system_from_zip, footer, format_sep, load_icon_base64s
+)
 from pyomo.opt import check_available_solvers
 from streamlit import session_state as ss
 
@@ -714,32 +714,10 @@ with tab_system:
         help=ss.tt['own_es'], key='own_es'
     )
     if esfile is not None:
-        tmppath = os.path.abspath(
-            os.path.join(
-                os.path.dirname(__file__), '..', '_tmp'
-            )
-        )
-        if not os.path.exists(tmppath):
-            os.mkdir(tmppath)
-
-        zippath = os.path.join(tmppath, esfile.name.split('.')[0])
-        with zipfile.ZipFile(esfile, 'r') as z:
-            z.extractall(zippath)
-
-        tspath = os.path.join(zippath, 'data_input.csv')
-        ss.data = pd.read_csv(tspath, sep=';', index_col=0, parse_dates=True)
-
-        optpath = os.path.join(zippath, 'param_opt.json')
-        with open(optpath, 'r', encoding='utf-8') as file:
-            ss.param_opt = json.load(file)
-
-        unitpath = os.path.join(zippath, 'param_units.json')
-        with open(unitpath, 'r', encoding='utf-8') as file:
-            ss.param_units = json.load(file)
+        ss.data, ss.param_opt, ss.param_units = energy_system_from_zip(esfile)
 
         ss.units = [longnames[u] for u in ss.param_units.keys()]
 
-        shutil.rmtree(tmppath)
         own_es = True
 
 # %% MARK: Unit Parameters

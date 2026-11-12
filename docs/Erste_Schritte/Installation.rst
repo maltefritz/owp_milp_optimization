@@ -2,11 +2,11 @@
 Installation
 ~~~~~~~~~~~~
 
-Das Tool kann lokal unter Windows, macOS und Linux ausgeführt werden. Die Installation erfolgt direkt aus dem GitHub-Repository. Für die Python-Abhängigkeiten wird eine virtuelle Umgebung mit :mod:`venv` verwendet.
+Das Tool kann lokal unter Windows, macOS und Linux ausgeführt werden. Es wird als Python-Paket aus dem Python Package Index (PyPI) installiert. Für die Python-Abhängigkeiten wird eine virtuelle Umgebung mit :mod:`venv` verwendet. Für die Weiterentwicklung kann das Tool alternativ aus dem Quellcode installiert werden (siehe :ref:`installation-quellcode`).
 
 .. note::
 
-   Für diese Anleitung wird **Python 3.11** empfohlen. Diese Version ist mit den derzeit verwendeten Abhängigkeiten kompatibel und wird auch für den Build der Online-Dokumentation eingesetzt.
+   Das Tool unterstützt Python 3.10 bis 3.14. Für diese Anleitung wird **Python 3.11** empfohlen. Diese Version wird auch für den Build der Online-Dokumentation eingesetzt.
 
 Voraussetzungen
 ===============
@@ -14,31 +14,10 @@ Voraussetzungen
 Für die lokale Installation werden benötigt:
 
 * Python 3.11,
-* Git oder ein als ZIP-Datei heruntergeladenes Repository,
 * eine Internetverbindung zur Installation der Python-Pakete und
 * ein aktueller Webbrowser.
 
 Python sollte von der offiziellen `Python-Webseite <https://www.python.org/downloads/release/python-3119/>`__ oder über die Paketverwaltung des jeweiligen Betriebssystems installiert werden.
-
-Quellcode herunterladen
-=======================
-
-Mit Git
--------
-
-Das Repository wird mit folgendem Befehl heruntergeladen:
-
-.. code-block:: batch
-
-   git clone https://github.com/maltefritz/owp_milp_optimization.git
-   cd owp_milp_optimization
-
-Alle weiteren Befehle werden zunächst im Hauptverzeichnis des Repositorys ausgeführt (in diesem Verzeichnis befindet sich unter anderem die Datei ``pyproject.toml``).
-
-Ohne Git
---------
-
-Alternativ kann das Repository auf GitHub über **Code → Download ZIP** als ZIP-Datei heruntergeladen werden. Das Archiv muss anschließend entpackt und das Terminal im entpackten Hauptverzeichnis geöffnet werden.
 
 Installation unter Windows
 ==========================
@@ -59,7 +38,7 @@ Die Ausgabe sollte beispielsweise ``Python 3.11.9`` lauten. Die genaue Patch-Ver
 Virtuelle Umgebung erstellen
 -----------------------------
 
-Im Hauptverzeichnis des Repositorys wird eine virtuelle Umgebung namens ``.venv`` erstellt:
+In einem beliebigen Arbeitsordner, beispielsweise einem neuen Projektordner, wird eine virtuelle Umgebung namens ``.venv`` erstellt:
 
 .. code-block:: batch
 
@@ -86,7 +65,7 @@ Danach werden das OWP-Tool und alle benötigten Abhängigkeiten installiert:
 
 .. code-block:: batch
 
-   python -m pip install .
+   python -m pip install owp-milp-optimization
 
 Installation unter macOS
 ========================
@@ -105,7 +84,7 @@ Die Ausgabe sollte eine Python-Version aus der Reihe 3.11 anzeigen.
 Virtuelle Umgebung erstellen
 -----------------------------
 
-Im Hauptverzeichnis des Repositorys wird die virtuelle Umgebung erstellt:
+In einem beliebigen Arbeitsordner, beispielsweise einem neuen Projektordner, wird die virtuelle Umgebung erstellt:
 
 .. code-block:: batch
 
@@ -127,7 +106,7 @@ Innerhalb der aktivierten Umgebung werden ``pip`` und anschließend das OWP-Tool
 .. code-block:: batch
 
    python -m pip install --upgrade pip
-   python -m pip install .
+   python -m pip install owp-milp-optimization
 
 Installation unter Linux
 ========================
@@ -146,7 +125,7 @@ Zusätzlich muss das Python-Modul ``venv`` installiert sein. Bei einigen Linux-D
 Virtuelle Umgebung erstellen
 -----------------------------
 
-Im Hauptverzeichnis des Repositorys wird die virtuelle Umgebung erstellt:
+In einem beliebigen Arbeitsordner, beispielsweise einem neuen Projektordner, wird die virtuelle Umgebung erstellt:
 
 .. code-block:: batch
 
@@ -168,18 +147,18 @@ Innerhalb der aktivierten Umgebung werden ``pip`` und anschließend das OWP-Tool
 .. code-block:: batch
 
    python -m pip install --upgrade pip
-   python -m pip install .
+   python -m pip install owp-milp-optimization
 
 Installation überprüfen
 =======================
 
-Nach der Installation kann geprüft werden, ob Streamlit verfügbar ist:
+Nach der Installation kann geprüft werden, ob das OWP-Tool installiert ist:
 
 .. code-block:: batch
 
-   python -m streamlit version
+   python -m pip show owp-milp-optimization
 
-Es sollte die installierte Streamlit-Version angezeigt werden.
+Es sollten unter anderem der Name und die installierte Version des Tools angezeigt werden.
 
 .. note::
    Der Solver HiGHS wird zusammen mit den Python-Abhängigkeiten installiert. Für die Standardnutzung des OWP-Tools ist daher keine separate Solver-Installation notwendig. Weitere Informationen zu Solvern und deren Installation befinden sich in der Dokumentation unter :doc:`../Dokumentation/Solver`.
@@ -192,19 +171,38 @@ Nach der Installation kann die Anwendung gestartet werden. Eine detaillierte Anl
 .. note::
    Die virtuelle Umgebung muss nur einmal erstellt und das Projekt nur einmal installiert werden. Bei einer späteren Nutzung genügen die Aktivierung der Umgebung und der erneute Start der Anwendung.
 
-Projekt aktualisieren
-=====================
+.. _installation-quellcode:
 
-Wurde das Repository mit Git heruntergeladen, kann der aktuelle Stand aus dem Hauptverzeichnis abgerufen werden:
+Installation aus dem Quellcode
+==============================
+
+Für die Weiterentwicklung oder um einen noch nicht veröffentlichten Stand zu nutzen, kann das Tool direkt aus dem GitHub-Repository installiert werden. Zusätzlich zu den oben genannten Voraussetzungen wird dafür Git oder ein als ZIP-Datei heruntergeladenes Repository benötigt.
+
+Mit Git
+-------
+
+Das Repository wird mit folgendem Befehl heruntergeladen:
 
 .. code-block:: batch
 
-   git pull
+   git clone https://github.com/maltefritz/owp_milp_optimization.git
+   cd owp_milp_optimization
 
-Wenn sich die Abhängigkeiten in ``pyproject.toml`` geändert haben, sollte das Projekt anschließend in der aktivierten virtuellen Umgebung erneut installiert werden:
+Alle weiteren Befehle werden im Hauptverzeichnis des Repositorys ausgeführt (in diesem Verzeichnis befindet sich unter anderem die Datei ``pyproject.toml``).
+
+Ohne Git
+--------
+
+Alternativ kann das Repository auf GitHub über **Code → Download ZIP** als ZIP-Datei heruntergeladen werden. Das Archiv muss anschließend entpackt und das Terminal im entpackten Hauptverzeichnis geöffnet werden.
+
+Tool installieren
+-----------------
+
+Die virtuelle Umgebung wird wie oben für das jeweilige Betriebssystem beschrieben im Hauptverzeichnis des Repositorys erstellt und aktiviert. Anschließend wird das Tool aus dem Quellcode installiert:
 
 .. code-block:: batch
 
+   python -m pip install --upgrade pip
    python -m pip install .
 
 .. tip::
@@ -216,6 +214,27 @@ Wenn sich die Abhängigkeiten in ``pyproject.toml`` geändert haben, sollte das 
       python -m pip install -e .
 
    Änderungen am lokalen Python-Quellcode werden dann ohne erneute Installation wirksam.
+
+Projekt aktualisieren
+=====================
+
+Eine neue Version des Tools wird in der aktivierten virtuellen Umgebung installiert mit:
+
+.. code-block:: batch
+
+   python -m pip install --upgrade owp-milp-optimization
+
+Bei einer Installation aus dem Quellcode mit Git wird der aktuelle Stand im Hauptverzeichnis des Repositorys abgerufen:
+
+.. code-block:: batch
+
+   git pull
+
+Wenn sich die Abhängigkeiten in ``pyproject.toml`` geändert haben, sollte das Projekt anschließend in der aktivierten virtuellen Umgebung erneut installiert werden:
+
+.. code-block:: batch
+
+   python -m pip install .
 
 Fehlerbehebung
 ==============
@@ -244,13 +263,13 @@ Unter macOS und Linux:
    which python
    python -m pip --version
 
-Die ausgegebenen Pfade sollten auf den Ordner ``.venv`` im Repository verweisen.
+Die ausgegebenen Pfade sollten auf den Ordner ``.venv`` verweisen.
 
-Streamlit wird nicht gefunden
------------------------------
+Das Tool ist nicht installiert
+------------------------------
 
-Wird die Meldung ``No module named streamlit`` angezeigt, ist Streamlit nicht installiert. Dies kann daran liegen, dass die virtuelle Umgebung nicht aktiviert ist (siehe oben) oder die Installation noch nicht durchgeführt wurde. Die Umgebung muss aktiviert und das Projekt aus dem Hauptverzeichnis installiert werden:
+Meldet ``python -m pip show owp-milp-optimization`` das Paket als nicht gefunden, ist das Tool in der aktiven Umgebung nicht installiert. Dies kann daran liegen, dass die virtuelle Umgebung nicht aktiviert ist (siehe oben) oder die Installation noch nicht durchgeführt wurde. Die Umgebung muss aktiviert und das Tool installiert werden:
 
 .. code-block:: batch
 
-   python -m pip install .
+   python -m pip install owp-milp-optimization

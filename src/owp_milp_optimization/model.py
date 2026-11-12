@@ -1,8 +1,11 @@
+import logging
 import os
+import tempfile
 
 import oemof.solph as solph
 import pandas as pd
 from oemof.solph import views
+from pyomo.common.log import LoggingIntercept
 
 
 class EnergySystem():
@@ -377,20 +380,65 @@ class EnergySystem():
     def solve_model(self):
         self.model = solph.Model(self.es)
 
-        solverlogspath = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), 'solverlogs')
-            )
-        if not os.path.exists(solverlogspath):
-            os.mkdir(solverlogspath)
+        self.solver_log = None
+        if self.param_opt['Solver'] == 'HiGHS':
+            tc = self._solve_highs()
+        else:
+            # Gurobi and SCIP write their log into a file. It is placed in a
+            # temporary directory of the user, which is removed right after
+            # the optimization. Only the content of the log is kept.
+            with tempfile.TemporaryDirectory(
+                    prefix='owp_milp_', ignore_cleanup_errors=True
+                    ) as logdir:
+                logpath = os.path.join(
+                    logdir, f'{self.param_opt["Solver"].lower()}_log.txt'
+                    )
+                tc = self._solve_with_log_file(logpath)
+                if os.path.exists(logpath):
+                    with open(
+                            logpath, 'r', encoding='utf-8', errors='replace'
+                            ) as file:
+                        self.solver_log = file.read()
 
-        logpath = os.path.abspath(
-            os.path.join(
-                solverlogspath, f'{self.param_opt["Solver"].lower()}_log.txt'
+        feasable_sols = ['optimal', 'objectiveLimit', 'maxTimeLimit']
+        infeasable_sols = ['infeasible', 'unbounded', 'infeasibleOrUnbounded']
+
+        # A solver can reach a limit before it finds a feasible solution
+        solution_found = self.model.objective(exception=False) is not None
+
+        if tc in feasable_sols and solution_found:
+            return 'ok'
+        elif tc in infeasable_sols:
+            return 'infeasable'
+        else:
+            print(f'UNKOWN SOVLER ERROR:: Termination Condition: {tc}')
+            return 'unknown solver error'
+
+    def _solve_highs(self):
+        """Solve the model with HiGHS and keep the solver log.
+
+        HiGHS runs within this process. Pyomo passes its console output to a
+        logger, from which the log is taken without writing a log file.
+
+        Returns the termination condition reported by the solver.
+        """
+        options = {'mip_rel_gap': self.param_opt['MIPGap']}
+        if self.param_opt['TimeLimit'] is not None:
+            options.update({'time_limit': self.param_opt['TimeLimit']})
+        with LoggingIntercept(
+                module='pyomo.contrib.appsi.solvers.highs', level=logging.INFO
+                ) as log:
+            self.model.solve(
+                solver='highs', cmdline_options=options, allow_nonoptimal=True
                 )
-            )
-        if os.path.exists(logpath):
-            os.remove(logpath)
+        self.solver_log = log.getvalue() or None
+        return self.model.solver_results['termination_condition']
 
+    def _solve_with_log_file(self, logpath):
+        """Solve the model with Gurobi or SCIP, which log into logpath.
+
+        Returns the termination condition reported by the solver.
+        """
         tc = None
         if self.param_opt['Solver'] == 'Gurobi':
             options = {
@@ -416,31 +464,8 @@ class EnergySystem():
                 cmdline_options=options, allow_nonoptimal=True
                 )
             tc = self.model.solver_results.Solver.Termination_condition
-        elif self.param_opt['Solver'] == 'HiGHS':
-            options = {
-                    'mip_rel_gap': self.param_opt['MIPGap'],
-                    'log_file': logpath
-                    }
-            if self.param_opt['TimeLimit'] is not None:
-                options.update({'time_limit': self.param_opt['TimeLimit']})
-            self.model.solve(
-                solver='highs', cmdline_options=options, allow_nonoptimal=True
-                )
-            tc = self.model.solver_results['termination_condition']
 
-        feasable_sols = ['optimal', 'objectiveLimit', 'maxTimeLimit']
-        infeasable_sols = ['infeasible', 'unbounded', 'infeasibleOrUnbounded']
-
-        # A solver can reach a limit before it finds a feasible solution
-        solution_found = self.model.objective(exception=False) is not None
-
-        if tc in feasable_sols and solution_found:
-            return 'ok'
-        elif tc in infeasable_sols:
-            return 'infeasable'
-        else:
-            print(f'UNKOWN SOVLER ERROR:: Termination Condition: {tc}')
-            return 'unknown solver error'
+        return tc
 
     def get_results(self):
         self.results = solph.processing.results(self.model)

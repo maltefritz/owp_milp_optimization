@@ -10,7 +10,7 @@ Research, Technology and Space.
 ## Key Features
 
 - Combined invest and dispatch optimization based on [oemof.solph](https://github.com/oemof/oemof-solph)
-- Parametrization and result visualizaiton with a [Streamlit](https://github.com/streamlit/streamlit) dashboard
+- Parametrization and result visualization with a [Streamlit](https://github.com/streamlit/streamlit) dashboard
 - Wide range of typical heating plants
 - Comprehensive data base of heat load data, energy prices and emission factors
 
@@ -22,18 +22,11 @@ The documentation is currently available in German only. An English version will
 
 ## Funding
 
-[<img src="src\owp_milp_optimization\img\Logos_Förderer_ohnePTJ_BMFTR.png">](https://www.innovation-strukturwandel.de/strukturwandel/de/innovation-strukturwandel/t_raum/t_raum_node.html)
+[<img src="https://raw.githubusercontent.com/maltefritz/owp_milp_optimization/main/src/owp_milp_optimization/img/Logos_F%C3%B6rderer_ohnePTJ_BMFTR.png">](https://www.innovation-strukturwandel.de/strukturwandel/shareddocs/entries/de/InnovationUndStrukturwandel/TRaum/innonord)
 
 ## Installation
 
-Python 3.11 is recommended. Clone the repository and navigate to its root directory:
-
-```bash
-git clone https://github.com/maltefritz/owp_milp_optimization.git
-cd owp_milp_optimization
-```
-
-Create and activate a virtual environment.
+Python 3.10 to 3.14 is supported, Python 3.11 is recommended. Create and activate a virtual environment.
 
 ### Windows
 
@@ -49,32 +42,34 @@ python3.11 -m venv .venv
 source .venv/bin/activate
 ```
 
-Install the application and its dependencies:
+Install the dashboard and its dependencies from PyPI:
 
 ```bash
 python -m pip install --upgrade pip
-python -m pip install .
+python -m pip install owp-milp-optimization
 ```
 
 The open-source HiGHS solver is installed as a dependency and is used by default. No separate solver installation is required for the standard setup.
 
+### Installation from source
+
+To work on the code, clone the repository and install it in editable mode in the activated virtual environment:
+
+```bash
+git clone https://github.com/maltefritz/owp_milp_optimization.git
+cd owp_milp_optimization
+python -m pip install -e .
+```
+
 ## Run the dashboard
 
-The virtual environment must be active before starting the application.
-
-### Windows
+Start the dashboard in the activated virtual environment:
 
 ```bash
-cd src\owp_milp_optimization
-python -m streamlit run Home.py
+owp-milp-optimization
 ```
 
-### macOS and Linux
-
-```bash
-cd src/owp_milp_optimization
-python -m streamlit run Home.py
-```
+If the command is not found, `python -m owp_milp_optimization` starts the dashboard as well.
 
 Streamlit will normally open the dashboard automatically. Otherwise, open the displayed local address, usually:
 
@@ -82,8 +77,14 @@ Streamlit will normally open the dashboard automatically. Otherwise, open the di
 http://localhost:8501
 ```
 
+Further options are passed on to Streamlit, e.g. to use another port:
+
+```bash
+owp-milp-optimization --server.port 8502
+```
+
 Stop the application by pressing `Ctrl+C`.
 
 ## License
 
-See the `LICENSE` file for further information.
+The dashboard is licensed under the MIT License. See the [LICENSE](https://github.com/maltefritz/owp_milp_optimization/blob/main/LICENSE) file for further information.

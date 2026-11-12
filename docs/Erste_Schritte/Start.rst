@@ -5,7 +5,7 @@ Start des Tools
 Anwendung starten
 =================
 
-Die Anwendung sollte aus dem Verzeichnis gestartet werden, in dem sich ``Home.py`` und die Streamlit-Konfiguration befinden.
+Die Anwendung wird mit dem Befehl ``owp-milp-optimization`` gestartet. Das Verzeichnis, aus dem der Befehl aufgerufen wird, spielt dabei keine Rolle. In den folgenden Beispielen ist der Pfad der Ordner, in dem die virtuelle Umgebung ``.venv`` erstellt wurde.
 
 .. important::
    Die Anwendung muss aus derselben virtuellen Umgebung gestartet werden, in der das Tool installiert wurde. Andernfalls kann es zu Problemen bei der Nutzung kommen.
@@ -16,20 +16,18 @@ Windows
 
 .. code-block:: batch
 
-   cd C:\Pfad\zum\owp_milp_optimization
+   cd C:\Pfad\zum\Projektordner
    .venv\Scripts\activate
-   cd src\owp_milp_optimization
-   python -m streamlit run Home.py
+   owp-milp-optimization
 
 macOS und Linux
 ---------------
 
 .. code-block:: batch
 
-   cd /pfad/zum/owp_milp_optimization
+   cd /pfad/zum/projektordner
    source .venv/bin/activate
-   cd src/owp_milp_optimization
-   python -m streamlit run Home.py
+   owp-milp-optimization
 
 
 Aufrufen des Tools
@@ -75,16 +73,22 @@ Unter macOS und Linux:
    which python
    python -m pip --version
 
-Die ausgegebenen Pfade sollten auf den Ordner ``.venv`` im Repository verweisen.
+Die ausgegebenen Pfade sollten auf den Ordner ``.venv`` verweisen.
 
-Streamlit wird nicht gefunden
------------------------------
+Der Befehl wird nicht gefunden
+------------------------------
 
-Wird die Meldung ``No module named streamlit`` angezeigt, ist Streamlit nicht installiert. Dies kann daran liegen, dass die virtuelle Umgebung nicht aktiviert ist (siehe oben) oder die Installation noch nicht durchgeführt wurde. Die Umgebung muss aktiviert und das Projekt aus dem Hauptverzeichnis installiert werden:
+Wird ``owp-milp-optimization`` nicht als Befehl erkannt, ist meist die virtuelle Umgebung nicht aktiviert (siehe oben) oder das Tool noch nicht installiert. Die Umgebung muss aktiviert und das Tool installiert werden:
 
 .. code-block:: batch
 
-   python -m pip install .
+   python -m pip install owp-milp-optimization
+
+Ist das Tool installiert und wird der Befehl trotzdem nicht gefunden, kann die Anwendung auch über Python gestartet werden:
+
+.. code-block:: batch
+
+   python -m owp_milp_optimization
 
 Port 8501 ist bereits belegt
 ----------------------------
@@ -93,6 +97,6 @@ Falls bereits eine andere Streamlit-Anwendung läuft, kann ein anderer Port verw
 
 .. code-block:: batch
 
-   python -m streamlit run Home.py --server.port 8502
+   owp-milp-optimization --server.port 8502
 
 Die Anwendung ist anschließend unter ``http://localhost:8502`` erreichbar.
