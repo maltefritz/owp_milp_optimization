@@ -76,9 +76,9 @@ HiGHS wird über die in ``oemof.solph`` integrierte Anbindung genutzt, die auf d
 
 .. code-block:: batch
 
-   python -m pip install .
+   python -m pip install owp-milp-optimization
 
-Für die Weiterentwicklung des Tools kann stattdessen die editierbare Installation verwendet werden:
+Für die Weiterentwicklung des Tools kann stattdessen die editierbare Installation aus dem Quellcode verwendet werden:
 
 .. code-block:: batch
 
@@ -277,18 +277,18 @@ Unter macOS und Linux:
    which python
    python -m pip --version
 
-Die ausgegebenen Pfade sollten auf die virtuelle Umgebung ``.venv`` im Repository verweisen.
+Die ausgegebenen Pfade sollten auf die virtuelle Umgebung ``.venv`` verweisen.
 
 HiGHS ist nicht verfügbar
 -------------------------
 
-Das Projekt wurde möglicherweise nicht vollständig in der aktiven virtuellen Umgebung installiert. Aus dem Hauptverzeichnis des Repositorys kann die Installation wiederholt werden:
+Das Tool wurde möglicherweise nicht vollständig in der aktiven virtuellen Umgebung installiert. Die Installation kann wiederholt werden:
 
 .. code-block:: batch
 
-   python -m pip install .
+   python -m pip install owp-milp-optimization
 
-Für eine editierbare Installation:
+Für eine editierbare Installation aus dem Quellcode wird im Hauptverzeichnis des Repositorys folgender Befehl ausgeführt:
 
 .. code-block:: batch
 
