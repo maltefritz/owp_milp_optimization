@@ -32,6 +32,8 @@ Improvements
 - Declare the license as SPDX expression in the package metadata (PEP 639)
 - Add classifiers, keywords and links to the documentation, issues and
   changelog to the package metadata
+- Describe the installation from PyPI and the start with
+  ``owp-milp-optimization`` in the README and the documentation
 
 Fixes
 -----
